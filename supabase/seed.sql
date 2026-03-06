@@ -1,0 +1,4 @@
+-- MVP-1 DB layer seed (optional)
+-- Intentionally left empty by default because org/event demo rows require
+-- real auth.users UUIDs in environments with auth FK constraints.
+-- Use `supabase/verify_mvp1.sql` for manual end-to-end validation.
