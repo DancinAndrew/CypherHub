@@ -4,8 +4,11 @@ import EventDetailView from "../views/EventDetailView.vue";
 import HomeView from "../views/HomeView.vue";
 import LoginView from "../views/LoginView.vue";
 import MyTicketsView from "../views/MyTicketsView.vue";
+import OrganizerApplyView from "../views/organizer/OrganizerApplyView.vue";
 import OrganizerCheckinView from "../views/OrganizerCheckinView.vue";
-import OrganizerManageView from "../views/OrganizerManageView.vue";
+import OrganizerEventView from "../views/organizer/OrganizerEventView.vue";
+import OrganizerFormBuilderView from "../views/organizer/OrganizerFormBuilderView.vue";
+import OrganizerHomeView from "../views/organizer/OrganizerHomeView.vue";
 import { useAuthStore } from "../stores/auth";
 import { pinia } from "../stores/index";
 
@@ -35,8 +38,38 @@ const router = createRouter({
     },
     {
       path: "/organizer",
-      name: "organizer-manage",
-      component: OrganizerManageView,
+      name: "organizer-home",
+      component: OrganizerHomeView,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: "/organizer/apply",
+      name: "organizer-apply",
+      component: OrganizerApplyView,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: "/organizer/events",
+      name: "organizer-events",
+      component: OrganizerEventView,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: "/organizer/events/:eventId",
+      name: "organizer-event-edit",
+      component: OrganizerEventView,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: "/organizer/forms",
+      name: "organizer-forms",
+      component: OrganizerFormBuilderView,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: "/organizer/forms/:eventId",
+      name: "organizer-forms-with-event",
+      component: OrganizerFormBuilderView,
       meta: { requiresAuth: true },
     },
     {

@@ -20,50 +20,51 @@
 
 ## Quickstart (Docker-first)
 
-### 方案 A：本地 Supabase（推薦）
+專案支援 **本地** 與 **雲端** Supabase，可依情境切換。詳見 [docs/local-cloud-switch.md](docs/local-cloud-switch.md)。
 
-1. 執行設定腳本（啟動 Supabase + 寫入 .env keys）：
+### 方案 A：本地 Supabase（開發測試用）
 
-```bash
-./scripts/setup-local-supabase.sh
-```
+1. 切換到本地模式並取得 keys：
+   ```bash
+   ./scripts/use-local-supabase.sh
+   ./scripts/setup-local-supabase.sh   # 若 keys 為空
+   ```
 
 2. 套用 DB migrations：
-
-```bash
-supabase db reset
-```
+   ```bash
+   supabase db reset
+   ```
 
 3. 啟動專案：
-
-```bash
-docker compose -f infra/docker-compose.yml up --build
-```
+   ```bash
+   docker compose -f infra/docker-compose.yml up --build
+   ```
 
 4. 驗證：
-- Frontend: http://localhost:5173
-- Backend health: http://localhost:8000/api/v1/health
-- Supabase Studio: http://127.0.0.1:54323（建立測試用戶、檢視資料）
+   - Frontend: http://localhost:5173
+   - Backend health: http://localhost:8000/api/v1/health
+   - Supabase Studio: http://127.0.0.1:54323（建立測試用戶、檢視資料）
 
-### 方案 B：雲端 Supabase
+### 方案 B：雲端 Supabase（正式/部署用）
 
-1. 複製環境變數範本並填入雲端專案的 URL 與 keys：
+1. 切換到雲端模式並填入專案 keys：
+   ```bash
+   ./scripts/use-cloud-supabase.sh
+   # 編輯 backend/.env 與 frontend/.env，填入 Dashboard → API 的值
+   ```
 
-```bash
-cp backend/.env.example backend/.env
-cp frontend/.env.example frontend/.env
-# 編輯 .env 填入 SUPABASE_URL、SUPABASE_ANON_KEY、SUPABASE_SERVICE_ROLE_KEY、VITE_SUPABASE_* 
-```
+2. 若雲端專案被 pause，請先到 [Supabase Dashboard](https://supabase.com/dashboard) 喚醒。
 
-2. 啟動：
+3. 套用 migrations 到雲端：
+   ```bash
+   supabase link --project-ref YOUR_PROJECT_REF
+   supabase db push
+   ```
 
-```bash
-docker compose -f infra/docker-compose.yml up --build
-```
-
-3. 驗證：
-- Frontend: http://localhost:5173
-- Backend health: http://localhost:8000/api/v1/health
+4. 啟動專案：
+   ```bash
+   docker compose -f infra/docker-compose.yml up --build
+   ```
 
 ## Thread 3 MVP-1 驗收流程（Docker + UI + API）
 
