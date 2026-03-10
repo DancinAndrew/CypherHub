@@ -3,3 +3,16 @@ __pycache__/
 *.pyc
 .env
 .DS_Store
+backend/.pytest_cache/
+backend/.ruff_cache/
+backend/.venv/
+frontend/node_modules/
+frontend/dist/
+
+# Supabase CLI generated
+supabase/.temp/
+supabase/.branches/
+
+# ChatGPT 匯出檔（非程式碼）
+ChatGPT-CypherHub*.md
+ChatGPT-CypherHub*.pdf
