@@ -1,10 +1,19 @@
 <script setup lang="ts">
-import { useRouter } from "vue-router";
+import { onErrorCaptured, ref } from "vue";
+import { useRoute, useRouter } from "vue-router";
 
 import { useAuthStore } from "./stores/auth";
 
+const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
+const captureError = ref<Error | null>(null);
+
+onErrorCaptured((err) => {
+  captureError.value = err;
+  console.error("Component error:", err);
+  return false;
+});
 
 async function handleSignOut(): Promise<void> {
   try {
@@ -13,6 +22,10 @@ async function handleSignOut(): Promise<void> {
   } catch (error) {
     console.error(error);
   }
+}
+
+function clearError() {
+  captureError.value = null;
 }
 </script>
 
@@ -49,6 +62,15 @@ async function handleSignOut(): Promise<void> {
       </nav>
     </header>
 
-    <router-view />
+    <main class="min-h-[calc(100vh-4rem)]">
+      <div v-if="captureError" class="mx-auto max-w-2xl p-6">
+        <div class="rounded-lg border border-rose-200 bg-rose-50 p-4 text-rose-800">
+          <p class="font-semibold">頁面載入錯誤</p>
+          <p class="mt-1 text-sm">{{ captureError.message }}</p>
+          <RouterLink to="/" class="mt-3 inline-block rounded-lg bg-rose-200 px-3 py-1 text-sm font-medium hover:bg-rose-300" @click="clearError">返回首頁</RouterLink>
+        </div>
+      </div>
+      <router-view v-else :key="route.fullPath" />
+    </main>
   </div>
 </template>

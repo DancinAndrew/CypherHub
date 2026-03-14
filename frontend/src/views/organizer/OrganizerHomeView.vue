@@ -1,5 +1,7 @@
 <script setup lang="ts">
 import { useOrganizerStore } from "../../stores/organizer";
+
+const organizerStore = useOrganizerStore();
 </script>
 
 <template>
