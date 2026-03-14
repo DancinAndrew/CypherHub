@@ -37,6 +37,10 @@
 | **MVP-3.2** | 主辦方入駐審核 | ⬜ 未做 |
 | **MVP-3.3** | 結算與提款 | ⬜ 未做 |
 | **MVP-3.4** | 平台治理與 Audit | ⬜ 未做 |
+| **SEC-1** | 傳輸與端點安全（HTTPS、CORS、Headers） | ⬜ 未做 |
+| **SEC-2** | 身份與資料保護（帳密、URL、敏感資料） | ⬜ 未做 |
+| **SEC-3** | 注入與攻擊防護（SQL、XSS、CSRF、Rate limit） | ⬜ 未做 |
+| **SEC-4** | Secrets 與部署檢查（環境變數、錯誤、日誌） | ⬜ 未做 |
 
 ---
 
@@ -654,6 +658,107 @@
 
 ---
 
+# Phase SEC：上線前資安驗證
+
+> 上線前必須完成的資安檢查。依序驗證各項，並勾選 Done 條件。建議在 MVP-1.5 補齊後、正式對外前執行。
+
+## 專案目前資安狀態（摘要）
+
+| 項目 | 現況 | 說明 |
+|------|------|------|
+| **傳輸加密** | 本地 HTTP，上線需 HTTPS | 生產環境必須 HTTPS；Supabase 連線本身為 HTTPS |
+| **帳密** | 密碼欄位 `type="password"` | Supabase Auth 處理，不經 CypherHub backend |
+| **URL 敏感資料** | 重設密碼 token 在 hash | Supabase 標準流程，一次性 token；需避免將 email/token 寫入一般 query |
+| **SQL Injection** | 使用 Supabase client + RPC | 參數化查詢；無手寫 raw SQL 串接使用者輸入 |
+| **XSS** | Vue 預設 escape | 需審查 `v-html`、`innerHTML`、動態插入 |
+| **CSRF** | API 用 Bearer token | 非 cookie-based，典型 CSRF 風險較低 |
+| **Rate limiting** | 未實作 | 登入、報名、核銷等高風險 endpoint 建議加限流 |
+| **Secrets** | .env 在 .gitignore | 需確認無 key 寫入程式碼、log、前端 bundle |
+
+---
+
+## SEC-1：傳輸與端點安全 ⬜
+
+| 項目 | 說明 | 驗證方式 | 現況 |
+|------|------|----------|------|
+| **HTTPS** | 生產環境全站 HTTPS | 瀏覽器無混合內容警告；API 與 Supabase 皆走 `https://` | 上線前設 |
+| **HSTS** | 強制 HTTPS（Strict-Transport-Security） | 回傳 header 含 `Strict-Transport-Security` | 未設 |
+| **CORS** | 限制允許來源 | `CORS_ORIGINS` 僅允許已知 domain，禁止 `*` | 已有 CORS |
+| **API Base URL** | 前端呼叫後端用環境變數 | `VITE_API_BASE_URL` 指向正確 API | ✓ |
+| **Supabase URL** | 生產用 Cloud 正式 URL | 非 `127.0.0.1`、非 localhost | 上線前設 |
+
+**Done 條件**：生產環境全程 HTTPS；CORS 僅允許白名單；必要時加上 HSTS header（可由反向代理設定）。
+
+---
+
+## SEC-2：身份與資料保護 ⬜
+
+| 項目 | 說明 | 驗證方式 | 現況 |
+|------|------|----------|------|
+| **密碼欄位** | 登入/註冊/重設密碼使用 `type="password"` | 檢視 LoginView、ResetPasswordView | ✓ |
+| **密碼不經後端** | 登入註冊由 Supabase Auth 處理 | 後端無接收密碼的 endpoint | ✓ |
+| **JWT 存放** | Token 在記憶體或 localStorage，非 cookie（可選） | 不將 token 放於易被 XSS 讀取的 cookie | ✓ |
+| **URL 不含敏感資料** | Email、密碼、完整 token 不出現在 query string | 審查 router、redirect、連結 | 需檢查 |
+| **重設密碼連結** | Supabase 重設連結會帶 hash 參數 | 為一次性，使用後失效；避免 log 或轉寄 | ✓ |
+| **Referrer-Policy** | 避免敏感路徑外洩至第三方 | 可設 `Referrer-Policy: strict-origin-when-cross-origin` | 未設 |
+
+**Done 條件**：密碼不經手刻 API；URL 與 redirect 不含 email/密碼/token（重設密碼 hash 除外）；必要時加上 Referrer-Policy。
+
+---
+
+## SEC-3：注入與攻擊防護 ⬜
+
+| 項目 | 說明 | 驗證方式 | 現況 |
+|------|------|----------|------|
+| **SQL Injection** | 所有 DB 查詢使用參數化 | 使用 Supabase client、RPC 參數，無 raw SQL 串接輸入 | ✓ |
+| **XSS** | 使用者輸入輸出時 escape | 避免 `v-html` 渲染未淨化內容；動態插入需 sanitize | 需審查 |
+| **CSRF** | API 非 cookie session | Bearer token 在 header；表單 POST 用 JSON | ✓ |
+| **輸入驗證** | 後端 Pydantic schema 驗證 | UUID、字串長度、enum 等 | ✓ |
+| **IDOR** | 不可跨用戶/活動操作 | RLS + `user_id` 來自 JWT，不信任 client 傳入 | ✓ |
+| **Rate limiting** | 登入、報名、核銷等限流 | `flask-limiter` 或類似；防暴力破解、濫用 | 未做 |
+
+**Done 條件**：無 raw SQL 串接；前端無 unsafe `v-html` 渲染使用者內容；登入/報名/核銷等 endpoint 加上 rate limit。
+
+---
+
+## SEC-4：Secrets 與部署檢查 ⬜
+
+| 項目 | 說明 | 驗證方式 | 現況 |
+|------|------|----------|------|
+| **Secrets 不進 Git** | `.env`、`.env.cloud`、`.env.local` 在 .gitignore | `git status` 無上述檔；`.env.example` 僅 placeholder | ✓ |
+| **後端無 SERVICE_ROLE 外洩** | 僅 server-side 使用 | 前端 bundle、API 回傳、log 皆無 | ✓ |
+| **錯誤訊息** | 500 不回傳 stack trace、SQL、路徑 | 生產環境 `FLASK_DEBUG=0`；回傳通用訊息 | 上線前確認 |
+| **Log** | 不 log 密碼、完整 token、信用卡 | 審查 `current_app.logger`、第三方 log 整合 | 需審查 |
+| **環境變數** | 生產用獨立 keys | 與開發/測試環境分離 | 上線前設 |
+
+**Done 條件**：無 secret 寫入程式碼或 Git；生產錯誤訊息不洩漏內部資訊；log 不含敏感資料。
+
+---
+
+## SEC 建議執行順序
+
+1. **SEC-4**（Secrets 與部署）— 先確保無外洩  
+2. **SEC-3**（注入與攻擊）— 補 rate limiting，審查 XSS  
+3. **SEC-2**（身份與資料）— 檢查 URL、redirect  
+4. **SEC-1**（傳輸與端點）— 上線前設定 HTTPS、CORS、HSTS  
+
+---
+
+## SEC 檢查清單（上線前逐項勾選）
+
+- [ ] 生產環境全程 HTTPS
+- [ ] CORS 僅允許白名單 domain
+- [ ] 密碼欄位為 `type="password"`，無 log
+- [ ] URL 與 redirect 不含 email/密碼/完整 token
+- [ ] 無 raw SQL 串接使用者輸入
+- [ ] 前端無 unsafe `v-html` 渲染使用者輸入
+- [ ] 登入/報名/核銷 API 有 rate limit
+- [ ] `.env` 等含 key 的檔案皆在 .gitignore
+- [ ] 生產 `FLASK_DEBUG=0`，錯誤不洩漏 stack/SQL
+- [ ] Log 不含密碼、完整 token、信用卡號
+
+---
+
 # Explicit Non-Goals（禁止提前）
 
 > **來源**：AGENTS.md。防止開發範圍蔓延，以下項目不得提前納入。
@@ -701,6 +806,9 @@
 
 3. **MVP-3** 依序  
    - 3.1 成員權限 → 3.2 審核 → 3.3 結算提款 → 3.4 Audit 與治理  
+
+4. **上線前：Phase SEC 資安驗證**（見 [Phase SEC](#phase-sec上線前資安驗證)）  
+   - SEC-4 → SEC-3 → SEC-2 → SEC-1，完成檢查清單後再對外開放  
 
 ---
 
