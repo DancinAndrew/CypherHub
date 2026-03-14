@@ -38,6 +38,7 @@ _RPC_ERROR_MAP: dict[str, tuple[int, str]] = {
     "TICKET_TYPE_NOT_FOUND": (404, "Ticket type not found"),
     "EVENT_NOT_FOUND": (404, "Event not found"),
     "TICKET_NOT_FOUND": (404, "Ticket not found"),
+    "TICKET_NOT_FOUND_OR_ALREADY_CANCELLED": (404, "Ticket not found or already cancelled"),
     "EVENT_NOT_PUBLISHED": (409, "Event is not open for registration"),
     "TICKET_TYPE_INACTIVE": (409, "Ticket type is inactive"),
     "SALE_NOT_STARTED": (409, "Sale has not started"),

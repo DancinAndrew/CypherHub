@@ -49,3 +49,27 @@ def test_resend_ticket_route_scopes_to_authenticated_user(client, monkeypatch) -
 
     assert response.status_code == 200
     assert captured == {"jwt": jwt, "ticket_id": ticket_id, "user_id": user_id}
+
+
+def test_cancel_ticket_route_scopes_to_authenticated_user(client, monkeypatch) -> None:
+    jwt = "fake.jwt.token"
+    user_id = "f4f65d24-a934-4af7-9e6b-3cad7f24652d"
+    ticket_id = "5e08e9a0-8b6e-411a-9852-2f99d07cf5ab"
+    captured: dict[str, str] = {}
+
+    monkeypatch.setattr(supabase_client, "get_user", lambda _token: {"id": user_id})
+
+    def _fake_cancel_ticket(jwt_token: str, scoped_ticket_id, scoped_user_id: str) -> None:
+        captured["jwt"] = jwt_token
+        captured["ticket_id"] = str(scoped_ticket_id)
+        captured["user_id"] = scoped_user_id
+
+    monkeypatch.setattr(ticket_service, "cancel_ticket", _fake_cancel_ticket)
+
+    response = client.delete(
+        f"/api/v1/me/tickets/{ticket_id}",
+        headers={"Authorization": f"Bearer {jwt}"},
+    )
+
+    assert response.status_code == 200
+    assert captured == {"jwt": jwt, "ticket_id": ticket_id, "user_id": user_id}

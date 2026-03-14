@@ -32,6 +32,15 @@ def list_my_tickets() -> tuple[dict, int]:
     return jsonify(payload.model_dump(mode="json")), 200
 
 
+@bp.delete("/<ticket_id>")
+@require_auth
+def cancel_ticket(ticket_id: str) -> tuple[dict, int]:
+    ticket_uuid = parse_uuid(ticket_id, "ticket_id")
+    ticket_service.cancel_ticket(g.jwt, ticket_uuid, g.user_id)
+    payload = GenericOKResponse(ok=True)
+    return jsonify(payload.model_dump(mode="json")), 200
+
+
 @bp.post("/<ticket_id>/resend")
 @require_auth
 def resend_ticket(ticket_id: str) -> tuple[dict, int]:

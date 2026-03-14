@@ -185,6 +185,10 @@ export async function resendTicket(ticketId: string): Promise<void> {
   await client.post(`/api/v1/me/tickets/${ticketId}/resend`);
 }
 
+export async function cancelTicket(ticketId: string): Promise<void> {
+  await client.delete(`/api/v1/me/tickets/${ticketId}`);
+}
+
 export type OrganizerApplyPayload = {
   name: string;
   description?: string;

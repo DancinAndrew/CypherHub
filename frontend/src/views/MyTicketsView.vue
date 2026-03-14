@@ -2,7 +2,7 @@
 import QrcodeVue from "qrcode.vue";
 import { onMounted, ref } from "vue";
 
-import { fetchMyTickets, resendTicket, type TicketItem } from "../api/client";
+import { cancelTicket, fetchMyTickets, resendTicket, type TicketItem } from "../api/client";
 import { toApiErrorMessage } from "../utils/errorMessages";
 
 const tickets = ref<TicketItem[]>([]);
@@ -10,6 +10,8 @@ const loading = ref(true);
 const errorMessage = ref<string | null>(null);
 const resendMessage = ref<string | null>(null);
 const copyMessage = ref<string | null>(null);
+const cancelMessage = ref<string | null>(null);
+const cancellingId = ref<string | null>(null);
 
 function qrPayload(ticket: TicketItem): string {
   return JSON.stringify({
@@ -55,6 +57,21 @@ async function copyPayload(ticket: TicketItem): Promise<void> {
   }
 }
 
+async function handleCancel(ticketId: string): Promise<void> {
+  if (!confirm("確定要取消這張票券的報名嗎？取消後名額將釋出。")) return;
+  cancelMessage.value = null;
+  cancellingId.value = ticketId;
+  try {
+    await cancelTicket(ticketId);
+    cancelMessage.value = "已取消報名。";
+    await loadTickets();
+  } catch (error: unknown) {
+    cancelMessage.value = toApiErrorMessage(error, "取消報名失敗");
+  } finally {
+    cancellingId.value = null;
+  }
+}
+
 onMounted(() => {
   loadTickets().catch(() => {});
 });
@@ -96,10 +113,19 @@ onMounted(() => {
         >
           Copy Payload
         </button>
+        <button
+          type="button"
+          class="mt-2 inline-flex rounded-lg border border-rose-400 px-3 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-50 disabled:opacity-50"
+          :disabled="cancellingId === ticket.ticket_id"
+          @click="handleCancel(ticket.ticket_id)"
+        >
+          {{ cancellingId === ticket.ticket_id ? "取消中…" : "取消報名" }}
+        </button>
       </article>
     </div>
 
     <p v-if="resendMessage" class="mt-4 text-sm text-brand-700">{{ resendMessage }}</p>
     <p v-if="copyMessage" class="mt-2 text-sm text-slate-700">{{ copyMessage }}</p>
+    <p v-if="cancelMessage" class="mt-2 text-sm" :class="cancelMessage.startsWith('已') ? 'text-emerald-700' : 'text-rose-700'">{{ cancelMessage }}</p>
   </main>
 </template>

@@ -85,6 +85,20 @@
 - **活動圖片**：Supabase Storage + RLS，不需另建圖床。
 - **Rate limiting**：用 `flask-limiter`，不要自己計數。
 
+### 部署與運維（個人專案最小清單）
+
+| 項目 | 建議做法 | 說明 |
+|------|----------|------|
+| **前端部署** | **Vercel** | 連 GitHub 自動 build（Vite），Preview 分支可測；環境變數在 Vercel 後台填 `VITE_API_BASE_URL`、Supabase 等 |
+| **後端上雲** | **Railway / Render / Fly.io** 擇一 | 用 Dockerfile 或直接跑 `gunicorn`；環境變數同上，勿 commit secrets。Supabase 已雲端，DB 不需自建 |
+| **網域** | Namecheap 買網域 → **Cloudflare** 或 Vercel 綁定 | DNS 指到 Vercel（前端）、後端用子網域或同一域 reverse proxy |
+| **CI** | **GitHub Actions** | 每次 PR 跑：`pytest`、`ruff check`、前端 `npm run build`；通過才 merge，避免壞版上線 |
+| **日誌** | 先 stdout | 各平台（Vercel / Railway / Render）內建 log 查詢；要集中再考慮 Logtail、Axiom 等 |
+| **監控** | **UptimeRobot** + **Sentry** | UptimeRobot 對 API 與前端 URL 做 HTTP 偵測、斷線告警；Sentry 收前/後端 exception、release 對應。個人專案兩者內建頁面即夠用，不需自建 Grafana |
+| **分析（可選）** | **PostHog** | 事件、漏斗、Session 錄影；見 Tools.md |
+
+細節與待研究清單見 [note.md](../note.md)。
+
 ---
 
 ## 未實作功能 — 建議套件／平台／開源

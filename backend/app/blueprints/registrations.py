@@ -43,6 +43,7 @@ def register_event(event_id: str) -> tuple[dict, int]:
 
     user_email = (g.user or {}).get("email") if hasattr(g, "user") else None
     if user_email and tickets:
+        current_app.logger.info("[registration] sending success email to %s (event=%s)", user_email, event_uuid)
         try:
             event_title = events_service.get_event_title(event_uuid)
             base_url = current_app.config.get("FRONTEND_BASE_URL", "http://localhost:5173")

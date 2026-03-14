@@ -17,6 +17,7 @@ class TicketService:
                 client.table("tickets")
                 .select("id,event_id,ticket_type_id,user_id,status,issued_at,checked_in_at,qr_secret,created_at")
                 .eq("user_id", user_id)
+                .in_("status", ["issued", "checked_in"])
                 .order("created_at", desc=True)
                 .execute()
             )
@@ -51,6 +52,16 @@ class TicketService:
             raise
         except Exception as exc:
             raise map_supabase_error(exc, fallback_code="RESEND_TICKET_FAILED") from exc
+
+    def cancel_ticket(self, jwt: str, ticket_id: UUID, user_id: str) -> None:
+        try:
+            supabase_client.call_rpc(
+                "cancel_ticket",
+                {"p_ticket_id": str(ticket_id)},
+                jwt=jwt,
+            )
+        except Exception as exc:
+            raise map_supabase_error(exc, fallback_code="CANCEL_TICKET_FAILED") from exc
 
 
 ticket_service = TicketService()
