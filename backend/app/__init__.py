@@ -41,10 +41,10 @@ def create_app(test_config: dict | None = None) -> Flask:
 
 def _register_blueprints(app: Flask) -> None:
     app.register_blueprint(auth_bp)
+    app.register_blueprint(registrations_bp)  # before events so /events/<id>/register is here
     app.register_blueprint(events_bp)
     app.register_blueprint(ticket_types_bp)
     app.register_blueprint(tickets_bp)
-    app.register_blueprint(registrations_bp)
     app.register_blueprint(checkin_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(orders_bp)

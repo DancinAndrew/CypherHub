@@ -90,6 +90,12 @@ export const useAuthStore = defineStore("auth", () => {
     user.value = null;
   }
 
+  /** 僅清除本地 session（如 401 時），不呼叫 Supabase signOut。 */
+  function clearSession(): void {
+    session.value = null;
+    user.value = null;
+  }
+
   return {
     session,
     user,
@@ -101,5 +107,6 @@ export const useAuthStore = defineStore("auth", () => {
     signUp,
     signIn,
     signOut,
+    clearSession,
   };
 });

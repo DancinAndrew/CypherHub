@@ -176,7 +176,7 @@ async function handleRegister(): Promise<void> {
 }
 
 onMounted(() => {
-  loadDetail().catch((error) => console.error(error));
+  loadDetail().catch(() => {});
 });
 </script>
 

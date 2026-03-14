@@ -24,6 +24,20 @@ client.interceptors.request.use((config) => {
   return config;
 });
 
+client.interceptors.response.use(
+  (res) => res,
+  (err) => {
+    if (err.response?.status === 401) {
+      const authStore = useAuthStore(pinia);
+      authStore.clearSession();
+      const path = window.location.pathname + window.location.search;
+      const redirect = path && path !== "/login" ? path : "/";
+      window.location.href = `/login?redirect=${encodeURIComponent(redirect)}`;
+    }
+    return Promise.reject(err);
+  },
+);
+
 export type EventItem = {
   id: string;
   org_id: string;
@@ -178,8 +192,12 @@ export type OrganizerApplyPayload = {
   logo_url?: string;
 };
 
-export async function organizerApply(payload: OrganizerApplyPayload): Promise<any> {
-  const response = await client.post("/api/v1/organizer/apply", payload);
+export type OrganizerApplyResponse = {
+  organization: { id: string };
+};
+
+export async function organizerApply(payload: OrganizerApplyPayload): Promise<OrganizerApplyResponse> {
+  const response = await client.post<OrganizerApplyResponse>("/api/v1/organizer/apply", payload);
   return response.data;
 }
 
@@ -211,13 +229,17 @@ export type OrganizerCreateEventPayload = {
   event_types?: string[];
 };
 
-export async function organizerCreateEvent(payload: OrganizerCreateEventPayload): Promise<any> {
-  const response = await client.post("/api/v1/organizer/events", payload);
+export type OrganizerEventMutationResponse = {
+  event: EventItem;
+};
+
+export async function organizerCreateEvent(payload: OrganizerCreateEventPayload): Promise<OrganizerEventMutationResponse> {
+  const response = await client.post<OrganizerEventMutationResponse>("/api/v1/organizer/events", payload);
   return response.data;
 }
 
-export async function organizerUpdateEvent(eventId: string, payload: Partial<OrganizerCreateEventPayload>): Promise<any> {
-  const response = await client.patch(`/api/v1/organizer/events/${eventId}`, payload);
+export async function organizerUpdateEvent(eventId: string, payload: Partial<OrganizerCreateEventPayload>): Promise<OrganizerEventMutationResponse> {
+  const response = await client.patch<OrganizerEventMutationResponse>(`/api/v1/organizer/events/${eventId}`, payload);
   return response.data;
 }
 
@@ -239,8 +261,15 @@ export async function organizerUpsertForm(
   return response.data.form;
 }
 
-export async function organizerUpsertInternalNote(eventId: string, note: string): Promise<any> {
-  const response = await client.patch(`/api/v1/organizer/events/${eventId}/internal-note`, { note });
+export type EventInternalNoteResponse = {
+  event_id: string;
+  note: string;
+  updated_at?: string | null;
+  updated_by?: string | null;
+};
+
+export async function organizerUpsertInternalNote(eventId: string, note: string): Promise<EventInternalNoteResponse> {
+  const response = await client.patch<EventInternalNoteResponse>(`/api/v1/organizer/events/${eventId}/internal-note`, { note });
   return response.data;
 }
 
@@ -254,11 +283,15 @@ export type OrganizerCreateTicketTypePayload = {
   is_active?: boolean;
 };
 
+export type OrganizerCreateTicketTypeResponse = {
+  ticket_type: TicketType;
+};
+
 export async function organizerCreateTicketType(
   eventId: string,
   payload: OrganizerCreateTicketTypePayload,
-): Promise<any> {
-  const response = await client.post(`/api/v1/organizer/events/${eventId}/ticket-types`, payload);
+): Promise<OrganizerCreateTicketTypeResponse> {
+  const response = await client.post<OrganizerCreateTicketTypeResponse>(`/api/v1/organizer/events/${eventId}/ticket-types`, payload);
   return response.data;
 }
 
@@ -284,13 +317,29 @@ export type CheckinPayload = {
   qr_payload?: string;
 };
 
-export async function organizerVerifyCheckin(eventId: string, payload: CheckinPayload): Promise<any> {
-  const response = await client.post(`/api/v1/organizer/events/${eventId}/checkin/verify`, payload);
+export type CheckinVerifyResult = {
+  valid?: boolean;
+  can_checkin?: boolean;
+  status?: string;
+  user_id?: string;
+  ticket_type_id?: string;
+  reason?: string;
+};
+
+export type CheckinCommitResult = {
+  ok?: boolean;
+  already_checked_in?: boolean;
+  status?: string;
+  reason?: string;
+};
+
+export async function organizerVerifyCheckin(eventId: string, payload: CheckinPayload): Promise<CheckinVerifyResult> {
+  const response = await client.post<CheckinVerifyResult>(`/api/v1/organizer/events/${eventId}/checkin/verify`, payload);
   return response.data;
 }
 
-export async function organizerCommitCheckin(eventId: string, payload: CheckinPayload): Promise<any> {
-  const response = await client.post(`/api/v1/organizer/events/${eventId}/checkin/commit`, payload);
+export async function organizerCommitCheckin(eventId: string, payload: CheckinPayload): Promise<CheckinCommitResult> {
+  const response = await client.post<CheckinCommitResult>(`/api/v1/organizer/events/${eventId}/checkin/commit`, payload);
   return response.data;
 }
 

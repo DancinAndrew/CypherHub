@@ -3,8 +3,8 @@ import { BrowserQRCodeReader } from "@zxing/browser";
 import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 
-import { organizerCommitCheckin, organizerVerifyCheckin } from "../api/client";
-import { toApiErrorMessage } from "../utils/errorMessages";
+import { organizerCommitCheckin, organizerVerifyCheckin } from "../../api/client";
+import { toApiErrorMessage } from "../../utils/errorMessages";
 
 type QrParsedPayload = {
   ticket_id: string;
@@ -280,15 +280,14 @@ async function startScan(): Promise<void> {
     scanning.value = true;
     scannerControls.value = await scannerReader.decodeFromVideoDevice(undefined, videoEl, (result, error) => {
       if (result) {
-        handleScanText(result.getText()).catch((scanError) => {
-          console.error(scanError);
+        handleScanText(result.getText()).catch(() => {
           errorMessage.value = "掃碼處理失敗，請改手動輸入。";
         });
       }
 
-      // Ignore frequent no-result signal.
+      // Ignore frequent no-result signal (no log per frontend DoD).
       if (error && error.name !== "NotFoundException") {
-        console.warn("scanner error", error);
+        // scanner library noise; user sees live feed
       }
     });
     infoMessage.value = "相機已啟動，請將票券 QR 置中。";
@@ -306,12 +305,12 @@ async function startScan(): Promise<void> {
 }
 
 onBeforeUnmount(() => {
-  stopScan().catch((error) => console.error(error));
+  stopScan().catch(() => {});
 });
 
 watch(mode, (nextMode) => {
   if (nextMode === "manual" && scanning.value) {
-    stopScan().catch((error) => console.error(error));
+    stopScan().catch(() => {});
   }
 });
 </script>

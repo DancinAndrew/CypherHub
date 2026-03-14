@@ -32,10 +32,78 @@
 | **MVP-2.4** | 庫存安全與背景任務（Phase 3） | ⬜ 未做 |
 | **MVP-2.5** | 報名表單擴充（Phase 4.1） | ⬜ 未做 |
 | **MVP-2.6** | 基礎退款（Phase 4.2） | ⬜ 未做 |
+| **MVP-2.7** | 次要金流 PayPal（可選） | ⬜ 未做 |
 | **MVP-3.1** | 主辦方成員細權限 | ⬜ 未做 |
 | **MVP-3.2** | 主辦方入駐審核 | ⬜ 未做 |
 | **MVP-3.3** | 結算與提款 | ⬜ 未做 |
 | **MVP-3.4** | 平台治理與 Audit | ⬜ 未做 |
+
+---
+
+## 開發環境
+
+| 操作 | 指令 | 說明 |
+|------|------|------|
+| 切換本地 Supabase | `./scripts/use-local-supabase.sh` | 複製 `.env.local.example` → `.env`，連本地 DB |
+| 切換雲端 Supabase | `./scripts/use-cloud-supabase.sh` | 複製 `.env.cloud.example` → `.env`，連 Cloud |
+| 套用 migrations（本地） | `supabase db reset` | 依序套用 migrations 與 seed |
+| 套用 migrations（雲端） | `./scripts/push-to-cloud.sh` | `supabase db push` 到 Cloud |
+| Cloud 種子資料 | `python scripts/seed-cloud-test-data.py` | 需已填入 Cloud 的 `SUPABASE_SERVICE_ROLE_KEY` |
+
+詳見 [local-cloud-switch.md](./local-cloud-switch.md)。
+
+### 本地開發啟動指令（來自 AGENTS.md）
+
+| 情境 | 指令 |
+|------|------|
+| **Docker Compose（推薦）** | `docker compose -f infra/docker-compose.yml up --build` |
+| 停止 | `docker compose -f infra/docker-compose.yml down` |
+| **Backend 本機** | `cd backend` → `python -m venv .venv && source .venv/bin/activate` → `pip install -r requirements.txt` → `flask --app app run --debug` |
+| **Frontend 本機** | `cd frontend` → `npm i` → `npm run dev` |
+
+---
+
+# MVP-1 已完成功能對照表
+
+> 供新開發者快速掌握既有實作位置，避免重複開發。
+
+| 功能 | 實作位置 | API / 檔案 |
+|------|----------|------------|
+| 註冊 / 登入 / 登出 | Supabase Auth | `LoginView.vue`、`stores/auth.ts` |
+| 活動列表（篩選） | 首頁 | `HomeView.vue`、`GET /api/v1/events?styles=&types=` |
+| 活動詳情 | 活動頁 | `EventDetailView.vue`、`GET /api/v1/events/:id` |
+| 免費報名（防超賣） | register_free_v2 RPC | `POST /api/v1/events/:id/register`、`0003/0011` migrations |
+| 動態報名表單 | Form Builder | `DynamicForm.vue`、`event_forms`、`register_free_v2` |
+| 我的票券 + QR | 票券頁 | `MyTicketsView.vue`、`GET /api/v1/me/tickets` |
+| 主辦方申請 | Organizer | `POST /api/v1/organizer/apply`、`OrganizerApplyView.vue` |
+| 活動建立 / 編輯 | Organizer | `OrganizerEventView.vue`、POST·PATCH `/organizer/events` |
+| 票種管理 | Organizer | `POST /organizer/events/:id/ticket-types` |
+| 活動 metadata / 私密備註 | 活動管理 | `0007/0008` migrations、internal-note API |
+| 名單查詢（含 answers） | Attendees | `GET /organizer/events/:id/attendees` |
+| QR 核銷（掃碼 + 手動） | 核銷頁 | `OrganizerCheckinView.vue`、verify + commit API |
+| Admin 活動列表 | Admin | `GET /admin/events`、allowlist 驗證 |
+
+**DB 原子性**：`register_free_v2` 使用 `FOR UPDATE` 鎖定 ticket_type，防止超賣。**QR 安全性**：payload 含 `ticket_id` + 隨機 `qr_secret`（`encode(gen_random_bytes(16), 'hex')`），查表比對；可選 HMAC(ticket_id, server_secret)。禁止可猜 id、自增 id、短碼無簽名。
+
+---
+
+## 系統架構與規範（來自 AGENTS.md）
+
+- **API 路由**：Base `/api/v1`，JSON only，Auth 用 `Authorization: Bearer <SUPABASE_ACCESS_TOKEN>`
+- **後端目錄**：`backend/app/blueprints/`（auth、events、registrations、checkin、admin 等）、`services/`、`domain/`
+- **JWT 驗證**：Backend 必須驗 JWT（JWKS）或將 JWT 帶入 Supabase；`user_id` 僅從 token 解析，**禁止信任 client 傳入**
+- **錯誤格式**：`{ "error": { "code": "...", "message": "...", "details": ... } }`
+
+### 完整 RBAC（角色與權限，來自 note.md）
+
+| 角色 | 檢視邊界 | 可執行操作 |
+|------|----------|------------|
+| **Guest（訪客）** | 活動列表、活動詳情（published） | 無；需登入才能報名 |
+| **User（一般使用者）** | 自己 tickets、profiles、orders（MVP-2） | 報名、看票券、重寄自己的票 |
+| **Organizer Owner** | 自己 org 的 events、ticket_types、attendees | 建立/編輯活動、票種、表單、核銷、代寄票券 |
+| **Organizer Admin** | 同 Owner，不可改收款 | 管理活動、不可改結算設定 |
+| **Staff** | 被授權的活動名單 | 僅核銷、查看該活動 attendee；付費票未付款不可核銷 |
+| **Admin** | 全站活動、主辦方、訂單、金流 | 審核、下架、封鎖、結算、調帳 |
 
 ---
 
@@ -249,11 +317,53 @@
 
 **Done 條件**：核銷頁顯示「已入場 N / 未入場 M」及按票種統計。
 
+#### 1.5.2e 進階搜尋與篩選（來自 note.md）
+
+| 項目 | 說明 | 驗證方式 |
+|------|------|----------|
+| 關鍵字搜尋 | 活動名/主辦方/地點（LIKE 或全文） | GET /events?q=... |
+| 日期篩選 | 指定日期區間 | GET /events?from=&to= |
+| 地區篩選 | 依 location / region | 可選，依 taxonomy |
+| 票價篩選 | 免費/付費 | MVP-1 僅免費；MVP-2 可加 |
+
+**Done 條件**：活動列表支援關鍵字搜尋；日期篩選可選實作。
+
+#### 1.5.2f 活動分享連結
+
+| 項目 | 說明 | 驗證方式 |
+|------|------|----------|
+| 永久網址 | `/events/:eventId` 可分享 | 複製連結可開啟活動詳情 |
+| 前端 | 活動詳情頁「分享」按鈕 | 複製 URL 或產生短網址 |
+
+**Done 條件**：活動詳情頁有分享按鈕，可複製活動永久網址。
+
+#### 1.5.2g 活動編輯限制（主辦方防呆）
+
+| 項目 | 說明 | 驗證方式 |
+|------|------|----------|
+| 已上架活動 | 對已 published 活動，某些欄位編輯時需警告或限制 | 如時間、票種已售出後不可隨意改 |
+| 警告 | 修改敏感欄位時彈出確認 | 前端實作 |
+| 限制 | 已售出票種不可刪除或改 capacity 小於已售 | API 與 RLS |
+
+**Done 條件**：主辦方編輯已上架活動時，敏感欄位有警告或限制。
+
 ---
 
 ### 1.5.3 平台治理基礎（Phase 1.3）
 
-#### 1.5.3a 後台前端介面
+#### 1.5.3a 活動狀態機完整流轉
+
+| 項目 | 說明 | 驗證方式 |
+|------|------|----------|
+| 狀態流 | 草稿 (Draft) → 上架 (Published) → 結束/取消 (Ended/Cancelled) | events.status enum |
+| 草稿 | 建立時可選 draft，GET /events 不回草稿 | 僅主辦方可見 |
+| 上架 | draft → published，公開可見 | 首頁與詳情可見 |
+| 結束/取消 | 活動後設 ended，或手動 cancelled | 已結束/取消的活動不可報名、不可核銷 |
+| 下架 | status=disabled 或 cancelled | GET /events 只回 published |
+
+**Done 條件**：主辦方可建立草稿、上架、標記結束；已取消活動不可核銷；下架後不再出現在公開列表。
+
+#### 1.5.3b 後台前端介面
 
 | 項目 | 說明 | 驗證方式 |
 |------|------|----------|
@@ -262,7 +372,7 @@
 
 **Done 條件**：Admin 可進入 /admin 並看到活動列表。
 
-#### 1.5.3b 下架活動 API
+#### 1.5.3c 下架活動 API
 
 | 項目 | 說明 | 驗證方式 |
 |------|------|----------|
@@ -271,12 +381,13 @@
 
 **Done 條件**：Admin 可下架活動，下架後 GET /events 不回該活動。
 
-#### 1.5.3c Rate Limiting
+#### 1.5.3d Rate Limiting
 
 | 項目 | 說明 | 驗證方式 |
 |------|------|----------|
 | extensions | 已有 stub，接上 flask-limiter 或類似 | 實際生效 |
 | 限制 | 登入、報名、核銷等 | 超限回 429 |
+| 註 | MVP-2 Phase 3 需再擴展：下單、付款、核銷、登入 | note.md 系統層 |
 
 **Done 條件**：短時間大量請求登入/報名時回 429。
 
@@ -393,6 +504,20 @@
 
 ---
 
+## MVP-2.7 次要金流 PayPal（可選）⬜
+
+> **來源**：AGENTS.md、note.md。綠界優先，PayPal 可於 MVP-2.5 或 MVP-3 擴充。
+
+| 項目 | 說明 | 驗證方式 |
+|------|------|----------|
+| PayPal 串接 | 與 ECPay 並存，依付款方式選擇 | 可選 PayPal 完成付費購票 |
+| Webhook | 驗簽、冪等、webhook_event_id 去重 | 同 ECPay 規範 |
+| 預留 | payment_service 設計時預留 provider 抽象 | 便於新增金流 |
+
+**Done 條件**：可選 PayPal 付款；或至少架構預留、文件標註擴充點。
+
+---
+
 # MVP-3 詳細規格
 
 ## MVP-3.1 主辦方成員細權限 ⬜
@@ -445,18 +570,50 @@
 | 全站訂單總覽 | Admin 可查全站訂單、付款、退款、Webhook | 後台介面 |
 | 手動補票 (Comp) | 主辦方/Admin 手動發放公關票，強制寫入 Audit | 有 Comp 按鈕且 audit 有紀錄 |
 | Admin 治理 | 活動下架、主辦方封鎖 | - |
+| **平台進階治理設定** | 退款規則模板、Email 通知模板管理 | Admin 後台可設定 |
+| | 黑名單/限購規則（進階：封鎖 user/email/ip） | 可選，note.md 3.5 |
+| **進階分析報表** | 銷售概覽（總收入、票數） | 主辦方報表 |
+| | 時間序列（每小時/每日售票） | 圖表或 CSV |
+| | 匯出報表 | 銷售/核銷/名單 |
+| **進階財務比對** | 交易對帳差異比對（金流記錄 vs 平台 ledger） | Admin 後台，note.md 3.3 可選 |
 
-**Done 條件**：Critical 操作寫入 audit_logs；Admin 有全站查詢與 Comp 功能。
+**Done 條件**：Critical 操作寫入 audit_logs；Admin 有全站查詢與 Comp；平台設定與進階報表可選實作。
+
+---
+
+## MVP-3.5 使用者端擴充（來自 note.md M3）⬜
+
+> M3 規劃中面向使用者的功能，可選實作。
+
+| 項目 | 說明 | 驗證方式 |
+|------|------|----------|
+| 熱門活動列表 | 活動列表「熱門」標籤或排序（定義熱門規則） | 首頁可顯示熱門 |
+| 活動提醒 Email | 前一天/前一小時提醒 | 背景 job 發送 |
+| 活動異動/取消通知 | 活動時間變更或取消時 Email 通知參加者 | 異動時觸發 |
+
+**Done 條件**：上述功能可選實作；若實作需有對應 API 與 job。
 
 ---
 
 # Explicit Non-Goals（禁止提前）
 
+> **來源**：AGENTS.md。防止開發範圍蔓延，以下項目不得提前納入。
+
 | 階段 | 不做 |
 |------|------|
-| MVP-1 | 金流、退款、分潤、折扣碼、轉讓、候補、進階報表、站內通知、簡訊/LINE |
-| MVP-2 | 部分退款、複雜退票規則、折扣碼、平台分潤自動化、拒付/爭議款 |
-| MVP-3 之後 | 風控規則引擎、拒付全流程、成長工具、裝置登入管理、2FA |
+| **MVP-1** | 金流、退款、分潤、折扣碼、轉讓、候補、進階報表、站內通知、簡訊/LINE |
+| **MVP-2** | 部分退款、複雜退票規則、折扣碼、平台分潤自動化、拒付/爭議款 |
+| **MVP-3 之後** | 風控規則引擎、拒付全流程、成長工具、裝置登入管理、2FA |
+
+**全階段禁止**（AGENTS.md Explicit Non-Goals）：
+
+- 簡訊 / LINE Notify / 站內通知（MVP-1 不做；MVP-2 僅 Email）
+- 2FA、裝置登入管理（session 列表 / 踢除）
+- 候補機制、座位劃位、票券轉讓
+- 報名表單「檔案上傳欄位」
+- 活動複製（可選延後）
+- 正式電子發票整合（第三方發票服務）
+- 內容檢舉中心（完整工單流）
 
 ---
 
@@ -485,6 +642,123 @@
 
 3. **MVP-3** 依序  
    - 3.1 成員權限 → 3.2 審核 → 3.3 結算提款 → 3.4 Audit 與治理  
+
+---
+
+# 附錄 A：Repo Layout（完整目錄結構，來自 AGENTS.md）
+
+```
+/
+├── backend/
+│   ├── app/
+│   │   ├── __init__.py          # app factory
+│   │   ├── config.py
+│   │   ├── extensions.py        # supabase client, mail, rate limit
+│   │   ├── blueprints/          # auth, events, registrations, checkin, admin, orders, payments, settlements
+│   │   ├── services/            # supabase_client, auth_service, events_service, registration_service, checkin_service, email_service, payment_service, settlement_service, audit_service
+│   │   ├── domain/              # schemas.py, errors.py
+│   │   ├── tasks/               # jobs.py
+│   │   └── tests/
+│   ├── requirements.txt
+│   ├── pyproject.toml
+│   ├── .env.example
+│   └── Dockerfile
+├── frontend/
+│   ├── src/
+│   │   ├── api/                 # axios clients
+│   │   ├── views/
+│   │   ├── components/
+│   │   ├── router/
+│   │   └── stores/              # pinia
+│   ├── .env.example
+│   └── Dockerfile
+├── infra/
+│   └── docker-compose.yml
+├── supabase/
+│   ├── migrations/
+│   └── seed.sql
+└── scripts/
+```
+
+---
+
+# 附錄 B：Domain Model（實體定義，來自 AGENTS.md）
+
+| 實體 | 說明 |
+|------|------|
+| **profiles** | 使用者 metadata（link auth.users）：display_name, avatar_url, phone, social_links |
+| **organizations** | 主辦方帳戶：name, owner_user_id |
+| **organizer_members** | user-role 對應：org_id, user_id, role (owner/admin/staff) |
+| **events** | 單一場次活動：org_id, title, start_at, end_at, status, ... |
+| **ticket_types** | capacity, per_user_limit, price（MVP-1 price=0 only）|
+| **tickets** | 一張票一列：ticket_id, qr_secret, status (issued/checked_in/cancelled), checked_in_at, checker_id |
+| **orders** | MVP-2+ |
+| **payments** | MVP-2+ |
+| **settlements / payouts / ledger / audit_logs** | MVP-3+ |
+
+---
+
+# 附錄 C：AI 開發者協作規範（來自 AGENTS.md §12）
+
+執行任務時：
+
+1. **先寫短 plan**：要改哪些檔、需不需要 migration、要補哪些 tests
+2. **diff 小且可跑**：每次改動可獨立驗證
+3. **絕不加入 secrets**：只改 `.env.example` 放 placeholder
+4. **每個 feature**：加 tests（unit + 最小 integration）、寫清楚本地如何測
+5. **每個 DB 變更**：migration SQL + RLS policies、說明預期權限行為
+6. **critical operations**（register/check-in/payment）：確保 atomicity + idempotency；盡量補 concurrency/race tests
+
+---
+
+# 附錄 D：技術速查總表（來自 ChatGPT-CypherHubCypherHub.md）
+
+**前端路由：**
+
+| 路徑 | 說明 |
+|------|------|
+| `/` | 活動列表 |
+| `/events/:eventId` | 活動詳情 |
+| `/login` | 登入 |
+| `/tickets` | 我的票券（需登入） |
+| `/organizer` | 主辦方管理 |
+| `/organizer/apply` | 申請主辦方 |
+| `/organizer/events` | 活動列表與建立 |
+| `/organizer/forms` | Form Builder |
+| `/organizer/checkin/:eventId` | 核銷 |
+
+**後端 API（`/api/v1` 前綴）：**
+
+| 方法 | 路徑 | 說明 |
+|------|------|------|
+| GET | `/events` | 活動列表 |
+| GET | `/events/:id` | 活動詳情 |
+| GET | `/events/:id/forms` | 取得報名表單 |
+| POST | `/events/:id/register` | 報名（需登入） |
+| GET | `/me/tickets` | 我的票券（需登入） |
+| POST | `/me/tickets/:id/resend` | 重寄票券（需登入） |
+| POST | `/organizer/apply` | 申請主辦方（需登入） |
+| POST | `/organizer/events` | 建立活動 |
+| PATCH | `/organizer/events/:id` | 編輯活動 |
+| GET | `/organizer/events/:id` | 主辦方活動詳情 |
+| PATCH | `/organizer/events/:id/internal-note` | 設定私密備註 |
+| GET·POST | `/organizer/events/:id/forms` | 報名表單 |
+| POST | `/organizer/events/:id/ticket-types` | 建立票種 |
+| GET | `/organizer/events/:id/attendees` | 名單查詢 |
+| POST | `/organizer/events/:id/checkin/verify` | 驗票 |
+| POST | `/organizer/events/:id/checkin/commit` | 核銷 |
+| GET | `/admin/events` | Admin 活動列表（allowlist） |
+
+**DB migrations（依序）：**
+
+- `0001_mvp1_init.sql`：profiles、organizations、events、ticket_types、tickets
+- `0002_mvp1_rls.sql`：RLS policies
+- `0003_mvp1_rpc.sql`：register_free、checkin RPC
+- `0004`～`0005`：patch
+- `0006_mvp11_event_taxonomy.sql`：dance_styles、event_types
+- `0007_mvp15a_event_metadata.sql`：活動 metadata
+- `0008_mvp15a_event_internal_notes.sql`：internal notes
+- `0009`～`0011`：forms 表 + register_free_v2
 
 ---
 

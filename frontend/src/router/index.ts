@@ -5,7 +5,7 @@ import HomeView from "../views/HomeView.vue";
 import LoginView from "../views/LoginView.vue";
 import MyTicketsView from "../views/MyTicketsView.vue";
 import OrganizerApplyView from "../views/organizer/OrganizerApplyView.vue";
-import OrganizerCheckinView from "../views/OrganizerCheckinView.vue";
+import OrganizerCheckinView from "../views/organizer/OrganizerCheckinView.vue";
 import OrganizerEventView from "../views/organizer/OrganizerEventView.vue";
 import OrganizerFormBuilderView from "../views/organizer/OrganizerFormBuilderView.vue";
 import OrganizerHomeView from "../views/organizer/OrganizerHomeView.vue";
@@ -93,8 +93,8 @@ router.beforeEach(async (to) => {
   if (!authStore.initialized) {
     try {
       await authStore.refreshSession();
-    } catch (error) {
-      console.error("Session refresh failed", error);
+    } catch {
+      // non-fatal: proceed with current session state
     }
   }
 

@@ -64,7 +64,7 @@ async function submit(): Promise<void> {
 
     const redirect = typeof route.query.redirect === "string" ? route.query.redirect : "/";
     await router.push(redirect);
-  } catch (error: any) {
+  } catch (error: unknown) {
     errorMessage.value = toAuthErrorMessage(error, mode.value);
   } finally {
     loading.value = false;

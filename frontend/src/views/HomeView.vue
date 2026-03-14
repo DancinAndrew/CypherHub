@@ -43,7 +43,7 @@ function toggleStyle(style: DanceStyleKey): void {
   } else {
     selectedStyles.value = [...selectedStyles.value, style];
   }
-  applyFilters().catch((error) => console.error(error));
+  applyFilters().catch(() => {});
 }
 
 function toggleType(type: EventTypeKey): void {
@@ -52,13 +52,13 @@ function toggleType(type: EventTypeKey): void {
   } else {
     selectedTypes.value = [...selectedTypes.value, type];
   }
-  applyFilters().catch((error) => console.error(error));
+  applyFilters().catch(() => {});
 }
 
 function clearFilters(): void {
   selectedStyles.value = [];
   selectedTypes.value = [];
-  applyFilters().catch((error) => console.error(error));
+  applyFilters().catch(() => {});
 }
 
 async function loadEvents(): Promise<void> {
@@ -91,7 +91,7 @@ async function applyFilters(): Promise<void> {
 onMounted(() => {
   selectedStyles.value = parseQueryList(route.query.styles, styleKeys) as DanceStyleKey[];
   selectedTypes.value = parseQueryList(route.query.types, typeKeys) as EventTypeKey[];
-  loadEvents().catch((error) => console.error(error));
+  loadEvents().catch(() => {});
 });
 </script>
 

@@ -13,8 +13,8 @@ app.use(router);
 
 const authStore = useAuthStore(pinia);
 authStore.bindAuthListener();
-authStore.refreshSession().catch((error: unknown) => {
-  console.error("Failed to refresh session", error);
+authStore.refreshSession().catch(() => {
+  // non-fatal: auth state will be updated on first navigation
 });
 
 app.mount("#app");

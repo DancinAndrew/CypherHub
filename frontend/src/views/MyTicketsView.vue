@@ -3,6 +3,7 @@ import QrcodeVue from "qrcode.vue";
 import { onMounted, ref } from "vue";
 
 import { fetchMyTickets, resendTicket, type TicketItem } from "../api/client";
+import { toApiErrorMessage } from "../utils/errorMessages";
 
 const tickets = ref<TicketItem[]>([]);
 const loading = ref(true);
@@ -23,8 +24,8 @@ async function loadTickets(): Promise<void> {
 
   try {
     tickets.value = await fetchMyTickets();
-  } catch (error: any) {
-    errorMessage.value = error?.response?.data?.error?.message ?? error?.message ?? "Failed to load tickets";
+  } catch (error: unknown) {
+    errorMessage.value = toApiErrorMessage(error, "Failed to load tickets");
   } finally {
     loading.value = false;
   }
@@ -35,8 +36,8 @@ async function handleResend(ticketId: string): Promise<void> {
   try {
     await resendTicket(ticketId);
     resendMessage.value = `Resent ticket ${ticketId}`;
-  } catch (error: any) {
-    resendMessage.value = error?.response?.data?.error?.message ?? error?.message ?? "Resend failed";
+  } catch (error: unknown) {
+    resendMessage.value = toApiErrorMessage(error, "Resend failed");
   }
 }
 
@@ -55,7 +56,7 @@ async function copyPayload(ticket: TicketItem): Promise<void> {
 }
 
 onMounted(() => {
-  loadTickets().catch((error) => console.error(error));
+  loadTickets().catch(() => {});
 });
 </script>
 

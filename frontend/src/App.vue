@@ -11,7 +11,6 @@ const captureError = ref<Error | null>(null);
 
 onErrorCaptured((err) => {
   captureError.value = err;
-  console.error("Component error:", err);
   return false;
 });
 
@@ -19,8 +18,8 @@ async function handleSignOut(): Promise<void> {
   try {
     await authStore.signOut();
     await router.push({ name: "home" });
-  } catch (error) {
-    console.error(error);
+  } catch {
+    // signOut failed; user remains on current page
   }
 }
 

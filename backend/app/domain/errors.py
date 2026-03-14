@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Optional
 
 from .schemas import ErrorContent, ErrorResponse
 
@@ -10,7 +10,7 @@ class AppError(Exception):
         self,
         code: str,
         message: str,
-        details: Any | None = None,
+        details: Optional[Any] = None,
         http_status: int = 400,
     ) -> None:
         super().__init__(message)
