@@ -96,6 +96,24 @@ export const useAuthStore = defineStore("auth", () => {
     user.value = null;
   }
 
+  /**
+   * 寄送重設密碼信。redirectTo 需已加入 Supabase Dashboard → Auth → URL Configuration → Redirect URLs。
+   */
+  async function resetPasswordForEmail(email: string, redirectTo?: string): Promise<void> {
+    const normalizedEmail = email.trim().toLowerCase();
+    const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
+      redirectTo: redirectTo ?? `${typeof window !== "undefined" ? window.location.origin : ""}/reset-password`,
+    });
+    if (error) throw error;
+  }
+
+  /** 重設密碼（需已透過 recovery 連結登入）。 */
+  async function updatePassword(newPassword: string): Promise<void> {
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    if (error) throw error;
+    await refreshSession();
+  }
+
   return {
     session,
     user,
@@ -108,5 +126,7 @@ export const useAuthStore = defineStore("auth", () => {
     signIn,
     signOut,
     clearSession,
+    resetPasswordForEmail,
+    updatePassword,
   };
 });

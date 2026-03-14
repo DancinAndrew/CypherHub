@@ -9,14 +9,16 @@ const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
 
-const mode = ref<"signin" | "signup">("signin");
+const mode = ref<"signin" | "signup" | "forgot">("signin");
 const email = ref("");
 const password = ref("");
 const loading = ref(false);
 const errorMessage = ref<string | null>(null);
 const infoMessage = ref<string | null>(null);
 
-const title = computed(() => (mode.value === "signin" ? "Sign In" : "Sign Up"));
+const title = computed(() =>
+  mode.value === "signin" ? "Sign In" : mode.value === "signup" ? "Sign Up" : "忘記密碼",
+);
 const emailHelp = "請輸入有效 Email（例如 name@example.com）";
 const passwordHelp = "密碼至少 6 個字元";
 
@@ -32,7 +34,7 @@ function validateForm(): string | null {
     errorMessage.value = "Email 格式不正確，請輸入有效信箱（例如 name@example.com）。";
     return null;
   }
-  if (pwd.length < 6) {
+  if (mode.value !== "forgot" && pwd.length < 6) {
     errorMessage.value = "密碼長度不足，至少需要 6 個字元。";
     return null;
   }
@@ -40,11 +42,31 @@ function validateForm(): string | null {
   return normalizedEmail;
 }
 
-async function submit(): Promise<void> {
+async function submitForgotPassword(): Promise<void> {
   const normalizedEmail = validateForm();
-  if (!normalizedEmail) {
+  if (!normalizedEmail) return;
+
+  loading.value = true;
+  errorMessage.value = null;
+  infoMessage.value = null;
+  try {
+    await authStore.resetPasswordForEmail(normalizedEmail);
+    infoMessage.value = `已寄送重設密碼信至 ${normalizedEmail}，請到信箱點擊連結並設定新密碼。`;
+  } catch (error: unknown) {
+    errorMessage.value = toAuthErrorMessage(error, "forgot");
+  } finally {
+    loading.value = false;
+  }
+}
+
+async function submit(): Promise<void> {
+  if (mode.value === "forgot") {
+    await submitForgotPassword();
     return;
   }
+
+  const normalizedEmail = validateForm();
+  if (!normalizedEmail) return;
 
   loading.value = true;
   errorMessage.value = null;
@@ -97,14 +119,14 @@ async function submit(): Promise<void> {
           />
         </label>
 
-        <label class="block">
+        <label v-if="mode !== 'forgot'" class="block">
           <span class="mb-1 block text-sm text-slate-700">Password</span>
           <input
             v-model="password"
             required
             type="password"
             minlength="6"
-            autocomplete="current-password"
+            :autocomplete="mode === 'signin' ? 'current-password' : 'new-password'"
             placeholder="At least 6 characters"
             class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-brand-500"
           />
@@ -115,14 +137,29 @@ async function submit(): Promise<void> {
           class="w-full rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-50"
           :disabled="loading"
         >
-          {{ loading ? "Please wait..." : title }}
+          {{ loading ? "Please wait..." : mode === "forgot" ? "寄送重設密碼信" : title }}
         </button>
       </form>
+
+      <p v-if="mode !== 'forgot'" class="mt-2 text-right">
+        <button
+          type="button"
+          class="text-sm text-slate-500 hover:text-brand-600"
+          @click="
+            mode = 'forgot';
+            errorMessage = null;
+            infoMessage = null;
+          "
+        >
+          忘記密碼？
+        </button>
+      </p>
 
       <p v-if="infoMessage" class="mt-4 text-sm text-emerald-700">{{ infoMessage }}</p>
       <p v-if="errorMessage" class="mt-4 text-sm text-rose-700">{{ errorMessage }}</p>
 
       <button
+        v-if="mode !== 'forgot'"
         type="button"
         class="mt-4 text-sm font-medium text-brand-700 hover:text-brand-800"
         @click="
@@ -132,6 +169,18 @@ async function submit(): Promise<void> {
         "
       >
         {{ mode === "signin" ? "Need an account? Sign up" : "Have an account? Sign in" }}
+      </button>
+      <button
+        v-else
+        type="button"
+        class="mt-4 text-sm font-medium text-slate-600 hover:text-slate-800"
+        @click="
+          mode = 'signin';
+          errorMessage = null;
+          infoMessage = null;
+        "
+      >
+        ← 返回登入
       </button>
     </section>
   </main>

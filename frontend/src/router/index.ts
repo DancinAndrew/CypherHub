@@ -4,11 +4,13 @@ import EventDetailView from "../views/EventDetailView.vue";
 import HomeView from "../views/HomeView.vue";
 import LoginView from "../views/LoginView.vue";
 import MyTicketsView from "../views/MyTicketsView.vue";
+import ResetPasswordView from "../views/ResetPasswordView.vue";
 import OrganizerApplyView from "../views/organizer/OrganizerApplyView.vue";
 import OrganizerCheckinView from "../views/organizer/OrganizerCheckinView.vue";
 import OrganizerEventView from "../views/organizer/OrganizerEventView.vue";
 import OrganizerFormBuilderView from "../views/organizer/OrganizerFormBuilderView.vue";
 import OrganizerHomeView from "../views/organizer/OrganizerHomeView.vue";
+import ProfileView from "../views/ProfileView.vue";
 import { useAuthStore } from "../stores/auth";
 import { pinia } from "../stores/index";
 
@@ -31,9 +33,20 @@ const router = createRouter({
       component: LoginView,
     },
     {
+      path: "/reset-password",
+      name: "reset-password",
+      component: ResetPasswordView,
+    },
+    {
       path: "/tickets",
       name: "my-tickets",
       component: MyTicketsView,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: "/profile",
+      name: "profile",
+      component: ProfileView,
       meta: { requiresAuth: true },
     },
     {

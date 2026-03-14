@@ -52,6 +52,63 @@
 
 詳見 [local-cloud-switch.md](./local-cloud-switch.md)。
 
+---
+
+## 推薦套件與工具（對照 [Tools.md](./Tools.md)）
+
+> 能用現成套件/服務就不手刻，以下對應 [docs/Tools.md](./Tools.md) 工具選單與 CypherHub 功能。
+
+### Tools.md 工具 → 功能對照（建議採用）
+
+| 工具 | 用途 | 對應 develop 項目 | 備註 |
+|------|------|------------------|------|
+| **Resend** | 交易型郵件（報名確認、重寄票、驗證信） | 1.5.1c Email 寄送 | 已列在 backend requirements，直接串接取代 stub |
+| **Sentry** | 錯誤追蹤（前/後端 exception、source map） | 上線前建議 | 可選；MVP-1.5 或 MVP-2 前接入 |
+| **flask-limiter** | API 頻率限制 | 1.5.3d Rate Limiting | 後端加 `flask-limiter`，配合 Redis 或 memory |
+| **Stripe** | 金流（信用卡、webhook、refund） | MVP-2.2 付費票 | 若不做台灣綠界可優先 Stripe；台灣線下/ATM 則 ECPay |
+| **UptimeRobot** | HTTP/ping 監控、故障告警 | 部署後 | 監控 API 與前端可用性 |
+| **Vercel** | 前端/全端部署、Preview 分支 | 部署 | 適合 Vue/Vite 靜態站 |
+| **Cloudflare** | DNS、CDN、DDoS、SSL | 部署 | 網域解析與快取 |
+| **PostHog** | 產品分析、事件、Session 錄影、Feature flags | 可選 | 開源可自架；MVP-3 或上線後 |
+| **Namecheap** | 網域註冊與 DNS | 上線 | 與 Cloudflare 擇一或並用 |
+| **Clerk** | Auth（登入/OAuth/2FA） | 非必 | 目前用 Supabase Auth，僅在要替換時考慮 |
+| **Pinecone / FAISS** | 向量搜尋、相似推薦 | 進階 | 活動推薦、搜尋優化等；MVP-3 之後 |
+
+### 不建議重造輪子的項目
+
+- **忘記/重設密碼**：Supabase Auth 內建 `resetPasswordForEmail`，不需額外套件。
+- **Email 寄送**：用 Resend（已納入專案），不要手刻 SMTP。
+- **活動圖片**：Supabase Storage + RLS，不需另建圖床。
+- **Rate limiting**：用 `flask-limiter`，不要自己計數。
+
+---
+
+## 未實作功能 — 建議套件／平台／開源
+
+> 以下對應 develop 未做項目，可用現成套件或開源方案取代/加速實作。
+
+| 功能區塊 | develop 章節 | 建議方案 | 說明 |
+|----------|--------------|----------|------|
+| **背景任務（hold 逾時、補償出票）** | MVP-2.1 / 2.4 | **Redis + RQ** 或 **Celery**；或 **Supabase pg_cron + Edge Functions** | RQ 輕量、Celery 功能多；若全在 Supabase 可考慮 pg_cron 定時掃 + Edge 出票 |
+| **金流** | MVP-2.2 / 2.7 | **ECPay**（台灣）、**Stripe**（國際）、**PayPal**（可選） | 見 Tools.md；Webhook 驗簽與冪等需自實作，無現成「整包」可取代 |
+| **訂單狀態機** | MVP-2.2 / 2.3 | 自實作 | 可參考 **python-statemachine** 或 **transitions** 做狀態轉換與守衛 |
+| **報名表單擴充（下拉/單選/多選/日期）** | MVP-2.5 | 擴充現有 DynamicForm schema | 不需新套件，在既有 JSON schema 加 type + options |
+| **名單匯出 CSV** | MVP-2.5 | 後端 `csv` 標準庫或 **pandas** | 簡單用 `csv.writer`；要 Excel 可 **openpyxl** |
+| **退款** | MVP-2.6 | 金流商 API（ECPay/Stripe refund） | 無獨立開源「退款服務」，依既有金流 API 實作 |
+| **結算與提款** | MVP-3.3 | **Stripe Connect**（若用 Stripe）或自建 ledger | 分潤/提款多數自建；Stripe Connect 可處理「主辦方收款與平台抽成」 |
+| **Audit 日誌** | MVP-3.4 | **Supabase Audit**（pg 擴展）、或自建 `audit_logs` 表 | 關鍵操作寫入 audit 表；進階可查 **pgAudit** |
+| **進階搜尋（全文/日期）** | 1.5.2e | **Postgres full-text search**（`tsvector`） | 先不引入 Elasticsearch；日期篩選用 `start_at` 區間即可 |
+| **異常告警 / Dashboard** | MVP-3.4 | **Sentry**（錯誤）、**UptimeRobot**（可用性）、**Grafana + Prometheus**（自架） | 小規模 Sentry + UptimeRobot 即可 |
+| **主辦方細權限（RBAC）** | MVP-3.1 | 自實作 + RLS | 角色已在 domain 定義，用 `organizer_members.role` + RLS policy 即可，無需引入 Casbin 等 |
+
+### 開源專案參考（可研究、不一定要用）
+
+- **ticketing**：各語言都有開源售票（如 [Attendize](https://github.com/attendize/attendize) PHP），多數偏重活動報名與金流，可參考流程與狀態設計，不建議直接取代現有 stack。
+- **Stripe 範例**：[stripe-payments-demo](https://github.com/stripe-samples) 可參考 webhook、idempotency、refund 流程。
+- **任務佇列**：[RQ (Redis Queue)](https://github.com/rq/rq)、[Celery](https://docs.celeryq.dev/)。
+
+---
+
 ### 本地開發啟動指令（來自 AGENTS.md）
 
 | 情境 | 指令 |
@@ -256,6 +313,8 @@
 | 依賴 | Supabase Auth `resetPasswordForEmail` | 需設定 Site URL / Redirect |
 
 **Done 條件**：登入頁有「忘記密碼」→ 輸入 email → 收信 → 點連結可重設密碼。
+
+**實作備註**：重設密碼信中的連結會導向前端 `/reset-password`。請在 Supabase Dashboard → Authentication → URL Configuration → Redirect URLs 加入 `http://localhost:5173/reset-password`（及正式環境網址）。
 
 #### 1.5.1b 個人資料編輯
 
@@ -765,6 +824,7 @@
 # 參考文件
 
 - [AGENTS.md](../AGENTS.md) - 專案規範、API、Supabase、防超賣
+- [Tools.md](./Tools.md) - 工具選單（金流、郵件、監控、部署等）
 - [ChatGPT-CypherHubCypherHub.md](../ChatGPT-CypherHubCypherHub.md) - 進度總覽
 - [note.md](../note.md) - M1/M2/M3 細項
 - [verification-report.md](./verification-report.md) - 功能驗證對照

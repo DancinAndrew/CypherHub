@@ -35,6 +35,7 @@ function clearError() {
         <div class="flex items-center gap-3">
           <RouterLink :to="{ name: 'home' }" class="text-lg font-bold text-slate-900">CypherHub</RouterLink>
           <RouterLink :to="{ name: 'my-tickets' }" class="text-sm text-slate-600 hover:text-slate-900">My Tickets</RouterLink>
+          <RouterLink :to="{ name: 'profile' }" class="text-sm text-slate-600 hover:text-slate-900">個人資料</RouterLink>
           <RouterLink :to="{ name: 'organizer-home' }" class="text-sm text-slate-600 hover:text-slate-900">
             Organizer
           </RouterLink>

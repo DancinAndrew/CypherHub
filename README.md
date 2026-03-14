@@ -1,33 +1,39 @@
 # CypherHub - 街舞活動整合平台
 
-專為街舞圈打造的活動資訊整合與售票平台（街舞版 Accupass）。
+專為街舞圈打造的**活動資訊整合與售票平台**（街舞版 Accupass）：主辦方發活動、設票種與報名表單，使用者報名取得票券與 QR，主辦方核銷入場。MVP 階段規劃與未實作功能詳見 [docs/develop.md](docs/develop.md)。
 
 ---
 
 ## 目錄
 
-- [Quick Start](#quickstart-docker-first)
+- [怎麼使用](#怎麼使用)
+- [技術棧與套件](#技術棧與套件)
+- [Quick Start（Docker）](#quick-start-docker-first)
 - [功能驗證](#功能驗證-ui--api)
-- [Non-Docker 開發](#non-docker-local-development)
+- [本機開發（非 Docker）](#non-docker-local-development)
 - [Lint / Test](#lint--test)
-- [Environment Variables](#environment-variables)
-- [Supabase Migrations](#supabase-migrations-mvp-1)
+- [環境變數與 Migrations](#environment-variables--migrations)
 - [參考](#參考)
 
 ---
 
-## 專案狀態（MVP-1）
+## 怎麼使用
 
-| 模組 | 技術 | 狀態 |
-|------|------|------|
-| Backend | Flask + Blueprints + Pydantic + pytest/ruff | ✓ |
-| Frontend | Vue 3 + Vite + TypeScript + TailwindCSS + Pinia | ✓ |
-| Infra | Docker Compose | ✓ |
-| DB | Supabase (Postgres) + RLS + RPC | ✓ |
+- **一般使用者**：瀏覽首頁活動 → 點活動詳情 → 登入後報名（免費）→ 在「我的票券」取得 QR → 活動當天出示給主辦核銷。
+- **主辦方**：申請主辦方 → 建立活動與票種、設定報名表單 → 活動當天在核銷頁掃碼或手動輸入完成入場。
+- **開發/部署**：見下方 Quick Start 與 [docs/local-cloud-switch.md](docs/local-cloud-switch.md)（本地 Supabase vs 雲端 Supabase 切換）。
 
-**已完成**：活動列表/詳情、免費報名、我的票券 QR、主辦核銷（含手機掃碼）、活動 metadata、私密備註、自訂報名表單。
+---
 
-**尚未包含**：MVP-2/3（orders/payments/refunds/settlement/payout）。
+## 技術棧與套件
+
+| 層級 | 技術與套件 |
+|------|------------|
+| **Backend** | Flask 3.x、flask-cors、Pydantic、Supabase Python client、Resend（郵件）、pytest、ruff |
+| **Frontend** | Vue 3、Vite、TypeScript、Vue Router、Pinia、TailwindCSS、Axios、@supabase/supabase-js、qrcode.vue、@zxing/browser（QR 掃碼） |
+| **Infra / DB** | Docker Compose、Supabase（Postgres + Auth + Storage + RLS + RPC） |
+
+依功能對應的推薦工具（郵件、金流、監控、部署等）與未實作功能的替代方案見 [docs/Tools.md](docs/Tools.md) 與 [docs/develop.md](docs/develop.md#推薦套件與工具對照-toolsmd)。
 
 ## Quickstart (Docker-first)
 
@@ -364,16 +370,12 @@ curl -sS http://localhost:8000/api/v1/events
 curl -sS http://localhost:8000/api/v1/me/tickets
 ```
 
-## Environment Variables
+## Environment Variables & Migrations
 
-範本檔：
-- 本地：`backend/.env.local.example`、`frontend/.env.local.example`（由 `use-local-supabase.sh` 複製）
-- 雲端：`backend/.env.cloud.example`、`frontend/.env.cloud.example`（由 `use-cloud-supabase.sh` 複製）
-- 通用：`backend/.env.example`、`frontend/.env.example`
+- **環境變數**：範本為 `backend/.env.example`、`frontend/.env.example`；本地/雲端切換時由 `use-local-supabase.sh` 或 `use-cloud-supabase.sh` 複製對應 `.env.local.example` / `.env.cloud.example`。勿提交真實 secrets。
+- **Migrations（MVP-1）**：見下方清單與套用方式；開發階段與 DB 設計詳見 [docs/develop.md](docs/develop.md)。
 
-注意：請勿提交任何真實 secrets。repo 僅保留 placeholder。
-
-## Supabase Migrations (MVP-1)
+### Supabase Migrations 清單
 
 Migrations:
 - `supabase/migrations/0001_mvp1_init.sql`
@@ -479,3 +481,10 @@ supabase db diff --linked > supabase/drift_check.sql
 - Organizer check-in 已支援相機掃碼，但需瀏覽器提供相機權限；部分裝置/瀏覽器在非 `localhost` 的 `http` 會限制相機。
 - `POST /api/v1/me/tickets/{ticket_id}/resend` 目前為 email service stub（log），未串第三方郵件供應商。
 - Admin endpoint 目前只保留最小 allowlist 讀取能力，管理功能維持 MVP-1 最小化。
+
+## 參考
+
+- [docs/develop.md](docs/develop.md) — 開發路線圖、MVP 階段、推薦套件與未實作功能替代方案
+- [docs/Tools.md](docs/Tools.md) — 金流／郵件／監控／部署等工具選單
+- [docs/local-cloud-switch.md](docs/local-cloud-switch.md) — 本地與雲端 Supabase 切換
+- [AGENTS.md](AGENTS.md) — 專案規範與 API

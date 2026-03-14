@@ -2,7 +2,13 @@
 __pycache__/
 *.pyc
 .env
+.env.cloud
+.env.local
 .DS_Store
+backend/.env.cloud
+backend/.env.local
+frontend/.env.cloud
+frontend/.env.local
 backend/.pytest_cache/
 backend/.ruff_cache/
 backend/.venv/

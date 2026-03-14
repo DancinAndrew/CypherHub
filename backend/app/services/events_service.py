@@ -79,6 +79,22 @@ class EventsService:
             types=types,
         )
 
+    def get_event_title(self, event_id: UUID) -> str:
+        """取得活動標題（供 email 等使用，不檢查 published）。"""
+        client = supabase_client.public_client()
+        try:
+            response = (
+                client.table("events")
+                .select("title")
+                .eq("id", str(event_id))
+                .limit(1)
+                .execute()
+            )
+            rows = supabase_client.extract_data(response) or []
+            return rows[0].get("title", "活動") if rows else "活動"
+        except Exception:
+            return "活動"
+
     def get_public_event_detail(self, event_id: UUID) -> dict:
         client = supabase_client.public_client()
 

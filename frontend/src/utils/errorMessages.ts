@@ -64,7 +64,7 @@ export function toApiErrorMessage(error: unknown, fallback: string): string {
   return message || fallback;
 }
 
-export function toAuthErrorMessage(error: unknown, mode: "signin" | "signup"): string {
+export function toAuthErrorMessage(error: unknown, mode: "signin" | "signup" | "forgot"): string {
   const rawMessage = ((error as { message?: string })?.message || "").toLowerCase();
   const code = ((error as { code?: string })?.code || "").toLowerCase();
 
@@ -89,6 +89,9 @@ export function toAuthErrorMessage(error: unknown, mode: "signin" | "signup"): s
 
   if (mode === "signup") {
     return (error as { message?: string })?.message || "註冊失敗，請確認輸入內容後重試。";
+  }
+  if (mode === "forgot") {
+    return (error as { message?: string })?.message || "無法寄送重設密碼信，請確認 Email 是否已註冊。";
   }
   return (error as { message?: string })?.message || "登入失敗，請稍後重試。";
 }

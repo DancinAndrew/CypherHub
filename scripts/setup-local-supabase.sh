@@ -44,6 +44,8 @@ CORS_ORIGINS=http://localhost:5173
 ADMIN_ALLOWLIST=
 EOF
 fi
+cp backend/.env backend/.env.local
+echo "  已同步 backend/.env → backend/.env.local"
 
 echo "==> 更新 frontend/.env ..."
 FRONTEND_URL="${API_URL:-http://127.0.0.1:54321}"
@@ -58,6 +60,8 @@ VITE_SUPABASE_URL=$FRONTEND_URL
 VITE_SUPABASE_ANON_KEY=$ANON_KEY
 EOF
 fi
+cp frontend/.env frontend/.env.local
+echo "  已同步 frontend/.env → frontend/.env.local"
 
 echo ""
 echo "==> 完成！下一步："

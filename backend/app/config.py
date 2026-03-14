@@ -22,3 +22,5 @@ class Config:
         for value in os.getenv("ADMIN_ALLOWLIST", "").split(",")
         if value.strip()
     }
+
+    FRONTEND_BASE_URL = os.getenv("FRONTEND_BASE_URL", "http://localhost:5173").rstrip("/")

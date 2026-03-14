@@ -1,46 +1,52 @@
 #!/usr/bin/env bash
 # 切換到本地 Supabase
-# 會覆蓋現有 .env，請先備份或確認
+# 若有 .env.local 則複製到 .env（保留本地 key）；否則從 .env.local.example 建立 .env.local 並提示執行 setup-local-supabase.sh
 
 set -e
 cd "$(dirname "$0")/.."
 
 echo "==> 切換到本地 Supabase"
 
-if [[ ! -f backend/.env.local.example ]]; then
-  echo "錯誤：找不到 backend/.env.local.example"
-  exit 1
-fi
+NEED_SETUP=
 
-# 若已是本地且含 keys，略過
-if [[ -f backend/.env ]] && grep -q "SUPABASE_URL=http://host.docker.internal" backend/.env 2>/dev/null && \
-   grep -qE "SUPABASE_ANON_KEY=.+" backend/.env 2>/dev/null; then
-  echo "  backend/.env 已是本地設定，略過"
+# Backend
+if [[ -f backend/.env.local ]]; then
+  cp backend/.env.local backend/.env
+  echo "  已複製 backend/.env.local → backend/.env"
 else
-  cp backend/.env.local.example backend/.env
-  echo "  已複製 backend/.env.local.example → backend/.env"
+  if [[ ! -f backend/.env.local.example ]]; then
+    echo "錯誤：找不到 backend/.env.local.example"
+    exit 1
+  fi
+  cp backend/.env.local.example backend/.env.local
+  cp backend/.env.local backend/.env
+  echo "  已建立 backend/.env.local（從 example）"
   NEED_SETUP=1
 fi
 
-if [[ ! -f frontend/.env.local.example ]]; then
-  echo "錯誤：找不到 frontend/.env.local.example"
-  exit 1
-fi
-
-if [[ -f frontend/.env ]] && grep -q "VITE_SUPABASE_URL=http://127.0.0.1" frontend/.env 2>/dev/null && \
-   grep -qE "VITE_SUPABASE_ANON_KEY=.+" frontend/.env 2>/dev/null; then
-  echo "  frontend/.env 已是本地設定，略過"
+# Frontend
+if [[ -f frontend/.env.local ]]; then
+  cp frontend/.env.local frontend/.env
+  echo "  已複製 frontend/.env.local → frontend/.env"
 else
-  cp frontend/.env.local.example frontend/.env
-  echo "  已複製 frontend/.env.local.example → frontend/.env"
+  if [[ ! -f frontend/.env.local.example ]]; then
+    echo "錯誤：找不到 frontend/.env.local.example"
+    exit 1
+  fi
+  cp frontend/.env.local.example frontend/.env.local
+  cp frontend/.env.local frontend/.env
+  echo "  已建立 frontend/.env.local（從 example）"
   NEED_SETUP=1
 fi
-
-[[ -n "$NEED_SETUP" ]] && echo "" && echo "  請執行 ./scripts/setup-local-supabase.sh 取得並填入 keys"
 
 echo ""
+if [[ -n "$NEED_SETUP" ]]; then
+  echo "  請執行：./scripts/setup-local-supabase.sh  取得本地 keys 並寫入 .env / .env.local"
+  echo "  之後再切換本地時，直接跑此腳本即可，無需重填。"
+fi
 echo "==> 下一步："
 echo "  1. supabase start（若未啟動）"
-echo "  2. ./scripts/setup-local-supabase.sh  # 取得 keys 並寫入 .env"
+echo "  2. ./scripts/setup-local-supabase.sh  # 首次或 keys 遺失時"
 echo "  3. supabase db reset  # 套用 migrations"
 echo "  4. docker compose -f infra/docker-compose.yml up --build"
+echo ""
