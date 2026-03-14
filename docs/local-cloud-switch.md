@@ -54,14 +54,20 @@
    - `frontend/.env`：VITE_SUPABASE_URL、VITE_SUPABASE_ANON_KEY
    - 取得位置：Dashboard → Project Settings → API
 
-4. **套用 migrations 到雲端**：
+4. **套用 migrations 到雲端**（一鍵腳本）：
    ```bash
    supabase login
-   supabase link --project-ref YOUR_PROJECT_REF
-   supabase db push
+   ./scripts/push-to-cloud.sh
    ```
 
-5. **啟動專案**（連到雲端）：
+5. **建立測試用戶與資料**（保持專案活躍、避免被 pause）：
+   ```bash
+   # 需已在 backend/.env 填入 Cloud 的 SUPABASE_URL 與 SUPABASE_SERVICE_ROLE_KEY
+   python scripts/seed-cloud-test-data.py
+   ```
+   會建立主辦方／觀眾測試帳號、一個活動、一張票券，之後可登入前端驗證。
+
+6. **啟動專案**（連到雲端）：
    ```bash
    docker compose -f infra/docker-compose.yml up --build
    ```
@@ -73,3 +79,4 @@
 - **同時只用一種**：同一時間只會連到「本地」或「雲端」，不會混用。
 - **Migrations 需分別套用**：本地用 `supabase db reset`，雲端用 `supabase db push`。
 - **雲端若被 pause**：需先到 Dashboard 恢復專案，才能正常連線。
+- **避免專案被 pause**：Supabase 免費方案在 7 天無活動後會暫停專案。定期執行 `./scripts/push-to-cloud.sh` 或 `python scripts/seed-cloud-test-data.py` 可產生 API 存取，有助保持活躍。

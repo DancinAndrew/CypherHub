@@ -1,22 +1,33 @@
-# CypherHub - 街舞活動整合平台 (The Street Dance Event Platform)
+# CypherHub - 街舞活動整合平台
 
 專為街舞圈打造的活動資訊整合與售票平台（街舞版 Accupass）。
 
 ---
 
-# CypherHub (MVP-1 Scaffold + DB + API/UI Flow)
+## 目錄
 
-本 repo 目前是「可啟動的開發骨架」：
-- Backend：Flask app factory + API blueprints stubs + pytest/ruff
-- Frontend：Vue 3 + Vite + TypeScript + TailwindCSS + Router + Pinia
-- Infra：Docker Compose（backend + frontend）
-- Supabase：MVP-1 schema + RLS + atomic RPC migrations
+- [Quick Start](#quickstart-docker-first)
+- [功能驗證](#功能驗證-ui--api)
+- [Non-Docker 開發](#non-docker-local-development)
+- [Lint / Test](#lint--test)
+- [Environment Variables](#environment-variables)
+- [Supabase Migrations](#supabase-migrations-mvp-1)
+- [參考](#參考)
 
-此 repo 目前已串上 MVP-1 關鍵閉環（活動列表/詳情、免費報名、我的票券 QR、主辦核銷 verify+commit）。
-並已加上 MVP-1.5-A 活動 metadata 擴充（報名時間/聯絡社群/流程）與 organizer 私密備註（獨立表 + RLS）。
-也已加上 MVP-1.5-B 主辦方自訂報名表單（Form Builder JSON schema）、報名 answers 存檔，以及 organizer attendees 查看 answers。
+---
 
-此 repo 仍**不包含** MVP-2/MVP-3（orders/payments/refunds/settlement/payout/ledger/audit_logs）。
+## 專案狀態（MVP-1）
+
+| 模組 | 技術 | 狀態 |
+|------|------|------|
+| Backend | Flask + Blueprints + Pydantic + pytest/ruff | ✓ |
+| Frontend | Vue 3 + Vite + TypeScript + TailwindCSS + Pinia | ✓ |
+| Infra | Docker Compose | ✓ |
+| DB | Supabase (Postgres) + RLS + RPC | ✓ |
+
+**已完成**：活動列表/詳情、免費報名、我的票券 QR、主辦核銷（含手機掃碼）、活動 metadata、私密備註、自訂報名表單。
+
+**尚未包含**：MVP-2/3（orders/payments/refunds/settlement/payout）。
 
 ## Quickstart (Docker-first)
 
@@ -55,10 +66,11 @@
 
 2. 若雲端專案被 pause，請先到 [Supabase Dashboard](https://supabase.com/dashboard) 喚醒。
 
-3. 套用 migrations 到雲端：
+3. 套用 migrations 並建立測試資料（一鍵腳本）：
    ```bash
-   supabase link --project-ref YOUR_PROJECT_REF
-   supabase db push
+   supabase login
+   ./scripts/push-to-cloud.sh
+   python scripts/seed-cloud-test-data.py   # 建立主辦方/觀眾、活動、票券
    ```
 
 4. 啟動專案：
@@ -66,13 +78,16 @@
    docker compose -f infra/docker-compose.yml up --build
    ```
 
-## Thread 3 MVP-1 驗收流程（Docker + UI + API）
+## 功能驗證（UI + API）
 
 ### 0) 驗收前置（env）
 
+使用 `./scripts/use-local-supabase.sh` 或 `./scripts/use-cloud-supabase.sh` 會自動複製對應範本到 `.env`。若手動設定：
+
 ```bash
-cp backend/.env.example backend/.env
-cp frontend/.env.example frontend/.env
+# 本地：複製 .env.local.example
+# 雲端：複製 .env.cloud.example
+# 或直接編輯 backend/.env、frontend/.env
 ```
 
 `backend/.env` 至少填：
@@ -131,7 +146,7 @@ curl -s http://localhost:8000/api/v1/health
 7. Commit 第一次預期：`ok=true`、`already_checked_in=false`
 8. Commit 第二次預期：`ok=true`、`already_checked_in=true`（idempotent）
 
-### 3.1 Thread 4 掃碼核銷（手機）
+### 3.1 掃碼核銷（手機）
 
 1. 到 `/organizer/checkin/{event_id}`（需登入 organizer member）
 2. 切到「掃碼模式」並點 `Start Scan`
@@ -153,7 +168,7 @@ QR payload 支援格式：
 - 會顯示提示，改用手動輸入模式完成核銷。
 - `/tickets` 提供 `Copy Payload` 按鈕，可快速貼到核銷頁。
 
-### 3.2 Thread 6 MVP-1.5-A（活動資訊完善 + 私密備註）
+### 3.2 MVP-1.5-A（活動資訊完善 + 私密備註）
 
 1. Organizer 到 `/organizer` 建立或載入活動（`Load Event`）。
 2. 在 Create/Update 區塊填寫：
@@ -170,7 +185,7 @@ QR payload 支援格式：
    - 不會看到 `internal_note`。
 5. Organizer 使用 `GET /api/v1/organizer/events/{event_id}` 讀取編輯資料時可看到 `internal_note`。
 
-#### Thread 6 手動驗收步驟
+#### 手動驗收步驟
 
 1. 套用 migrations：
    - `supabase db push --dry-run`
@@ -181,7 +196,7 @@ QR payload 支援格式：
 5. Organizer 再次進 `/organizer` 載入該活動，確認可以讀寫 internal note。
 6. Guest 再次查看活動頁，確認不會出現 internal note。
 
-### 3.3 Thread 7 MVP-1.5-B（報名表單 / Form Builder）
+### 3.3 MVP-1.5-B（報名表單 / Form Builder）
 
 1. Organizer 到 `/organizer`，在 `Form Builder (JSON Schema)` 區塊設定：
    - `event_id`
@@ -351,11 +366,12 @@ curl -sS http://localhost:8000/api/v1/me/tickets
 
 ## Environment Variables
 
-請只使用範本檔案並填入你自己的本機值：
-- backend: `backend/.env.example`
-- frontend: `frontend/.env.example`
+範本檔：
+- 本地：`backend/.env.local.example`、`frontend/.env.local.example`（由 `use-local-supabase.sh` 複製）
+- 雲端：`backend/.env.cloud.example`、`frontend/.env.cloud.example`（由 `use-cloud-supabase.sh` 複製）
+- 通用：`backend/.env.example`、`frontend/.env.example`
 
-注意：請勿提交任何真實 secrets。repo 僅保留 `.env.example` placeholder。
+注意：請勿提交任何真實 secrets。repo 僅保留 placeholder。
 
 ## Supabase Migrations (MVP-1)
 
@@ -383,11 +399,18 @@ supabase db reset
 
 ### DB migrations（cloud）
 
-先確認已安裝 CLI（或使用 `npx --yes supabase`）：
+使用一鍵腳本（推薦）：
 
 ```bash
 supabase login
-supabase link --project-ref mcqpgnavygeuylisjllr
+./scripts/push-to-cloud.sh
+```
+
+或手動：
+
+```bash
+supabase login
+supabase link --project-ref YOUR_PROJECT_REF
 supabase db push --dry-run
 supabase db push
 supabase migration list
@@ -415,31 +438,6 @@ supabase migration list
 順序不可顛倒（RLS 依賴 tables；RPC 依賴 tables 與 helper functions）。  
 若 CLI 登入/token 卡住，SQL Editor 是官方可行 fallback。
 
-### Thread 6 migrations（cloud）
-
-```bash
-supabase db push --dry-run
-supabase db push
-```
-
-預期 dry-run 摘要：
-- `ALTER TABLE public.events` 新增 metadata 欄位
-- `CREATE TABLE public.event_internal_notes`
-- `ENABLE ROW LEVEL SECURITY` + policies（`event_internal_notes_*`）
-
-### Thread 7 migrations（cloud）
-
-```bash
-supabase db push --dry-run
-supabase db push
-```
-
-預期 dry-run 摘要：
-- `CREATE TABLE public.event_forms`
-- `CREATE TABLE public.ticket_form_responses`
-- `ENABLE ROW LEVEL SECURITY` + `event_forms_*` / `ticket_form_responses_*`
-- `CREATE FUNCTION public.register_free_v2(...)`
-
 ### Drift check（cloud）
 
 ```bash
@@ -451,7 +449,9 @@ supabase db diff --linked > supabase/drift_check.sql
 
 ## MVP-1 DB 驗證
 
-Cloud SQL Editor 驗證步驟：
+**雲端**：可使用 `python scripts/seed-cloud-test-data.py` 自動建立測試用戶與資料（需已填入 `SUPABASE_SERVICE_ROLE_KEY`）。
+
+**Cloud SQL Editor 手動驗證**：
 1. 到 Supabase Dashboard -> Authentication -> Users，建立兩個測試使用者。
    - `OWNER_UUID`：主辦方 owner
    - `ATTENDEE_UUID`：報名者
