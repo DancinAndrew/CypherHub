@@ -273,6 +273,39 @@ onMounted(() => {
         </div>
       </header>
 
+      <section v-if="detail.organizer" class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 class="text-xl font-semibold text-slate-900">主辦方</h2>
+        <div class="mt-3 flex flex-wrap items-start gap-4">
+          <img
+            v-if="detail.organizer.logo_url"
+            :src="detail.organizer.logo_url"
+            :alt="detail.organizer.name"
+            class="h-16 w-16 rounded-lg object-cover"
+          />
+          <div>
+            <p class="font-semibold text-slate-800">{{ detail.organizer.name }}</p>
+            <p v-if="detail.organizer.description" class="mt-1 text-sm text-slate-600">{{ detail.organizer.description }}</p>
+            <p v-if="detail.organizer.contact_email" class="mt-1 text-sm text-slate-500">
+              <a :href="`mailto:${detail.organizer.contact_email}`" class="text-brand-700 underline">{{ detail.organizer.contact_email }}</a>
+            </p>
+          </div>
+        </div>
+        <div v-if="detail.other_events && detail.other_events.length > 0" class="mt-4">
+          <h3 class="text-sm font-semibold text-slate-800">同主辦方其他活動</h3>
+          <ul class="mt-2 space-y-2">
+            <li v-for="ev in detail.other_events" :key="ev.id">
+              <router-link
+                :to="{ name: 'event-detail', params: { eventId: ev.id } }"
+                class="block rounded-lg border border-slate-200 p-3 text-sm text-slate-700 hover:border-brand-300 hover:bg-slate-50"
+              >
+                <span class="font-medium">{{ ev.title }}</span>
+                <span class="ml-2 text-slate-500">{{ formatDateTime(ev.start_at) }}</span>
+              </router-link>
+            </li>
+          </ul>
+        </div>
+      </section>
+
       <section class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <h2 class="text-xl font-semibold text-slate-900">Event Information</h2>
 

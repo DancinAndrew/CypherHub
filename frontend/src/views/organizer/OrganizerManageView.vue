@@ -8,11 +8,14 @@ import {
   organizerFetchAttendees,
   organizerFetchForms,
   organizerGetEventDetail,
+  organizerResendAttendeeTicket,
   organizerUpdateEvent,
+  organizerUploadEventMedia,
   organizerUpsertForm,
   organizerUpsertInternalNote,
   type AttendeeItem,
   type EventForm,
+  type EventMediaItem,
   type FormSchemaDefinition,
   type OrganizerCreateEventPayload,
 } from "../../api/client";
@@ -92,6 +95,17 @@ const forms = ref<EventForm[]>([]);
 const attendeesEventId = ref("");
 const attendeesQuery = ref("");
 const attendees = ref<AttendeeItem[]>([]);
+const resendAttendeeTicketId = ref<string | null>(null);
+const resendAttendeeMessage = ref<string | null>(null);
+
+const eventMediaList = ref<EventMediaItem[]>([]);
+const eventMediaUploading = ref(false);
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL ?? "";
+function eventMediaUrl(path: string): string {
+  if (!path) return "";
+  const base = supabaseUrl.replace(/\/$/, "");
+  return `${base}/storage/v1/object/public/event-media/${path}`;
+}
 
 const message = ref<string | null>(null);
 const errorMessage = ref<string | null>(null);
@@ -490,6 +504,7 @@ async function loadEventForEdit(): Promise<void> {
 
     scheduleJson.value = JSON.stringify(event.schedule || [], null, 2);
     internalNote.value = detail.internal_note || "";
+    eventMediaList.value = detail.event_media ?? [];
     syncEventIdTargets(targetEventId);
     await loadForms();
     message.value = `已載入活動資料。event_id=${targetEventId}`;
@@ -664,6 +679,51 @@ async function loadAttendees(): Promise<void> {
   }
 }
 
+async function handleResendAttendeeTicket(ticketId: string): Promise<void> {
+  const eventId = attendeesEventId.value.trim();
+  if (!eventId || !isValidUuid(eventId)) {
+    resendAttendeeMessage.value = "請先輸入並載入活動的 event_id。";
+    return;
+  }
+  resendAttendeeMessage.value = null;
+  resendAttendeeTicketId.value = ticketId;
+  try {
+    await organizerResendAttendeeTicket(eventId, ticketId);
+    resendAttendeeMessage.value = "已重寄票券信至參加者信箱。";
+  } catch (error: unknown) {
+    resendAttendeeMessage.value = toApiErrorMessage(error, "重寄失敗");
+  } finally {
+    resendAttendeeTicketId.value = null;
+  }
+}
+
+async function handleUploadEventMedia(event: Event): Promise<void> {
+  const targetEventId = editEventId.value.trim();
+  if (!targetEventId || !isValidUuid(targetEventId)) {
+    message.value = "請先載入要編輯的活動。";
+    return;
+  }
+  const input = event.target as HTMLInputElement;
+  const file = input.files?.[0];
+  if (!file) return;
+  if (!file.type.startsWith("image/")) {
+    errorMessage.value = "請選擇圖片檔（JPEG/PNG/WebP/GIF）。";
+    return;
+  }
+  eventMediaUploading.value = true;
+  errorMessage.value = null;
+  try {
+    const media = await organizerUploadEventMedia(targetEventId, file);
+    eventMediaList.value = [...eventMediaList.value, media];
+    message.value = "已上傳活動圖片。";
+  } catch (err: unknown) {
+    errorMessage.value = toApiErrorMessage(err, "上傳失敗");
+  } finally {
+    eventMediaUploading.value = false;
+    input.value = "";
+  }
+}
+
 formSchemaText.value = JSON.stringify(defaultFormTemplate(), null, 2);
 </script>
 
@@ -782,6 +842,23 @@ formSchemaText.value = JSON.stringify(defaultFormTemplate(), null, 2);
       </div>
     </section>
 
+    <section v-if="editEventId.trim()" class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+      <h2 class="text-xl font-semibold text-slate-900">活動圖片</h2>
+      <p class="mt-1 text-xs text-slate-500">上傳後會顯示於活動詳情頁輪播。限 JPEG/PNG/WebP/GIF，單檔 5MB。</p>
+      <div class="mt-3 flex flex-wrap items-center gap-3">
+        <label class="cursor-pointer rounded-lg border border-brand-600 px-4 py-2 text-sm font-semibold text-brand-700 hover:bg-brand-50">
+          <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" class="hidden" :disabled="eventMediaUploading" @change="handleUploadEventMedia" />
+          {{ eventMediaUploading ? "上傳中…" : "選擇圖片上傳" }}
+        </label>
+      </div>
+      <div v-if="eventMediaList.length > 0" class="mt-4 flex flex-wrap gap-3">
+        <div v-for="item in eventMediaList" :key="item.id" class="overflow-hidden rounded-lg border border-slate-200">
+          <img :src="eventMediaUrl(item.path)" :alt="item.path" class="h-24 w-32 object-cover" />
+          <p class="truncate px-2 py-1 text-xs text-slate-500">{{ item.path }}</p>
+        </div>
+      </div>
+    </section>
+
     <section class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
       <h2 class="text-xl font-semibold text-slate-900">3) Form Builder (JSON Schema)</h2>
       <p class="mt-1 text-xs text-slate-500">
@@ -850,6 +927,9 @@ formSchemaText.value = JSON.stringify(defaultFormTemplate(), null, 2);
       </div>
 
       <div class="mt-4 overflow-auto rounded-lg border border-slate-200">
+        <p v-if="resendAttendeeMessage" class="mt-2 text-sm" :class="resendAttendeeMessage.startsWith('已') ? 'text-emerald-600' : 'text-rose-600'">
+          {{ resendAttendeeMessage }}
+        </p>
         <table class="min-w-full text-sm">
           <thead class="bg-slate-100 text-left text-slate-600">
             <tr>
@@ -858,6 +938,7 @@ formSchemaText.value = JSON.stringify(defaultFormTemplate(), null, 2);
               <th class="px-3 py-2">status</th>
               <th class="px-3 py-2">checked_in_at</th>
               <th class="px-3 py-2">answers</th>
+              <th class="px-3 py-2">操作</th>
             </tr>
           </thead>
           <tbody>
@@ -868,6 +949,17 @@ formSchemaText.value = JSON.stringify(defaultFormTemplate(), null, 2);
               <td class="px-3 py-2">{{ row.checked_in_at || '-' }}</td>
               <td class="px-3 py-2">
                 <pre class="whitespace-pre-wrap break-all text-xs text-slate-600">{{ formatAnswers(row.answers) }}</pre>
+              </td>
+              <td class="px-3 py-2">
+                <button
+                  v-if="row.status !== 'cancelled'"
+                  type="button"
+                  class="rounded border border-brand-600 px-2 py-1 text-xs font-medium text-brand-700 hover:bg-brand-50 disabled:opacity-50"
+                  :disabled="resendAttendeeTicketId === row.ticket_id"
+                  @click="handleResendAttendeeTicket(row.ticket_id)"
+                >
+                  {{ resendAttendeeTicketId === row.ticket_id ? "寄送中…" : "重寄票券" }}
+                </button>
               </td>
             </tr>
           </tbody>

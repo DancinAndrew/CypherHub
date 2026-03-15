@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { BrowserQRCodeReader } from "@zxing/browser";
-import { computed, onBeforeUnmount, ref, watch } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { useRoute } from "vue-router";
 
-import { organizerCommitCheckin, organizerVerifyCheckin } from "../../api/client";
+import { organizerCommitCheckin, organizerFetchAttendees, organizerVerifyCheckin } from "../../api/client";
 import { toApiErrorMessage } from "../../utils/errorMessages";
 
 type QrParsedPayload = {
@@ -16,6 +16,15 @@ const eventId = ref<string>(typeof route.params.eventId === "string" ? route.par
 const ticketId = ref("");
 const qrSecret = ref("");
 const mode = ref<"scan" | "manual">("scan");
+
+const attendeesStats = ref<{
+  total: number;
+  checkedIn: number;
+  notCheckedIn: number;
+  byTicketType: Array<{ ticket_type_id: string; total: number; checkedIn: number }>;
+} | null>(null);
+const attendeesStatsLoading = ref(false);
+const attendeesStatsError = ref<string | null>(null);
 
 const verifyResult = ref<Record<string, unknown> | null>(null);
 const commitResult = ref<Record<string, unknown> | null>(null);
@@ -208,6 +217,7 @@ async function commit(): Promise<void> {
       } else {
         infoMessage.value = "核銷成功。";
       }
+      loadAttendeesStats().catch(() => {});
     } else {
       errorMessage.value = mapCommitReason(result) ?? "Commit failed";
     }
@@ -304,9 +314,61 @@ async function startScan(): Promise<void> {
   }
 }
 
+async function loadAttendeesStats(): Promise<void> {
+  const eid = eventId.value.trim();
+  if (!eid) {
+    attendeesStats.value = null;
+    return;
+  }
+  attendeesStatsLoading.value = true;
+  attendeesStatsError.value = null;
+  try {
+    const items = await organizerFetchAttendees(eid);
+    const active = items.filter((r) => r.status !== "cancelled");
+    const checkedIn = active.filter((r) => r.status === "checked_in").length;
+    const notCheckedIn = active.length - checkedIn;
+    const byType: Record<string, { total: number; checkedIn: number }> = {};
+    for (const r of active) {
+      const tt = r.ticket_type_id ?? "unknown";
+      if (!byType[tt]) byType[tt] = { total: 0, checkedIn: 0 };
+      byType[tt].total += 1;
+      if (r.status === "checked_in") byType[tt].checkedIn += 1;
+    }
+    attendeesStats.value = {
+      total: active.length,
+      checkedIn,
+      notCheckedIn,
+      byTicketType: Object.entries(byType).map(([ticket_type_id, v]) => ({
+        ticket_type_id: ticket_type_id.slice(0, 8),
+        total: v.total,
+        checkedIn: v.checkedIn,
+      })),
+    };
+  } catch (error: unknown) {
+    attendeesStatsError.value = toApiErrorMessage(error, "載入統計失敗");
+    attendeesStats.value = null;
+  } finally {
+    attendeesStatsLoading.value = false;
+  }
+}
+
+onMounted(() => {
+  if (eventId.value.trim()) loadAttendeesStats().catch(() => {});
+});
+
 onBeforeUnmount(() => {
   stopScan().catch(() => {});
 });
+
+watch(
+  () => route.params.eventId,
+  (val) => {
+    const next = typeof val === "string" ? val : "";
+    if (eventId.value !== next) eventId.value = next;
+    if (next.trim()) loadAttendeesStats().catch(() => {});
+  },
+  { immediate: true },
+);
 
 watch(mode, (nextMode) => {
   if (nextMode === "manual" && scanning.value) {
@@ -321,6 +383,45 @@ watch(mode, (nextMode) => {
     <p class="mt-2 text-sm text-slate-600">
       手機可直接用相機掃碼核銷；若權限受限可切手動模式。
     </p>
+
+    <section v-if="eventId.trim()" class="mt-6 rounded-xl border border-slate-200 bg-white p-5 shadow-sm md:p-6">
+      <h2 class="text-lg font-semibold text-slate-900">核銷統計</h2>
+      <p v-if="attendeesStatsLoading" class="mt-2 text-sm text-slate-500">載入中…</p>
+      <p v-else-if="attendeesStatsError" class="mt-2 text-sm text-rose-600">{{ attendeesStatsError }}</p>
+      <div v-else-if="attendeesStats" class="mt-3">
+        <p class="text-base font-medium text-slate-700">
+          已入場 <span class="text-brand-600">{{ attendeesStats.checkedIn }}</span> / 未入場
+          <span class="text-slate-600">{{ attendeesStats.notCheckedIn }}</span>
+          <span class="ml-2 text-sm text-slate-500">（總計 {{ attendeesStats.total }} 張有效票）</span>
+        </p>
+        <div v-if="attendeesStats.byTicketType.length" class="mt-3 overflow-x-auto">
+          <table class="min-w-full text-sm">
+            <thead class="border-b border-slate-200 text-left text-slate-600">
+              <tr>
+                <th class="pb-2 pr-4">票種 ID</th>
+                <th class="pb-2 pr-4">已入場</th>
+                <th class="pb-2">總數</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="row in attendeesStats.byTicketType" :key="row.ticket_type_id" class="border-b border-slate-100">
+                <td class="py-1.5 pr-4 font-mono text-xs">{{ row.ticket_type_id }}</td>
+                <td class="py-1.5 pr-4">{{ row.checkedIn }}</td>
+                <td class="py-1.5">{{ row.total }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <button
+        type="button"
+        class="mt-3 rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50"
+        :disabled="attendeesStatsLoading"
+        @click="loadAttendeesStats()"
+      >
+        重新載入統計
+      </button>
+    </section>
 
     <section class="mt-6 rounded-xl border border-slate-200 bg-white p-5 shadow-sm md:p-6">
       <label class="block">

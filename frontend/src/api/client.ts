@@ -138,9 +138,17 @@ export type EventForm = {
   updated_at?: string | null;
 };
 
+export type EventMediaItem = {
+  id: string;
+  event_id: string;
+  path: string;
+  sort_order: number;
+};
+
 export type OrganizerEventDetail = {
   event: EventItem;
   internal_note: string;
+  event_media?: EventMediaItem[];
 };
 
 export type TicketItem = {
@@ -262,6 +270,15 @@ export async function organizerGetEventDetail(eventId: string): Promise<Organize
   return response.data;
 }
 
+export async function organizerUploadEventMedia(eventId: string, file: File): Promise<EventMediaItem> {
+  const formData = new FormData();
+  formData.append("file", file);
+  const response = await client.post<{ media: EventMediaItem }>(`/api/v1/organizer/events/${eventId}/media`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return response.data.media;
+}
+
 export async function organizerFetchForms(eventId: string): Promise<EventForm[]> {
   const response = await client.get<{ items: EventForm[] }>(`/api/v1/organizer/events/${eventId}/forms`);
   return response.data.items;
@@ -323,6 +340,10 @@ export async function organizerFetchAttendees(eventId: string, query?: string): 
     params: query ? { query } : undefined,
   });
   return response.data.items;
+}
+
+export async function organizerResendAttendeeTicket(eventId: string, ticketId: string): Promise<void> {
+  await client.post(`/api/v1/organizer/events/${eventId}/attendees/${ticketId}/resend`);
 }
 
 export type CheckinPayload = {

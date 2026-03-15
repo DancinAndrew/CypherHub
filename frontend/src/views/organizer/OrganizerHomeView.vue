@@ -51,6 +51,12 @@ const organizerStore = useOrganizerStore();
       <h2 class="font-semibold text-slate-800">其他功能</h2>
       <div class="mt-4 flex flex-wrap gap-4">
         <router-link
+          to="/organizer/manage"
+          class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-white"
+        >
+          主辦方管理
+        </router-link>
+        <router-link
           to="/organizer/checkin"
           class="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-white"
         >
