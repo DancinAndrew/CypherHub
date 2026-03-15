@@ -31,6 +31,14 @@ const formError = ref<string | null>(null);
 const selectedTicketTypeId = ref<string | null>(null);
 const selectedForm = ref<EventForm | null>(null);
 const formAnswers = ref<Record<string, unknown>>({});
+const carouselIndex = ref(0);
+
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL ?? "";
+function eventMediaUrl(path: string): string {
+  if (!path) return "";
+  const base = supabaseUrl.replace(/\/$/, "");
+  return `${base}/storage/v1/object/public/event-media/${path}`;
+}
 
 const selectedTicketType = computed<TicketType | null>(() => {
   if (!detail.value || !selectedTicketTypeId.value) {
@@ -112,6 +120,7 @@ async function loadDetail(): Promise<void> {
 
   try {
     detail.value = await fetchEventDetail(eventId.value);
+    carouselIndex.value = 0;
     if (detail.value.ticket_types.length === 1) {
       await selectTicketType(detail.value.ticket_types[0]);
     }
