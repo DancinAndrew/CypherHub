@@ -436,5 +436,94 @@ class EventsService:
         except Exception as exc:
             raise map_supabase_error(exc, fallback_code="LIST_ATTENDEES_FAILED") from exc
 
+    def resend_attendee_ticket(self, jwt: str, event_id: UUID, ticket_id: UUID) -> None:
+        """主辦方代參加者重寄票券信。僅 organizer member 可呼叫。"""
+        client = supabase_client.authed_client(jwt)
+        try:
+            response = (
+                client.table("tickets")
+                .select("id,event_id,ticket_type_id,user_id,status,issued_at,checked_in_at,qr_secret")
+                .eq("id", str(ticket_id))
+                .eq("event_id", str(event_id))
+                .limit(1)
+                .execute()
+            )
+            rows = supabase_client.extract_data(response) or []
+            if not rows:
+                raise AppError(
+                    code="TICKET_NOT_FOUND",
+                    message="Ticket not found",
+                    details={"ticket_id": str(ticket_id), "event_id": str(event_id)},
+                    http_status=404,
+                )
+            ticket = rows[0]
+            user_id = str(ticket.get("user_id", ""))
+            to_email = supabase_client.get_user_email_by_id(user_id)
+            event_title = self.get_event_title(event_id)
+            frontend_base_url = current_app.config.get("FRONTEND_BASE_URL", "http://localhost:5173")
+            email_service.send_ticket_email(to_email, event_title, ticket, frontend_base_url)
+        except AppError:
+            raise
+        except Exception as exc:
+            raise map_supabase_error(exc, fallback_code="RESEND_ATTENDEE_TICKET_FAILED") from exc
+
+    def upload_event_media(
+        self,
+        jwt: str,
+        event_id: UUID,
+        file_data: bytes,
+        content_type: str,
+        user_id: str,
+    ) -> dict:
+        """上傳活動圖片至 Storage 並寫入 event_media。僅 event admin 可呼叫。"""
+        # 先確認是 event member（取得 detail 會透過 RLS 檢查）
+        detail = self.get_organizer_event_detail(jwt, event_id, user_id)
+        if not detail:
+            raise AppError(
+                code="FORBIDDEN",
+                message="Not an organizer of this event",
+                http_status=403,
+            )
+        ext = "jpg"
+        if "png" in content_type:
+            ext = "png"
+        elif "webp" in content_type:
+            ext = "webp"
+        elif "gif" in content_type:
+            ext = "gif"
+        path = f"{event_id}/{uuid.uuid4().hex}.{ext}"
+        try:
+            sr_client = supabase_client.service_role_client()
+            sr_client.storage.from_("event-media").upload(
+                path,
+                file_data,
+                {"content-type": content_type, "upsert": "true"},
+            )
+        except Exception as exc:
+            raise map_supabase_error(exc, fallback_code="UPLOAD_EVENT_MEDIA_FAILED") from exc
+        client = supabase_client.authed_client(jwt)
+        try:
+            max_order = 0
+            order_resp = (
+                client.table("event_media")
+                .select("sort_order")
+                .eq("event_id", str(event_id))
+                .order("sort_order", desc=True)
+                .limit(1)
+                .execute()
+            )
+            order_rows = supabase_client.extract_data(order_resp) or []
+            if order_rows:
+                max_order = int(order_rows[0].get("sort_order") or 0) + 1
+            insert_resp = (
+                client.table("event_media")
+                .insert({"event_id": str(event_id), "path": path, "sort_order": max_order})
+                .execute()
+            )
+            rows = supabase_client.extract_data(insert_resp) or []
+            return rows[0] if rows else {"event_id": str(event_id), "path": path, "sort_order": max_order}
+        except Exception as exc:
+            raise map_supabase_error(exc, fallback_code="INSERT_EVENT_MEDIA_FAILED") from exc
+
 
 events_service = EventsService()
