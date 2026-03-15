@@ -133,11 +133,39 @@ class EventsService:
                 .order("created_at", desc=False)
                 .execute()
             )
+            event = events[0]
+            org_id = event.get("org_id")
+            organizer = None
+            other_events: list[dict] = []
+            if org_id:
+                org_response = (
+                    client.table("organizations")
+                    .select("id,name,description,contact_email,logo_url")
+                    .eq("id", str(org_id))
+                    .limit(1)
+                    .execute()
+                )
+                org_rows = supabase_client.extract_data(org_response) or []
+                if org_rows:
+                    organizer = org_rows[0]
+                other_response = (
+                    client.table("events")
+                    .select(EVENT_PUBLIC_SELECT)
+                    .eq("org_id", str(org_id))
+                    .eq("status", "published")
+                    .neq("id", str(event_id))
+                    .order("start_at", desc=False)
+                    .limit(6)
+                    .execute()
+                )
+                other_events = supabase_client.extract_data(other_response) or []
 
             return {
-                "event": events[0],
+                "event": event,
                 "event_media": supabase_client.extract_data(media_response) or [],
                 "ticket_types": supabase_client.extract_data(ticket_type_response) or [],
+                "organizer": organizer,
+                "other_events": other_events,
             }
         except AppError:
             raise

@@ -132,10 +132,20 @@ class EventListResponse(BaseModel):
     items: list[EventResponse]
 
 
+class OrganizerSummaryResponse(BaseModel):
+    id: UUID
+    name: str
+    description: Optional[str] = None
+    contact_email: Optional[str] = None
+    logo_url: Optional[str] = None
+
+
 class EventDetailResponse(BaseModel):
     event: EventResponse
     event_media: list[EventMediaResponse]
     ticket_types: list[TicketTypeResponse]
+    organizer: Optional[OrganizerSummaryResponse] = None
+    other_events: list[EventResponse] = Field(default_factory=list)
 
 
 class RegisterRequest(BaseModel):
