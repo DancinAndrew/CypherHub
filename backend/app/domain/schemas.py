@@ -268,6 +268,7 @@ class UpsertEventFormRequest(BaseModel):
 class OrganizerEventDetailResponse(BaseModel):
     event: EventResponse
     internal_note: str = ""
+    event_media: list[EventMediaResponse] = Field(default_factory=list)
 
 
 class EventInternalNoteRequest(BaseModel):

@@ -311,7 +311,16 @@ class EventsService:
             note_rows = supabase_client.extract_data(note_response) or []
             note = note_rows[0].get("note", "") if note_rows else ""
 
-            return {"event": event_rows[0], "internal_note": note}
+            media_response = (
+                client.table("event_media")
+                .select("id,event_id,path,sort_order")
+                .eq("event_id", str(event_id))
+                .order("sort_order", desc=False)
+                .execute()
+            )
+            event_media = supabase_client.extract_data(media_response) or []
+
+            return {"event": event_rows[0], "internal_note": note, "event_media": event_media}
         except AppError:
             raise
         except Exception as exc:
