@@ -83,10 +83,20 @@ export type TicketType = {
   is_active: boolean;
 };
 
+export type OrganizerSummary = {
+  id: string;
+  name: string;
+  description?: string | null;
+  contact_email?: string | null;
+  logo_url?: string | null;
+};
+
 export type EventDetail = {
   event: EventItem;
   event_media: Array<{ id: string; path: string; sort_order: number }>;
   ticket_types: TicketType[];
+  organizer?: OrganizerSummary | null;
+  other_events?: EventItem[];
 };
 
 export type FormFieldType =
