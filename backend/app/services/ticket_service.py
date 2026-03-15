@@ -2,9 +2,12 @@ from __future__ import annotations
 
 from uuid import UUID
 
+from flask import current_app
+
 from app.domain.errors import AppError, map_supabase_error
 
 from .email_service import email_service
+from .events_service import events_service
 from .supabase_client import supabase_client
 
 
@@ -25,7 +28,13 @@ class TicketService:
         except Exception as exc:
             raise map_supabase_error(exc, fallback_code="LIST_TICKETS_FAILED") from exc
 
-    def resend_ticket_email(self, jwt: str, ticket_id: UUID, user_id: str) -> None:
+    def resend_ticket_email(
+        self,
+        jwt: str,
+        ticket_id: UUID,
+        user_id: str,
+        to_email: str | None = None,
+    ) -> None:
         client = supabase_client.authed_client(jwt)
 
         try:
@@ -47,7 +56,10 @@ class TicketService:
                 )
 
             ticket = rows[0]
-            email_service.send_ticket_email(str(ticket.get("user_id")), ticket)
+            event_id = ticket.get("event_id")
+            event_title = events_service.get_event_title(UUID(str(event_id))) if event_id else "活動"
+            frontend_base_url = current_app.config.get("FRONTEND_BASE_URL", "http://localhost:5173")
+            email_service.send_ticket_email(to_email, event_title, ticket, frontend_base_url)
         except AppError:
             raise
         except Exception as exc:

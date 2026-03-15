@@ -45,6 +45,7 @@ def cancel_ticket(ticket_id: str) -> tuple[dict, int]:
 @require_auth
 def resend_ticket(ticket_id: str) -> tuple[dict, int]:
     ticket_uuid = parse_uuid(ticket_id, "ticket_id")
-    ticket_service.resend_ticket_email(g.jwt, ticket_uuid, g.user_id)
+    to_email = (g.user or {}).get("email") if hasattr(g, "user") else None
+    ticket_service.resend_ticket_email(g.jwt, ticket_uuid, g.user_id, to_email=to_email)
     payload = GenericOKResponse(ok=True)
     return jsonify(payload.model_dump(mode="json")), 200

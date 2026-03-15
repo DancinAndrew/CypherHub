@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import json
+import urllib.request
 from dataclasses import dataclass
 from typing import Any
 
-from flask import Flask
+from flask import Flask, current_app
 
 try:
     from supabase import create_client
@@ -28,6 +30,28 @@ class SupabaseClientWrapper:
             anon_key=app.config.get("SUPABASE_ANON_KEY", ""),
         )
         self._initialized = True
+
+    @staticmethod
+    def get_user_email_by_id(user_id: str) -> str | None:
+        """Resolve user email by id via Auth Admin API (requires SUPABASE_SERVICE_ROLE_KEY)."""
+        url = current_app.config.get("SUPABASE_URL", "").rstrip("/")
+        key = current_app.config.get("SUPABASE_SERVICE_ROLE_KEY", "").strip()
+        if not url or not key:
+            return None
+        req = urllib.request.Request(
+            f"{url}/auth/v1/admin/users/{user_id}",
+            headers={"Authorization": f"Bearer {key}", "apikey": key},
+            method="GET",
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                data = json.loads(resp.read().decode())
+            user = data.get("user") if isinstance(data, dict) else None
+            if isinstance(user, dict):
+                return user.get("email") or None
+            return None
+        except Exception:
+            return None
 
     @property
     def initialized(self) -> bool:
@@ -118,6 +142,16 @@ class SupabaseClientWrapper:
             raise RuntimeError("supabase package is not installed")
 
         return create_client(self.settings.url, self.settings.anon_key)
+
+    def service_role_client(self) -> Any:
+        """Client with service role (server-side only). Use for Storage upload etc."""
+        url = current_app.config.get("SUPABASE_URL", "").rstrip("/")
+        key = current_app.config.get("SUPABASE_SERVICE_ROLE_KEY", "").strip()
+        if not url or not key:
+            raise RuntimeError("Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY")
+        if create_client is None:
+            raise RuntimeError("supabase package is not installed")
+        return create_client(url, key)
 
 
 supabase_client = SupabaseClientWrapper()

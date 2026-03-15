@@ -1,10 +1,14 @@
 from __future__ import annotations
 
+import uuid
 from datetime import datetime, timedelta, timezone
 from uuid import UUID
 
+from flask import current_app
+
 from app.domain.errors import AppError, map_supabase_error
 
+from .email_service import email_service
 from .supabase_client import supabase_client
 
 UTC = getattr(datetime, "UTC", timezone(timedelta(0)))

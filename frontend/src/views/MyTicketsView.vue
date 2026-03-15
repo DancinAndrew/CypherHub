@@ -37,9 +37,9 @@ async function handleResend(ticketId: string): Promise<void> {
   resendMessage.value = null;
   try {
     await resendTicket(ticketId);
-    resendMessage.value = `Resent ticket ${ticketId}`;
+    resendMessage.value = "已重寄票券信至您的信箱。";
   } catch (error: unknown) {
-    resendMessage.value = toApiErrorMessage(error, "Resend failed");
+    resendMessage.value = toApiErrorMessage(error, "重寄失敗");
   }
 }
 
@@ -104,7 +104,7 @@ onMounted(() => {
           class="mt-4 inline-flex rounded-lg border border-brand-600 px-3 py-2 text-xs font-semibold text-brand-700 hover:bg-brand-50"
           @click="handleResend(ticket.ticket_id)"
         >
-          Resend Email (Stub)
+          重寄票券信
         </button>
         <button
           type="button"

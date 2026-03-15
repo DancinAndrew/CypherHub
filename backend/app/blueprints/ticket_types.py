@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from flask import Blueprint, g, jsonify, request
 
+from app.domain.errors import AppError
 from app.domain.schemas import (
     CreateEventRequest,
     CreateTicketTypeRequest,
@@ -157,3 +158,41 @@ def list_attendees(event_id: str) -> tuple[dict, int]:
 
     payload = OrganizerAttendeesResponse(items=normalized)
     return jsonify(payload.model_dump(mode="json")), 200
+
+
+@bp.post("/events/<event_id>/attendees/<ticket_id>/resend")
+@require_auth
+def resend_attendee_ticket(event_id: str, ticket_id: str) -> tuple[dict, int]:
+    event_uuid = parse_uuid(event_id, "event_id")
+    ticket_uuid = parse_uuid(ticket_id, "ticket_id")
+    events_service.resend_attendee_ticket(g.jwt, event_uuid, ticket_uuid)
+    return jsonify({"ok": True}), 200
+
+
+@bp.post("/events/<event_id>/media")
+@require_auth
+def upload_event_media(event_id: str) -> tuple[dict, int]:
+    event_uuid = parse_uuid(event_id, "event_id")
+    file = request.files.get("file")
+    if not file or file.filename == "":
+        raise AppError(
+            code="VALIDATION_ERROR",
+            message="Missing file",
+            http_status=400,
+        )
+    content_type = file.content_type or "image/jpeg"
+    file_data = file.read()
+    if len(file_data) > 5 * 1024 * 1024:
+        raise AppError(
+            code="VALIDATION_ERROR",
+            message="File too large (max 5MB)",
+            http_status=400,
+        )
+    row = events_service.upload_event_media(
+        g.jwt,
+        event_uuid,
+        file_data,
+        content_type,
+        g.user_id,
+    )
+    return jsonify({"media": row}), 201
