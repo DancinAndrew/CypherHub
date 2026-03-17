@@ -83,6 +83,30 @@ class EventsService:
             types=types,
         )
 
+    def list_admin_events(
+        self,
+        q: str | None = None,
+        from_at: str | None = None,
+        to_at: str | None = None,
+        org_id: str | None = None,
+    ) -> list[dict]:
+        """Admin: 全站活動（含 draft/cancelled/ended/disabled），不 filter status。"""
+        client = supabase_client.service_role_client()
+        query = client.table("events").select(EVENT_PUBLIC_SELECT)
+        if org_id:
+            query = query.eq("org_id", org_id)
+        if q:
+            query = query.ilike("title", f"%{q}%")
+        if from_at:
+            query = query.gte("start_at", from_at)
+        if to_at:
+            query = query.lte("start_at", to_at)
+        try:
+            response = query.order("start_at", desc=False).execute()
+            return supabase_client.extract_data(response) or []
+        except Exception as exc:
+            raise map_supabase_error(exc, fallback_code="ADMIN_EVENTS_LIST_FAILED") from exc
+
     def get_event_title(self, event_id: UUID) -> str:
         """取得活動標題（供 email 等使用，不檢查 published）。"""
         client = supabase_client.public_client()
@@ -176,6 +200,55 @@ class EventsService:
         except Exception as exc:
             raise map_supabase_error(exc, fallback_code="EVENT_DETAIL_FAILED") from exc
 
+    def get_my_organizer_summary(self, jwt: str, user_id: str) -> dict:
+        """回傳目前使用者所屬主辦方與其底下的活動（供個人資料頁使用）。"""
+        client = supabase_client.authed_client(jwt)
+        try:
+            members_resp = (
+                client.table("organizer_members")
+                .select("org_id,role")
+                .eq("user_id", user_id)
+                .execute()
+            )
+            members = supabase_client.extract_data(members_resp) or []
+            if not members:
+                return {"organizations": [], "events": []}
+            org_ids = [str(m["org_id"]) for m in members]
+            role_by_org = {str(m["org_id"]): m.get("role", "staff") for m in members}
+            orgs_resp = (
+                client.table("organizations")
+                .select("id,name")
+                .in_("id", org_ids)
+                .execute()
+            )
+            orgs_rows = supabase_client.extract_data(orgs_resp) or []
+            organizations = [
+                {"id": o["id"], "name": o["name"], "role": role_by_org.get(str(o["id"]), "staff")}
+                for o in orgs_rows
+            ]
+            events_resp = (
+                client.table("events")
+                .select("id,org_id,title,status,start_at")
+                .in_("org_id", org_ids)
+                .order("start_at", desc=True)
+                .limit(100)
+                .execute()
+            )
+            events_rows = supabase_client.extract_data(events_resp) or []
+            events = [
+                {
+                    "id": e["id"],
+                    "org_id": e["org_id"],
+                    "title": e["title"],
+                    "status": e.get("status", "draft"),
+                    "start_at": e.get("start_at"),
+                }
+                for e in events_rows
+            ]
+            return {"organizations": organizations, "events": events}
+        except Exception as exc:
+            raise map_supabase_error(exc, fallback_code="MY_ORGANIZER_SUMMARY_FAILED") from exc
+
     def apply_organizer(self, jwt: str, user_id: str, payload: dict) -> dict:
         client = supabase_client.authed_client(jwt)
         values = {
@@ -228,6 +301,37 @@ class EventsService:
             raise
         except Exception as exc:
             raise map_supabase_error(exc, fallback_code="CREATE_EVENT_FAILED") from exc
+
+    def admin_update_event_status(self, event_id: UUID, status: str) -> dict:
+        """Admin 下架：僅允許將 status 改為 disabled 或 cancelled。"""
+        if status not in ("disabled", "cancelled"):
+            raise AppError(
+                code="VALIDATION_ERROR",
+                message="Admin can only set status to disabled or cancelled",
+                details={"status": status},
+                http_status=400,
+            )
+        client = supabase_client.service_role_client()
+        try:
+            response = (
+                client.table("events")
+                .update({"status": status})
+                .eq("id", str(event_id))
+                .execute()
+            )
+            rows = supabase_client.extract_data(response) or []
+            if not rows:
+                raise AppError(
+                    code="EVENT_NOT_FOUND",
+                    message="Event not found",
+                    details={"event_id": str(event_id)},
+                    http_status=404,
+                )
+            return rows[0]
+        except AppError:
+            raise
+        except Exception as exc:
+            raise map_supabase_error(exc, fallback_code="ADMIN_UPDATE_EVENT_FAILED") from exc
 
     def update_event(self, jwt: str, event_id: UUID, payload: dict) -> dict:
         client = supabase_client.authed_client(jwt)
@@ -393,6 +497,101 @@ class EventsService:
             raise
         except Exception as exc:
             raise map_supabase_error(exc, fallback_code="CREATE_TICKET_TYPE_FAILED") from exc
+
+    def update_ticket_type(
+        self, jwt: str, event_id: UUID, ticket_type_id: UUID, payload: dict
+    ) -> dict:
+        """更新票種。capacity 不可小於 sold_count。"""
+        client = supabase_client.authed_client(jwt)
+        try:
+            existing = (
+                client.table("ticket_types")
+                .select("id,event_id,capacity,sold_count")
+                .eq("id", str(ticket_type_id))
+                .eq("event_id", str(event_id))
+                .limit(1)
+                .execute()
+            )
+            rows = supabase_client.extract_data(existing) or []
+            if not rows:
+                raise AppError(
+                    code="TICKET_TYPE_NOT_FOUND",
+                    message="Ticket type not found or no permission",
+                    details={"ticket_type_id": str(ticket_type_id), "event_id": str(event_id)},
+                    http_status=404,
+                )
+            sold_count = int(rows[0].get("sold_count") or 0)
+            new_capacity = payload.get("capacity")
+            if new_capacity is not None and new_capacity < sold_count:
+                raise AppError(
+                    code="VALIDATION_ERROR",
+                    message="名額不可小於已售出數量",
+                    details={"sold_count": sold_count, "capacity": new_capacity},
+                    http_status=400,
+                )
+            update_values = {k: v for k, v in payload.items() if v is not None}
+            if not update_values:
+                raise AppError(
+                    code="VALIDATION_ERROR",
+                    message="No updatable fields provided",
+                    http_status=400,
+                )
+            response = (
+                client.table("ticket_types")
+                .update(update_values)
+                .eq("id", str(ticket_type_id))
+                .eq("event_id", str(event_id))
+                .execute()
+            )
+            result = supabase_client.extract_data(response) or []
+            if not result:
+                raise AppError(
+                    code="TICKET_TYPE_NOT_FOUND",
+                    message="Ticket type not found or no permission",
+                    details={"ticket_type_id": str(ticket_type_id), "event_id": str(event_id)},
+                    http_status=404,
+                )
+            return result[0]
+        except AppError:
+            raise
+        except Exception as exc:
+            raise map_supabase_error(exc, fallback_code="UPDATE_TICKET_TYPE_FAILED") from exc
+
+    def delete_ticket_type(self, jwt: str, event_id: UUID, ticket_type_id: UUID) -> None:
+        """刪除票種。已售出（sold_count > 0）不可刪除。"""
+        client = supabase_client.authed_client(jwt)
+        try:
+            existing = (
+                client.table("ticket_types")
+                .select("id,event_id,sold_count")
+                .eq("id", str(ticket_type_id))
+                .eq("event_id", str(event_id))
+                .limit(1)
+                .execute()
+            )
+            rows = supabase_client.extract_data(existing) or []
+            if not rows:
+                raise AppError(
+                    code="TICKET_TYPE_NOT_FOUND",
+                    message="Ticket type not found or no permission",
+                    details={"ticket_type_id": str(ticket_type_id), "event_id": str(event_id)},
+                    http_status=404,
+                )
+            sold_count = int(rows[0].get("sold_count") or 0)
+            if sold_count > 0:
+                raise AppError(
+                    code="VALIDATION_ERROR",
+                    message="已售出票種不可刪除",
+                    details={"sold_count": sold_count},
+                    http_status=400,
+                )
+            client.table("ticket_types").delete().eq(
+                "id", str(ticket_type_id)
+            ).eq("event_id", str(event_id)).execute()
+        except AppError:
+            raise
+        except Exception as exc:
+            raise map_supabase_error(exc, fallback_code="DELETE_TICKET_TYPE_FAILED") from exc
 
     def list_attendees(self, jwt: str, event_id: UUID, keyword: str | None = None) -> list[dict]:
         client = supabase_client.authed_client(jwt)

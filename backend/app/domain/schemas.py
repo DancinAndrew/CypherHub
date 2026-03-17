@@ -269,10 +269,17 @@ class OrganizerEventDetailResponse(BaseModel):
     event: EventResponse
     internal_note: str = ""
     event_media: list[EventMediaResponse] = Field(default_factory=list)
+    ticket_types: list[TicketTypeResponse] = Field(default_factory=list)
 
 
 class EventInternalNoteRequest(BaseModel):
     note: str = ""
+
+
+class AdminPatchEventRequest(BaseModel):
+    """Admin 下架用，僅支援 status=disabled（或 cancelled）。"""
+
+    status: str = Field(..., pattern="^(disabled|cancelled)$")
 
 
 class EventInternalNoteResponse(BaseModel):
@@ -290,6 +297,16 @@ class CreateTicketTypeRequest(BaseModel):
     sale_start_at: Optional[datetime] = None
     sale_end_at: Optional[datetime] = None
     is_active: bool = True
+
+
+class UpdateTicketTypeRequest(BaseModel):
+    name: Optional[str] = Field(default=None, min_length=1)
+    description: Optional[str] = None
+    capacity: Optional[int] = Field(default=None, ge=0)
+    per_user_limit: Optional[int] = Field(default=None, ge=1)
+    sale_start_at: Optional[datetime] = None
+    sale_end_at: Optional[datetime] = None
+    is_active: Optional[bool] = None
 
 
 class AttendeeResponse(BaseModel):

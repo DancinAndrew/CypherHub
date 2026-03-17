@@ -1,5 +1,6 @@
 import { createRouter, createWebHistory } from "vue-router";
 
+import AdminView from "../views/AdminView.vue";
 import EventDetailView from "../views/EventDetailView.vue";
 import HomeView from "../views/HomeView.vue";
 import LoginView from "../views/LoginView.vue";
@@ -51,6 +52,12 @@ const router = createRouter({
       meta: { requiresAuth: true },
     },
     {
+      path: "/admin",
+      name: "admin",
+      component: AdminView,
+      meta: { requiresAuth: true },
+    },
+    {
       path: "/organizer",
       name: "organizer-home",
       component: OrganizerHomeView,
@@ -64,15 +71,25 @@ const router = createRouter({
     },
     {
       path: "/organizer/events",
-      name: "organizer-events",
-      component: OrganizerEventView,
-      meta: { requiresAuth: true },
+      redirect: { name: "organizer-event-create" },
     },
     {
-      path: "/organizer/events/:eventId",
+      path: "/organizer/events/create",
+      name: "organizer-event-create",
+      component: OrganizerEventView,
+      meta: { requiresAuth: true, eventMode: "create" },
+    },
+    {
+      path: "/organizer/events/edit",
       name: "organizer-event-edit",
       component: OrganizerEventView,
-      meta: { requiresAuth: true },
+      meta: { requiresAuth: true, eventMode: "edit" },
+    },
+    {
+      path: "/organizer/events/edit/:eventId",
+      name: "organizer-event-edit-by-id",
+      component: OrganizerEventView,
+      meta: { requiresAuth: true, eventMode: "edit" },
     },
     {
       path: "/organizer/forms",
