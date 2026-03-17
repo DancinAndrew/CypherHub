@@ -41,26 +41,30 @@ function clearError() {
         <div class="flex items-center gap-10">
           <RouterLink
             :to="{ name: 'home' }"
-            class="font-street text-2xl tracking-[0.2em] text-white transition-all duration-300 hover:text-cypher-accent-pink hover:tracking-[0.25em]"
+            class="font-street text-2xl tracking-[0.2em] transition-all duration-300 hover:text-cypher-accent-pink hover:tracking-[0.25em]"
+            :class="route.name === 'home' ? 'text-cypher-accent-pink' : 'text-white'"
           >
             CYPHERHUB
           </RouterLink>
           <div class="hidden items-center gap-8 md:flex">
             <RouterLink
               :to="{ name: 'my-tickets' }"
-              class="text-sm font-medium text-gray-400 transition-colors hover:text-cypher-accent-cyan"
+              class="nav-link"
+              :class="{ 'nav-link-active': route.name === 'my-tickets' }"
             >
               My Tickets
             </RouterLink>
             <RouterLink
               :to="{ name: 'profile' }"
-              class="text-sm font-medium text-gray-400 transition-colors hover:text-cypher-accent-cyan"
+              class="nav-link"
+              :class="{ 'nav-link-active': route.name === 'profile' }"
             >
               個人資料
             </RouterLink>
             <RouterLink
               :to="{ name: 'organizer-home' }"
-              class="text-sm font-medium text-gray-400 transition-colors hover:text-cypher-accent-cyan"
+              class="nav-link"
+              :class="{ 'nav-link-active': route.path.startsWith('/organizer') }"
             >
               Organizer
             </RouterLink>

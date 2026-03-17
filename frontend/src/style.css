@@ -48,4 +48,12 @@
   .link-back {
     @apply text-sm font-medium text-cypher-muted transition-colors hover:text-cypher-accent;
   }
+
+  /* Nav: current page indicator */
+  .nav-link {
+    @apply text-sm font-medium text-gray-400 transition-colors hover:text-cypher-accent-cyan;
+  }
+  .nav-link-active {
+    @apply text-cypher-accent-cyan;
+  }
 }
