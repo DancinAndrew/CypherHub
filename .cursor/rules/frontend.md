@@ -177,6 +177,6 @@ router.beforeEach(async (to) => {
 
 ## 九、參考
 
-- 開發藍圖：`docs/develop.md`
-- 本地/雲端切換：`docs/local-cloud-switch.md`
+- 開發藍圖：`docs/development/develop.md`
+- 本地/雲端切換：`docs/setup/local-cloud-switch.md`
 - 後端規範：`.cursor/rules/backend.md`

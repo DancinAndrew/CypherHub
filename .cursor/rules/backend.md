@@ -1,7 +1,7 @@
 # CypherHub Backend 開發規範
 
 > 適用範圍：`backend/`（Flask / Supabase / migrations / pytest）  
-> 參考：AGENTS.md、docs/develop.md
+> 參考：AGENTS.md、docs/development/develop.md
 
 ---
 
@@ -11,7 +11,7 @@
 
 1. **先寫短 plan**：列出要改的檔案、是否需要 migration、要補哪些 tests
 2. **控範圍**：單次改動聚焦單一功能，禁止「順手加功能」導致 MVP 膨脹
-3. **查閱 develop.md**：確認該功能屬於哪個 MVP 階段，不得提前實作 Non-Goals
+3. **查閱 docs/development/develop.md**：確認該功能屬於哪個 MVP 階段，不得提前實作 Non-Goals
 
 ### PR / 改動標準
 
@@ -202,7 +202,7 @@ docker compose -f infra/docker-compose.yml run --rm backend pytest -q
 
 ## 8. 禁止事項
 
-- 提前實作 MVP Non-Goals（見 develop.md Explicit Non-Goals）
+- 提前實作 MVP Non-Goals（見 docs/development/develop.md Explicit Non-Goals）
 - 在 frontend 或 client 暴露 service_role key
 - 信任 client 傳入的 `user_id` 或敏感參數
 - 在 app code 用「先查再 insert」做庫存扣減（必須 DB 原子操作）
