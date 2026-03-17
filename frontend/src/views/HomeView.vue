@@ -262,7 +262,7 @@ onMounted(() => {
     <!-- Events List -->
     <section class="relative px-4 pb-24 pt-4">
       <div class="mx-auto max-w-6xl">
-        <h2 class="mb-8 font-street text-3xl tracking-wider text-white sm:text-4xl">
+        <h2 class="mb-8 font-street text-3xl tracking-wider text-white sm:text-4xl animate-fade-in">
           <span class="text-cypher-muted">//</span> 所有活動
         </h2>
 
@@ -291,7 +291,7 @@ onMounted(() => {
             :key="event.id"
             :to="{ name: 'event-detail', params: { eventId: event.id } }"
             class="group relative overflow-hidden rounded-2xl border border-cypher-border bg-cypher-surface transition-all duration-300 hover:scale-[1.02] hover:border-cypher-accent/50 hover:shadow-glow-sm"
-            :style="{ animationDelay: `${idx * 0.05}s` }"
+            :style="`animation: slideUp 0.5s ease-out ${idx * 0.06}s both`"
           >
             <!-- Card Image -->
             <div

@@ -65,14 +65,14 @@ async function submit() {
 
 <template>
   <main class="mx-auto max-w-2xl px-4 py-10">
-    <div class="mb-8">
+    <div class="mb-8 animate-fade-in">
       <router-link to="/organizer" class="link-back">← 回主辦方主頁</router-link>
     </div>
 
-    <h1 class="font-street text-3xl tracking-widest text-white">步驟 1：申請成為主辦方</h1>
-    <p class="mt-2 text-cypher-muted">填寫主辦方資料即可建立（目前免審核）。</p>
+    <h1 class="font-street text-3xl tracking-widest text-white animate-slide-up">步驟 1：申請成為主辦方</h1>
+    <p class="mt-2 text-cypher-muted animate-slide-up-delay">填寫主辦方資料即可建立（目前免審核）。</p>
 
-    <div class="card mt-6 space-y-4 p-6">
+    <div class="card mt-6 space-y-4 p-6 animate-slide-up-delay-2">
       <div>
         <label class="mb-1 block text-sm font-medium text-gray-300">主辦方名稱 *</label>
         <input v-model="form.name" placeholder="例如：街舞工作室" class="input-field" />

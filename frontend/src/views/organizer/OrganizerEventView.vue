@@ -541,17 +541,17 @@ async function handleDeleteTicketType(tt: TicketType) {
 
 <template>
   <main class="mx-auto max-w-3xl px-4 py-10">
-    <div class="mb-8">
+    <div class="mb-8 animate-fade-in">
       <router-link to="/organizer" class="link-back">← 回主辦方主頁</router-link>
     </div>
 
-    <h1 class="font-display text-3xl font-bold tracking-tight text-gray-900">{{ isCreatePage ? "步驟 2：建立活動" : "步驟 3：編輯活動" }}</h1>
-    <p class="mt-2 text-gray-600">
+    <h1 class="font-display text-3xl font-bold tracking-tight text-gray-900 animate-slide-up">{{ isCreatePage ? "步驟 2：建立活動" : "步驟 3：編輯活動" }}</h1>
+    <p class="mt-2 text-gray-600 animate-slide-up-delay">
       {{ isCreatePage ? "填寫活動資料與票種，建立新活動。" : "從下拉選擇既有活動載入後編輯。" }}
     </p>
 
     <!-- Load Event (edit only) -->
-    <section v-if="isEditPage" class="card mt-6 p-6">
+    <section v-if="isEditPage" class="card mt-6 p-6 animate-slide-up" style="animation-delay: 0.1s; animation-fill-mode: both;">
       <h2 class="font-display text-lg font-semibold text-gray-800">載入既有活動</h2>
       <div class="mt-3 flex flex-wrap items-center gap-3">
         <select
@@ -578,7 +578,7 @@ async function handleDeleteTicketType(tt: TicketType) {
     </section>
 
     <!-- Event Form -->
-    <section class="card mt-6 p-6">
+    <section class="card mt-6 p-6 animate-slide-up" :style="{ animationDelay: isEditPage ? '0.15s' : '0.05s', animationFillMode: 'both' }">
       <div
         v-if="mode === 'edit' && ['published', 'ended', 'cancelled'].includes(eventForm.status ?? '')"
         class="mb-4 rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-sm text-amber-300"

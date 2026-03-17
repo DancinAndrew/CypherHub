@@ -240,14 +240,14 @@ watch(
 
 <template>
   <main class="mx-auto max-w-3xl px-4 py-10">
-    <div class="mb-8">
+    <div class="mb-8 animate-fade-in">
       <router-link to="/organizer" class="link-back">← 回主辦方主頁</router-link>
     </div>
 
-    <h1 class="font-display text-3xl font-bold tracking-tight text-gray-900">步驟 4：報名表單設定</h1>
-    <p class="mt-2 text-gray-500">新增、排序與編輯報名欄位，儲存後會套用到該活動。可設 event-level（票種留空）或針對特定票種。</p>
+    <h1 class="font-street text-3xl tracking-widest text-white animate-slide-up">步驟 4：報名表單設定</h1>
+    <p class="mt-2 text-cypher-muted animate-slide-up-delay">新增、排序與編輯報名欄位，儲存後會套用到該活動。可設 event-level（票種留空）或針對特定票種。</p>
 
-    <div class="card mt-6 space-y-6 p-6">
+    <div class="card mt-6 space-y-6 p-6 animate-slide-up" style="animation-delay: 0.1s; animation-fill-mode: both;">
       <div class="grid gap-4 sm:grid-cols-2">
         <div>
           <label class="mb-1 block text-sm font-medium text-gray-700">活動 *</label>

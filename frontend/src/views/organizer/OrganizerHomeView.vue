@@ -6,13 +6,16 @@ const organizerStore = useOrganizerStore();
 
 <template>
   <main class="mx-auto max-w-2xl px-4 py-12">
-    <h1 class="font-street text-3xl tracking-widest text-white">主辦方管理中心</h1>
-    <p class="mt-2 text-cypher-muted">依步驟建立活動與設定報名表單。</p>
+    <header class="animate-fade-in">
+      <h1 class="font-street text-3xl tracking-widest text-white">主辦方管理中心</h1>
+      <p class="mt-2 text-cypher-muted">依步驟建立活動與設定報名表單。</p>
+    </header>
 
     <div class="mt-10 space-y-4">
       <router-link
         to="/organizer/apply"
         class="card flex items-center gap-5 p-6 transition-all hover:border-cypher-accent/50"
+        :style="{ animation: `slideUp 0.5s ease-out 0.05s both` }"
       >
         <span class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-cypher-accent/20 text-xl font-bold text-cypher-accent">1</span>
         <div class="flex-1 min-w-0">
@@ -24,7 +27,8 @@ const organizerStore = useOrganizerStore();
 
       <router-link
         to="/organizer/events/create"
-        class="card flex items-center gap-5 p-6 transition-all hover:border-brand-500/40"
+        class="card flex items-center gap-5 p-6 transition-all hover:border-cypher-accent/50"
+        :style="{ animation: `slideUp 0.5s ease-out 0.1s both` }"
       >
         <span class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-cypher-accent/20 text-xl font-bold text-cypher-accent">2</span>
         <div class="flex-1 min-w-0">
@@ -36,7 +40,8 @@ const organizerStore = useOrganizerStore();
 
       <router-link
         to="/organizer/events/edit"
-        class="card flex items-center gap-5 p-6 transition-all hover:border-brand-500/40"
+        class="card flex items-center gap-5 p-6 transition-all hover:border-cypher-accent/50"
+        :style="{ animation: `slideUp 0.5s ease-out 0.15s both` }"
       >
         <span class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-cypher-accent/20 text-xl font-bold text-cypher-accent">3</span>
         <div class="flex-1 min-w-0">
@@ -48,7 +53,8 @@ const organizerStore = useOrganizerStore();
 
       <router-link
         to="/organizer/forms"
-        class="card flex items-center gap-5 p-6 transition-all hover:border-brand-500/40"
+        class="card flex items-center gap-5 p-6 transition-all hover:border-cypher-accent/50"
+        :style="{ animation: `slideUp 0.5s ease-out 0.2s both` }"
       >
         <span class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-cypher-accent/20 text-xl font-bold text-cypher-accent">4</span>
         <div class="flex-1 min-w-0">
@@ -59,7 +65,7 @@ const organizerStore = useOrganizerStore();
       </router-link>
     </div>
 
-    <div class="card mt-12 p-6">
+    <div class="card mt-12 p-6 animate-slide-up" style="animation-delay: 0.25s; animation-fill-mode: both;">
       <h2 class="font-display font-semibold text-gray-400">其他功能</h2>
       <div class="mt-4 flex flex-wrap gap-3">
         <router-link

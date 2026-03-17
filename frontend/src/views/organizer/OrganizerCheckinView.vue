@@ -379,10 +379,10 @@ watch(mode, (nextMode) => {
 
 <template>
   <main class="mx-auto w-full max-w-3xl px-4 py-8 md:py-10">
-    <h1 class="font-display text-3xl font-bold tracking-tight text-gray-900">Organizer Check-in</h1>
-    <p class="mt-2 text-gray-500">手機可直接用相機掃碼核銷；若權限受限可切手動模式。</p>
+    <h1 class="font-street text-3xl tracking-widest text-white animate-slide-up">Organizer Check-in</h1>
+    <p class="mt-2 text-cypher-muted animate-slide-up-delay">手機可直接用相機掃碼核銷；若權限受限可切手動模式。</p>
 
-    <section v-if="eventId.trim()" class="card mt-6 p-5 md:p-6">
+    <section v-if="eventId.trim()" class="card mt-6 p-5 md:p-6 animate-slide-up" style="animation-delay: 0.1s; animation-fill-mode: both;">
       <h2 class="font-display text-lg font-semibold text-gray-800">核銷統計</h2>
       <p v-if="attendeesStatsLoading" class="mt-2 text-sm text-gray-500">載入中…</p>
       <p v-else-if="attendeesStatsError" class="mt-2 text-sm text-rose-400">{{ attendeesStatsError }}</p>
@@ -421,7 +421,7 @@ watch(mode, (nextMode) => {
       </button>
     </section>
 
-    <section class="card mt-6 p-5 md:p-6">
+    <section class="card mt-6 p-5 md:p-6 animate-slide-up" style="animation-delay: 0.15s; animation-fill-mode: both;">
       <label class="block">
         <span class="mb-1 block text-sm text-gray-600">Event ID</span>
         <input v-model="eventId" class="input-field" />

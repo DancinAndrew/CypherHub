@@ -112,15 +112,15 @@ async function handleResendAttendeeTicket(ticketId: string): Promise<void> {
 
 <template>
   <main class="mx-auto max-w-4xl px-4 py-10">
-    <div class="mb-6">
+    <div class="mb-6 animate-fade-in">
       <router-link to="/organizer" class="link-back">← 回主辦方管理中心</router-link>
     </div>
 
-    <h1 class="font-street text-3xl tracking-widest text-white">主辦方管理</h1>
-    <p class="mt-2 text-cypher-muted">選擇活動後可查核銷統計與代參加者重寄票券。</p>
+    <h1 class="font-street text-3xl tracking-widest text-white animate-slide-up">主辦方管理</h1>
+    <p class="mt-2 text-cypher-muted animate-slide-up-delay">選擇活動後可查核銷統計與代參加者重寄票券。</p>
 
     <!-- 選擇活動 -->
-    <section class="card mt-6 p-6">
+    <section class="card mt-6 p-6 animate-slide-up-delay-2">
       <h2 class="font-street text-lg tracking-wider text-white">選擇活動</h2>
       <div class="mt-3 flex flex-wrap items-center gap-3">
         <select

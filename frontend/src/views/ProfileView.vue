@@ -170,12 +170,14 @@ async function save(): Promise<void> {
 
 <template>
   <main class="mx-auto max-w-lg px-4 py-12">
-    <h1 class="font-street text-3xl tracking-widest text-white">個人資料</h1>
-    <p class="mt-2 text-sm text-cypher-muted">編輯顯示名稱與聯絡方式（頭像可於之後版本上傳）。</p>
+    <header class="animate-fade-in">
+      <h1 class="font-street text-3xl tracking-widest text-white">個人資料</h1>
+      <p class="mt-2 text-sm text-cypher-muted">編輯顯示名稱與聯絡方式（頭像可於之後版本上傳）。</p>
+    </header>
 
     <div v-if="loading" class="mt-6 animate-pulse text-cypher-muted">載入中…</div>
 
-    <div v-else-if="profile" class="card mt-6 space-y-4 p-6">
+    <div v-else-if="profile" class="card mt-6 space-y-4 p-6 animate-slide-up">
       <div>
         <label class="mb-1 block text-sm font-medium text-gray-300">顯示名稱 *</label>
         <input
@@ -227,16 +229,17 @@ async function save(): Promise<void> {
     </div>
 
     <template v-if="authStore.isAuthenticated && !loading">
-      <section class="card mt-8 p-6">
+      <section class="card mt-8 p-6 animate-slide-up" style="animation-delay: 0.1s">
         <h2 class="font-street text-lg tracking-wider text-white">主辦方帳號</h2>
         <p v-if="organizerSummaryLoading" class="mt-3 text-sm text-cypher-muted">載入中…</p>
         <p v-else-if="organizerSummaryError" class="mt-3 text-sm text-rose-400">{{ organizerSummaryError }}</p>
         <div v-else-if="organizations.length === 0" class="mt-3 text-sm text-gray-400">尚無主辦方帳號。可至主辦方申請頁建立。</div>
         <ul v-else class="mt-3 space-y-2">
           <li
-            v-for="org in organizations"
+            v-for="(org, i) in organizations"
             :key="org.id"
             class="flex items-center justify-between rounded-xl border border-cypher-border px-3 py-2 text-sm"
+            :style="`animation: slideUp 0.4s ease-out ${i * 0.05}s both`"
           >
             <span class="font-medium text-white">{{ org.name }}</span>
             <span class="badge-dance">{{ roleLabel(org.role) }}</span>
@@ -251,15 +254,16 @@ async function save(): Promise<void> {
         </router-link>
       </section>
 
-      <section class="card mt-6 p-6">
+      <section class="card mt-6 p-6 animate-slide-up" style="animation-delay: 0.15s">
         <h2 class="font-street text-lg tracking-wider text-white">主辦方底下的活動</h2>
         <p v-if="organizerSummaryLoading" class="mt-3 text-sm text-cypher-muted">載入中…</p>
         <div v-else-if="events.length === 0" class="mt-3 text-sm text-gray-400">尚無活動，或您尚未加入任何主辦方。</div>
         <ul v-else class="mt-3 space-y-2">
           <li
-            v-for="ev in events"
+            v-for="(ev, i) in events"
             :key="ev.id"
             class="rounded-xl border border-cypher-border px-3 py-2 text-sm"
+            :style="`animation: slideUp 0.4s ease-out ${i * 0.05}s both`"
           >
             <router-link :to="{ name: 'event-detail', params: { eventId: ev.id } }" class="font-medium text-cypher-accent transition-colors hover:text-cypher-accent-pink">
               {{ ev.title }}
