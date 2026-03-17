@@ -16,7 +16,9 @@ class EmailService:
 
     def __init__(self) -> None:
         self._api_key = os.environ.get("RESEND_API_KEY", "").strip()
-        self._from_email = os.environ.get("RESEND_FROM_EMAIL", "CypherHub <onboarding@resend.dev>").strip()
+        self._from_email = os.environ.get(
+            "RESEND_FROM_EMAIL", "CypherHub <onboarding@resend.dev>"
+        ).strip()
         if self._api_key and resend:
             resend.api_key = self._api_key
 
@@ -100,7 +102,9 @@ class EmailService:
                         "html": html,
                     }
                 )
-                current_app.logger.info("[email] registration success sent to %s for event %s", to_email, event_title)
+                current_app.logger.info(
+                    "[email] registration success sent to %s for event %s", to_email, event_title
+                )
             except Exception as exc:
                 current_app.logger.warning("[email] Resend send failed: %s", exc)
         else:

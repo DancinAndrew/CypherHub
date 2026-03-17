@@ -112,11 +112,7 @@ class EventsService:
         client = supabase_client.public_client()
         try:
             response = (
-                client.table("events")
-                .select("title")
-                .eq("id", str(event_id))
-                .limit(1)
-                .execute()
+                client.table("events").select("title").eq("id", str(event_id)).limit(1).execute()
             )
             rows = supabase_client.extract_data(response) or []
             return rows[0].get("title", "活動") if rows else "活動"
@@ -215,12 +211,7 @@ class EventsService:
                 return {"organizations": [], "events": []}
             org_ids = [str(m["org_id"]) for m in members]
             role_by_org = {str(m["org_id"]): m.get("role", "staff") for m in members}
-            orgs_resp = (
-                client.table("organizations")
-                .select("id,name")
-                .in_("id", org_ids)
-                .execute()
-            )
+            orgs_resp = client.table("organizations").select("id,name").in_("id", org_ids).execute()
             orgs_rows = supabase_client.extract_data(orgs_resp) or []
             organizations = [
                 {"id": o["id"], "name": o["name"], "role": role_by_org.get(str(o["id"]), "staff")}
@@ -314,10 +305,7 @@ class EventsService:
         client = supabase_client.service_role_client()
         try:
             response = (
-                client.table("events")
-                .update({"status": status})
-                .eq("id", str(event_id))
-                .execute()
+                client.table("events").update({"status": status}).eq("id", str(event_id)).execute()
             )
             rows = supabase_client.extract_data(response) or []
             if not rows:
@@ -349,10 +337,7 @@ class EventsService:
 
         try:
             response = (
-                client.table("events")
-                .update(update_values)
-                .eq("id", str(event_id))
-                .execute()
+                client.table("events").update(update_values).eq("id", str(event_id)).execute()
             )
             rows = supabase_client.extract_data(response) or []
             if not rows:
@@ -461,9 +446,11 @@ class EventsService:
         }
 
         try:
-            response = client.table("event_internal_notes").upsert(
-                values, on_conflict="event_id"
-            ).execute()
+            response = (
+                client.table("event_internal_notes")
+                .upsert(values, on_conflict="event_id")
+                .execute()
+            )
             rows = supabase_client.extract_data(response) or []
             if rows:
                 return rows[0]
@@ -601,9 +588,9 @@ class EventsService:
                     details={"sold_count": sold_count},
                     http_status=400,
                 )
-            client.table("ticket_types").delete().eq(
-                "id", str(ticket_type_id)
-            ).eq("event_id", str(event_id)).execute()
+            client.table("ticket_types").delete().eq("id", str(ticket_type_id)).eq(
+                "event_id", str(event_id)
+            ).execute()
         except AppError:
             raise
         except Exception as exc:
@@ -630,8 +617,7 @@ class EventsService:
             )
             answers_rows = supabase_client.extract_data(response_rows) or []
             answers_by_ticket_id = {
-                str(row.get("ticket_id")): row.get("answers")
-                for row in answers_rows
+                str(row.get("ticket_id")): row.get("answers") for row in answers_rows
             }
 
             for row in rows:
@@ -657,7 +643,9 @@ class EventsService:
         try:
             response = (
                 client.table("tickets")
-                .select("id,event_id,ticket_type_id,user_id,status,issued_at,checked_in_at,qr_secret")
+                .select(
+                    "id,event_id,ticket_type_id,user_id,status,issued_at,checked_in_at,qr_secret"
+                )
                 .eq("id", str(ticket_id))
                 .eq("event_id", str(event_id))
                 .limit(1)
@@ -675,7 +663,7 @@ class EventsService:
             user_id = str(ticket.get("user_id", ""))
             to_email = supabase_client.get_user_email_by_id(user_id)
             if not to_email or not to_email.strip():
-                # Fallback: email from registration form answers (e.g. 報名表單有 email 欄位且參加者有填)
+                # Fallback: email from registration form answers (e.g. 報名表單 email 欄位)
                 try:
                     ans_resp = (
                         client.table("ticket_form_responses")
@@ -760,7 +748,11 @@ class EventsService:
                 .execute()
             )
             rows = supabase_client.extract_data(insert_resp) or []
-            return rows[0] if rows else {"event_id": str(event_id), "path": path, "sort_order": max_order}
+            return (
+                rows[0]
+                if rows
+                else {"event_id": str(event_id), "path": path, "sort_order": max_order}
+            )
         except Exception as exc:
             raise map_supabase_error(exc, fallback_code="INSERT_EVENT_MEDIA_FAILED") from exc
 

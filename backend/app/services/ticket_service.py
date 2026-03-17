@@ -18,7 +18,9 @@ class TicketService:
         try:
             response = (
                 client.table("tickets")
-                .select("id,event_id,ticket_type_id,user_id,status,issued_at,checked_in_at,qr_secret,created_at")
+                .select(
+                    "id,event_id,ticket_type_id,user_id,status,issued_at,checked_in_at,qr_secret,created_at"
+                )
                 .eq("user_id", user_id)
                 .in_("status", ["issued", "checked_in"])
                 .order("created_at", desc=True)
@@ -40,7 +42,9 @@ class TicketService:
         try:
             response = (
                 client.table("tickets")
-                .select("id,event_id,ticket_type_id,user_id,status,issued_at,checked_in_at,qr_secret")
+                .select(
+                    "id,event_id,ticket_type_id,user_id,status,issued_at,checked_in_at,qr_secret"
+                )
                 .eq("id", str(ticket_id))
                 .eq("user_id", user_id)
                 .limit(1)
@@ -57,7 +61,9 @@ class TicketService:
 
             ticket = rows[0]
             event_id = ticket.get("event_id")
-            event_title = events_service.get_event_title(UUID(str(event_id))) if event_id else "活動"
+            event_title = (
+                events_service.get_event_title(UUID(str(event_id))) if event_id else "活動"
+            )
             frontend_base_url = current_app.config.get("FRONTEND_BASE_URL", "http://localhost:5173")
             email_service.send_ticket_email(to_email, event_title, ticket, frontend_base_url)
         except AppError:

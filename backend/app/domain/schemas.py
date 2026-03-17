@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -11,7 +11,7 @@ from pydantic import BaseModel, ConfigDict, Field
 class ErrorContent(BaseModel):
     code: str
     message: str
-    details: Optional[Any] = None
+    details: Any | None = None
 
 
 class ErrorResponse(BaseModel):
@@ -70,10 +70,10 @@ class FormField(BaseModel):
     label: str = Field(min_length=1)
     type: FormFieldType
     required: bool = False
-    help_text: Optional[str] = None
-    placeholder: Optional[str] = None
+    help_text: str | None = None
+    placeholder: str | None = None
     options: list[str] = Field(default_factory=list)
-    validation: Optional[dict[str, Any]] = None
+    validation: dict[str, Any] | None = None
 
 
 class FormSchemaDefinition(BaseModel):
@@ -85,28 +85,28 @@ class EventResponse(BaseModel):
     id: UUID
     org_id: UUID
     title: str
-    description: Optional[str] = None
-    short_desc: Optional[str] = None
+    description: str | None = None
+    short_desc: str | None = None
     start_at: datetime
     end_at: datetime
-    timezone: Optional[str] = None
-    location_name: Optional[str] = None
-    location_address: Optional[str] = None
-    map_url: Optional[str] = None
-    contact_email: Optional[str] = None
-    contact_phone: Optional[str] = None
-    registration_start_at: Optional[datetime] = None
-    registration_end_at: Optional[datetime] = None
+    timezone: str | None = None
+    location_name: str | None = None
+    location_address: str | None = None
+    map_url: str | None = None
+    contact_email: str | None = None
+    contact_phone: str | None = None
+    registration_start_at: datetime | None = None
+    registration_end_at: datetime | None = None
     socials: dict[str, str] = Field(default_factory=dict)
-    eligibility: Optional[str] = None
-    event_language: Optional[str] = None
-    checkin_open_at: Optional[datetime] = None
-    checkin_note: Optional[str] = None
+    eligibility: str | None = None
+    event_language: str | None = None
+    checkin_open_at: datetime | None = None
+    checkin_note: str | None = None
     schedule: list[dict[str, Any]] = Field(default_factory=list)
-    rules: Optional[str] = None
-    refund_policy: Optional[str] = None
+    rules: str | None = None
+    refund_policy: str | None = None
     status: str
-    published_at: Optional[datetime] = None
+    published_at: datetime | None = None
     dance_styles: list[DanceStyle] = Field(default_factory=list)
     event_types: list[EventType] = Field(default_factory=list)
 
@@ -122,14 +122,14 @@ class TicketTypeResponse(BaseModel):
     id: UUID
     event_id: UUID
     name: str
-    description: Optional[str] = None
+    description: str | None = None
     price_cents: int
     currency: str
     capacity: int
     sold_count: int
     per_user_limit: int
-    sale_start_at: Optional[datetime] = None
-    sale_end_at: Optional[datetime] = None
+    sale_start_at: datetime | None = None
+    sale_end_at: datetime | None = None
     is_active: bool
 
 
@@ -140,16 +140,16 @@ class EventListResponse(BaseModel):
 class OrganizerSummaryResponse(BaseModel):
     id: UUID
     name: str
-    description: Optional[str] = None
-    contact_email: Optional[str] = None
-    logo_url: Optional[str] = None
+    description: str | None = None
+    contact_email: str | None = None
+    logo_url: str | None = None
 
 
 class EventDetailResponse(BaseModel):
     event: EventResponse
     event_media: list[EventMediaResponse]
     ticket_types: list[TicketTypeResponse]
-    organizer: Optional[OrganizerSummaryResponse] = None
+    organizer: OrganizerSummaryResponse | None = None
     other_events: list[EventResponse] = Field(default_factory=list)
 
 
@@ -166,8 +166,8 @@ class TicketResponse(BaseModel):
     user_id: UUID
     status: str
     qr_secret: str
-    issued_at: Optional[datetime] = None
-    checked_in_at: Optional[datetime] = None
+    issued_at: datetime | None = None
+    checked_in_at: datetime | None = None
 
 
 class TicketsListResponse(BaseModel):
@@ -180,65 +180,65 @@ class RegisterResponse(BaseModel):
 
 class OrganizerApplyRequest(BaseModel):
     name: str = Field(min_length=1)
-    description: Optional[str] = None
-    contact_email: Optional[str] = None
-    logo_url: Optional[str] = None
+    description: str | None = None
+    contact_email: str | None = None
+    logo_url: str | None = None
 
 
 class CreateEventRequest(BaseModel):
     org_id: UUID
     title: str = Field(min_length=1)
-    description: Optional[str] = None
-    short_desc: Optional[str] = None
+    description: str | None = None
+    short_desc: str | None = None
     start_at: datetime
     end_at: datetime
-    timezone: Optional[str] = None
-    location_name: Optional[str] = None
-    location_address: Optional[str] = None
-    map_url: Optional[str] = None
-    contact_email: Optional[str] = None
-    contact_phone: Optional[str] = None
-    registration_start_at: Optional[datetime] = None
-    registration_end_at: Optional[datetime] = None
+    timezone: str | None = None
+    location_name: str | None = None
+    location_address: str | None = None
+    map_url: str | None = None
+    contact_email: str | None = None
+    contact_phone: str | None = None
+    registration_start_at: datetime | None = None
+    registration_end_at: datetime | None = None
     socials: dict[str, str] = Field(default_factory=dict)
-    eligibility: Optional[str] = None
-    event_language: Optional[str] = None
-    checkin_open_at: Optional[datetime] = None
-    checkin_note: Optional[str] = None
+    eligibility: str | None = None
+    event_language: str | None = None
+    checkin_open_at: datetime | None = None
+    checkin_note: str | None = None
     schedule: list[dict[str, Any]] = Field(default_factory=list)
-    rules: Optional[str] = None
-    refund_policy: Optional[str] = None
+    rules: str | None = None
+    refund_policy: str | None = None
     status: str = Field(default="draft")
     dance_styles: list[DanceStyle] = Field(default_factory=list)
     event_types: list[EventType] = Field(default_factory=list)
 
 
 class UpdateEventRequest(BaseModel):
-    title: Optional[str] = None
-    description: Optional[str] = None
-    short_desc: Optional[str] = None
-    start_at: Optional[datetime] = None
-    end_at: Optional[datetime] = None
-    timezone: Optional[str] = None
-    location_name: Optional[str] = None
-    location_address: Optional[str] = None
-    map_url: Optional[str] = None
-    contact_email: Optional[str] = None
-    contact_phone: Optional[str] = None
-    registration_start_at: Optional[datetime] = None
-    registration_end_at: Optional[datetime] = None
-    socials: Optional[dict[str, str]] = None
-    eligibility: Optional[str] = None
-    event_language: Optional[str] = None
-    checkin_open_at: Optional[datetime] = None
-    checkin_note: Optional[str] = None
-    schedule: Optional[list[dict[str, Any]]] = None
-    rules: Optional[str] = None
-    refund_policy: Optional[str] = None
-    status: Optional[str] = None
-    published_at: Optional[datetime] = None
-    dance_styles: Optional[list[DanceStyle]] = None
-    event_types: Optional[list[EventType]] = None
+    title: str | None = None
+    description: str | None = None
+    short_desc: str | None = None
+    start_at: datetime | None = None
+    end_at: datetime | None = None
+    timezone: str | None = None
+    location_name: str | None = None
+    location_address: str | None = None
+    map_url: str | None = None
+    contact_email: str | None = None
+    contact_phone: str | None = None
+    registration_start_at: datetime | None = None
+    registration_end_at: datetime | None = None
+    socials: dict[str, str] | None = None
+    eligibility: str | None = None
+    event_language: str | None = None
+    checkin_open_at: datetime | None = None
+    checkin_note: str | None = None
+    schedule: list[dict[str, Any]] | None = None
+    rules: str | None = None
+    refund_policy: str | None = None
+    status: str | None = None
+    published_at: datetime | None = None
+    dance_styles: list[DanceStyle] | None = None
+    event_types: list[EventType] | None = None
 
 
 class EventFormResponse(BaseModel):
@@ -246,16 +246,16 @@ class EventFormResponse(BaseModel):
 
     id: UUID
     event_id: UUID
-    ticket_type_id: Optional[UUID] = None
+    ticket_type_id: UUID | None = None
     form_schema: FormSchemaDefinition = Field(alias="schema", serialization_alias="schema")
     version: int
     is_active: bool
-    created_at: Optional[datetime] = None
-    updated_at: Optional[datetime] = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
 
 
 class EventFormEnvelopeResponse(BaseModel):
-    form: Optional[EventFormResponse] = None
+    form: EventFormResponse | None = None
 
 
 class EventFormsListResponse(BaseModel):
@@ -265,7 +265,7 @@ class EventFormsListResponse(BaseModel):
 class UpsertEventFormRequest(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
-    ticket_type_id: Optional[UUID] = None
+    ticket_type_id: UUID | None = None
     form_schema: FormSchemaDefinition = Field(alias="schema", serialization_alias="schema")
     is_active: bool = True
 
@@ -290,37 +290,37 @@ class AdminPatchEventRequest(BaseModel):
 class EventInternalNoteResponse(BaseModel):
     event_id: UUID
     note: str
-    updated_at: Optional[datetime] = None
-    updated_by: Optional[UUID] = None
+    updated_at: datetime | None = None
+    updated_by: UUID | None = None
 
 
 class CreateTicketTypeRequest(BaseModel):
     name: str = Field(min_length=1)
-    description: Optional[str] = None
+    description: str | None = None
     capacity: int = Field(ge=0)
     per_user_limit: int = Field(default=1, ge=1)
-    sale_start_at: Optional[datetime] = None
-    sale_end_at: Optional[datetime] = None
+    sale_start_at: datetime | None = None
+    sale_end_at: datetime | None = None
     is_active: bool = True
 
 
 class UpdateTicketTypeRequest(BaseModel):
-    name: Optional[str] = Field(default=None, min_length=1)
-    description: Optional[str] = None
-    capacity: Optional[int] = Field(default=None, ge=0)
-    per_user_limit: Optional[int] = Field(default=None, ge=1)
-    sale_start_at: Optional[datetime] = None
-    sale_end_at: Optional[datetime] = None
-    is_active: Optional[bool] = None
+    name: str | None = Field(default=None, min_length=1)
+    description: str | None = None
+    capacity: int | None = Field(default=None, ge=0)
+    per_user_limit: int | None = Field(default=None, ge=1)
+    sale_start_at: datetime | None = None
+    sale_end_at: datetime | None = None
+    is_active: bool | None = None
 
 
 class AttendeeResponse(BaseModel):
     ticket_id: UUID
     user_id: UUID
     status: str
-    checked_in_at: Optional[datetime] = None
+    checked_in_at: datetime | None = None
     ticket_type_id: UUID
-    answers: Optional[dict[str, Any]] = None
+    answers: dict[str, Any] | None = None
 
 
 class OrganizerAttendeesResponse(BaseModel):
@@ -328,9 +328,9 @@ class OrganizerAttendeesResponse(BaseModel):
 
 
 class CheckinRequest(BaseModel):
-    ticket_id: Optional[UUID] = None
-    qr_secret: Optional[str] = None
-    qr_payload: Optional[str] = None
+    ticket_id: UUID | None = None
+    qr_secret: str | None = None
+    qr_payload: str | None = None
 
     model_config = ConfigDict(extra="forbid")
 
@@ -354,7 +354,7 @@ class MyOrganizerEventResponse(BaseModel):
     org_id: UUID
     title: str
     status: str
-    start_at: Optional[datetime] = None
+    start_at: datetime | None = None
 
 
 class MyOrganizerSummaryResponse(BaseModel):

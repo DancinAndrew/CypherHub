@@ -183,11 +183,15 @@ class FormsService:
                     http_status=400,
                 )
 
-            if field.type in {
-                FormFieldType.single_select,
-                FormFieldType.multi_select,
-                FormFieldType.dropdown,
-            } and not field.options:
+            if (
+                field.type
+                in {
+                    FormFieldType.single_select,
+                    FormFieldType.multi_select,
+                    FormFieldType.dropdown,
+                }
+                and not field.options
+            ):
                 raise AppError(
                     code="VALIDATION_ERROR",
                     message="Select fields require options",

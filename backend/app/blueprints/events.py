@@ -81,9 +81,7 @@ def get_event_form(event_id: str) -> tuple[dict, int]:
     event_uuid = parse_uuid(event_id, "event_id")
     ticket_type_id_raw = request.args.get("ticket_type_id")
     ticket_type_uuid = (
-        parse_uuid(ticket_type_id_raw, "ticket_type_id")
-        if ticket_type_id_raw
-        else None
+        parse_uuid(ticket_type_id_raw, "ticket_type_id") if ticket_type_id_raw else None
     )
 
     form = forms_service.get_public_form(event_uuid, ticket_type_uuid)

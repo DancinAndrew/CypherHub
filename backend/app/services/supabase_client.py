@@ -58,7 +58,7 @@ class SupabaseClientWrapper:
         key = current_app.config.get("SUPABASE_SERVICE_ROLE_KEY", "").strip()
         if not url or not key:
             current_app.logger.warning(
-                "[auth] get_user_email_by_id: SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not set, cannot resolve email by user_id"
+                "[auth] get_user_email_by_id: SUPABASE_URL or SERVICE_ROLE_KEY not set"
             )
             return None
         req = urllib.request.Request(
@@ -75,7 +75,9 @@ class SupabaseClientWrapper:
             user = data.get("user") if data.get("user") is not None else data
             return SupabaseClientWrapper._email_from_user_like(user)
         except Exception as exc:
-            current_app.logger.warning("[auth] get_user_email_by_id failed for %s: %s", user_id, exc)
+            current_app.logger.warning(
+                "[auth] get_user_email_by_id failed for %s: %s", user_id, exc
+            )
             return None
 
     @property

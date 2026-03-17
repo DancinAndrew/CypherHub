@@ -3,7 +3,8 @@ from __future__ import annotations
 import json
 import urllib.error
 import urllib.request
-from flask import Blueprint, current_app, jsonify, request
+
+from flask import Blueprint, current_app, jsonify
 
 from app.domain.errors import AppError
 from app.extensions import rate_limiter
@@ -23,11 +24,13 @@ def _supabase_token(email: str, password: str) -> dict:
             message="Auth not configured",
             http_status=500,
         )
-    payload = json.dumps({
-        "grant_type": "password",
-        "email": email.strip().lower(),
-        "password": password,
-    }).encode("utf-8")
+    payload = json.dumps(
+        {
+            "grant_type": "password",
+            "email": email.strip().lower(),
+            "password": password,
+        }
+    ).encode("utf-8")
     req = urllib.request.Request(
         f"{url}/auth/v1/token",
         data=payload,
