@@ -10,7 +10,14 @@ function extractApiErrorPayload(error: unknown): ApiErrorPayload | null {
 }
 
 export function toApiErrorMessage(error: unknown, fallback: string): string {
+  const status = (error as { response?: { status?: number } })?.response?.status;
+  if (status === 429) {
+    return "操作過於頻繁，請稍後再試。";
+  }
   const apiError = extractApiErrorPayload(error);
+  if (apiError?.code === "AUTH_FAILED") {
+    return "登入失敗：帳號或密碼不正確。";
+  }
   if (apiError?.message) {
     const raw = String(
       ((apiError.details as { raw?: unknown } | undefined)?.raw ?? apiError.details ?? ""),
@@ -65,6 +72,11 @@ export function toApiErrorMessage(error: unknown, fallback: string): string {
 }
 
 export function toAuthErrorMessage(error: unknown, mode: "signin" | "signup" | "forgot"): string {
+  const status = (error as { response?: { status?: number } })?.response?.status;
+  if (status === 429) return "操作過於頻繁，請稍後再試。";
+  const apiError = extractApiErrorPayload(error);
+  if (apiError?.code === "AUTH_FAILED") return "登入失敗：帳號或密碼不正確。";
+
   const rawMessage = ((error as { message?: string })?.message || "").toLowerCase();
   const code = ((error as { code?: string })?.code || "").toLowerCase();
 

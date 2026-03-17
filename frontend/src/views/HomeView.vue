@@ -22,6 +22,9 @@ const errorMessage = ref<string | null>(null);
 
 const selectedStyles = ref<DanceStyleKey[]>([]);
 const selectedTypes = ref<EventTypeKey[]>([]);
+const searchQuery = ref("");
+const dateFrom = ref("");
+const dateTo = ref("");
 
 const styleKeys = new Set(DANCE_STYLES.map((item) => item.key));
 const typeKeys = new Set(EVENT_TYPES.map((item) => item.key));
@@ -58,6 +61,9 @@ function toggleType(type: EventTypeKey): void {
 function clearFilters(): void {
   selectedStyles.value = [];
   selectedTypes.value = [];
+  searchQuery.value = "";
+  dateFrom.value = "";
+  dateTo.value = "";
   applyFilters().catch(() => {});
 }
 
@@ -67,6 +73,9 @@ async function loadEvents(): Promise<void> {
 
   try {
     events.value = await fetchEvents({
+      q: searchQuery.value.trim() || undefined,
+      from: dateFrom.value || undefined,
+      to: dateTo.value || undefined,
       styles: selectedStyles.value.length ? selectedStyles.value.join(",") : undefined,
       types: selectedTypes.value.length ? selectedTypes.value.join(",") : undefined,
     });
@@ -81,6 +90,9 @@ async function applyFilters(): Promise<void> {
   await router.replace({
     query: {
       ...route.query,
+      q: searchQuery.value.trim() || undefined,
+      from: dateFrom.value || undefined,
+      to: dateTo.value || undefined,
       styles: selectedStyles.value.length ? selectedStyles.value.join(",") : undefined,
       types: selectedTypes.value.length ? selectedTypes.value.join(",") : undefined,
     },
@@ -91,6 +103,9 @@ async function applyFilters(): Promise<void> {
 onMounted(() => {
   selectedStyles.value = parseQueryList(route.query.styles, styleKeys) as DanceStyleKey[];
   selectedTypes.value = parseQueryList(route.query.types, typeKeys) as EventTypeKey[];
+  searchQuery.value = typeof route.query.q === "string" ? route.query.q : "";
+  dateFrom.value = typeof route.query.from === "string" ? route.query.from : "";
+  dateTo.value = typeof route.query.to === "string" ? route.query.to : "";
   loadEvents().catch(() => {});
 });
 </script>
@@ -111,6 +126,45 @@ onMounted(() => {
           @click="clearFilters"
         >
           Clear
+        </button>
+      </div>
+
+      <div class="mt-4">
+        <p class="text-xs font-semibold text-slate-500">關鍵字搜尋</p>
+        <input
+          v-model="searchQuery"
+          type="text"
+          placeholder="活動名稱、地點..."
+          class="mt-2 w-full max-w-md rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-brand-500"
+          @keydown.enter="applyFilters"
+        />
+      </div>
+
+      <div class="mt-4 grid gap-4 sm:grid-cols-2">
+        <div>
+          <p class="text-xs font-semibold text-slate-500">開始日期</p>
+          <input
+            v-model="dateFrom"
+            type="date"
+            class="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-brand-500"
+          />
+        </div>
+        <div>
+          <p class="text-xs font-semibold text-slate-500">結束日期</p>
+          <input
+            v-model="dateTo"
+            type="date"
+            class="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-brand-500"
+          />
+        </div>
+      </div>
+      <div class="mt-2 flex gap-2">
+        <button
+          type="button"
+          class="rounded-lg bg-brand-600 px-3 py-2 text-xs font-semibold text-white hover:bg-brand-700"
+          @click="applyFilters"
+        >
+          套用篩選
         </button>
       </div>
 

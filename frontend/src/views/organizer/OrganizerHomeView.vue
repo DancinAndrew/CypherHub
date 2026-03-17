@@ -23,13 +23,25 @@ const organizerStore = useOrganizerStore();
       </router-link>
 
       <router-link
-        to="/organizer/events"
+        to="/organizer/events/create"
         class="flex items-center gap-4 rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition hover:border-brand-300 hover:shadow-md"
       >
         <span class="flex h-12 w-12 items-center justify-center rounded-full bg-brand-100 text-xl font-bold text-brand-600">2</span>
         <div class="flex-1">
-          <h2 class="font-semibold text-slate-900">建立 / 編輯活動</h2>
-          <p class="mt-1 text-sm text-slate-600">建立活動、票種、主辦方備註</p>
+          <h2 class="font-semibold text-slate-900">建立活動</h2>
+          <p class="mt-1 text-sm text-slate-600">建立新活動、票種、主辦方備註</p>
+        </div>
+        <span class="text-slate-400">→</span>
+      </router-link>
+
+      <router-link
+        to="/organizer/events/edit"
+        class="flex items-center gap-4 rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition hover:border-brand-300 hover:shadow-md"
+      >
+        <span class="flex h-12 w-12 items-center justify-center rounded-full bg-brand-100 text-xl font-bold text-brand-600">3</span>
+        <div class="flex-1">
+          <h2 class="font-semibold text-slate-900">編輯活動</h2>
+          <p class="mt-1 text-sm text-slate-600">選擇既有活動載入後編輯</p>
         </div>
         <span class="text-slate-400">→</span>
       </router-link>
@@ -38,7 +50,7 @@ const organizerStore = useOrganizerStore();
         to="/organizer/forms"
         class="flex items-center gap-4 rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition hover:border-brand-300 hover:shadow-md"
       >
-        <span class="flex h-12 w-12 items-center justify-center rounded-full bg-brand-100 text-xl font-bold text-brand-600">3</span>
+        <span class="flex h-12 w-12 items-center justify-center rounded-full bg-brand-100 text-xl font-bold text-brand-600">4</span>
         <div class="flex-1">
           <h2 class="font-semibold text-slate-900">報名表單設定</h2>
           <p class="mt-1 text-sm text-slate-600">自訂報名時需填寫的欄位</p>

@@ -54,7 +54,7 @@ async function submit() {
     });
     organizerStore.setOrgId(result.organization.id);
     message.value = `主辦方建立成功！org_id: ${result.organization.id}`;
-    setTimeout(() => router.push({ name: "organizer-events" }), 1500);
+    setTimeout(() => router.push({ name: "organizer-event-create" }), 1500);
   } catch (error: unknown) {
     errorMessage.value = toApiErrorMessage(error, "申請主辦方失敗。");
   } finally {
@@ -122,7 +122,7 @@ async function submit() {
 
     <p class="mt-4 text-center text-sm text-slate-500">
       已有主辦方？
-      <router-link to="/organizer/events" class="text-brand-600 hover:underline">直接建立活動</router-link>
+      <router-link to="/organizer/events/create" class="text-brand-600 hover:underline">直接建立活動</router-link>
     </p>
   </main>
 </template>
