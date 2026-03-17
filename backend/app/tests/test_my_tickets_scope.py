@@ -51,7 +51,11 @@ def test_resend_ticket_route_scopes_to_authenticated_user(client, monkeypatch) -
     )
 
     assert response.status_code == 200
-    assert captured["jwt"] == jwt and captured["ticket_id"] == ticket_id and captured["user_id"] == user_id
+    assert (
+        captured["jwt"] == jwt
+        and captured["ticket_id"] == ticket_id
+        and captured["user_id"] == user_id
+    )
 
 
 def test_cancel_ticket_route_scopes_to_authenticated_user(client, monkeypatch) -> None:

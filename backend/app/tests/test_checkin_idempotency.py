@@ -1,4 +1,5 @@
 """Checkin commit: second commit on same ticket returns 200 with already_checked_in=true."""
+
 from __future__ import annotations
 
 from unittest.mock import MagicMock

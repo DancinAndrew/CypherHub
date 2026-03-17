@@ -34,4 +34,3 @@ def test_public_event_detail_does_not_include_internal_note(client, monkeypatch)
     assert response.status_code == 200
     payload = response.get_json()
     assert "internal_note" not in payload["event"]
-

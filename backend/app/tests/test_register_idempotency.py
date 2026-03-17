@@ -1,4 +1,5 @@
 """Register: per-user limit (second call same user/ticket_type returns 409)."""
+
 from __future__ import annotations
 
 from unittest.mock import MagicMock

@@ -54,4 +54,3 @@ def test_internal_note_upsert_requires_admin(client, monkeypatch) -> None:
     payload = ok_response.get_json()
     assert payload["event_id"] == event_id
     assert payload["note"] == "private note"
-
