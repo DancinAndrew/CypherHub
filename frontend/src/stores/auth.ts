@@ -2,6 +2,7 @@ import type { AuthChangeEvent, Session, User } from "@supabase/supabase-js";
 import { defineStore } from "pinia";
 import { computed, ref } from "vue";
 
+import { authLogin } from "../api/client";
 import { supabase } from "../api/supabase";
 
 type SignUpResult = {
@@ -69,14 +70,12 @@ export const useAuthStore = defineStore("auth", () => {
 
   async function signIn(email: string, password: string): Promise<void> {
     const normalizedEmail = email.trim().toLowerCase();
-    const { error } = await supabase.auth.signInWithPassword({
-      email: normalizedEmail,
-      password,
+    const data = await authLogin(normalizedEmail, password);
+    const { error } = await supabase.auth.setSession({
+      access_token: data.access_token,
+      refresh_token: data.refresh_token,
     });
-    if (error) {
-      throw error;
-    }
-
+    if (error) throw error;
     await refreshSession();
   }
 

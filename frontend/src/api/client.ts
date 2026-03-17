@@ -38,6 +38,19 @@ client.interceptors.response.use(
   },
 );
 
+export type AuthLoginResponse = {
+  access_token: string;
+  refresh_token: string;
+  token_type?: string;
+  expires_in?: number;
+  user?: Record<string, unknown>;
+};
+
+export async function authLogin(email: string, password: string): Promise<AuthLoginResponse> {
+  const response = await client.post<AuthLoginResponse>("/api/v1/auth/login", { email, password });
+  return response.data;
+}
+
 export type EventItem = {
   id: string;
   org_id: string;

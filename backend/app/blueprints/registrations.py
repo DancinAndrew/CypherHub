@@ -3,6 +3,7 @@ from __future__ import annotations
 from flask import Blueprint, current_app, g, jsonify
 
 from app.domain.schemas import RegisterRequest, RegisterResponse
+from app.extensions import rate_limiter
 from app.services.auth_service import require_auth
 from app.services.email_service import email_service
 from app.services.events_service import events_service
@@ -14,6 +15,7 @@ bp = Blueprint("registrations", __name__, url_prefix="/api/v1/events")
 
 
 @bp.post("/<event_id>/register")
+@rate_limiter.limit("20 per minute")
 @require_auth
 def register_event(event_id: str) -> tuple[dict, int]:
     event_uuid = parse_uuid(event_id, "event_id")

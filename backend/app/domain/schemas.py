@@ -336,3 +336,22 @@ class CheckinResponse(BaseModel):
 
 class GenericOKResponse(BaseModel):
     ok: bool
+
+
+class MyOrganizerOrgResponse(BaseModel):
+    id: UUID
+    name: str
+    role: str
+
+
+class MyOrganizerEventResponse(BaseModel):
+    id: UUID
+    org_id: UUID
+    title: str
+    status: str
+    start_at: Optional[datetime] = None
+
+
+class MyOrganizerSummaryResponse(BaseModel):
+    organizations: list[MyOrganizerOrgResponse]
+    events: list[MyOrganizerEventResponse]

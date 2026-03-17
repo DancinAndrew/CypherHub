@@ -3,6 +3,7 @@ from __future__ import annotations
 from flask import Blueprint, g, jsonify
 
 from app.domain.schemas import CheckinRequest
+from app.extensions import rate_limiter
 from app.services.auth_service import require_auth
 from app.services.checkin_service import checkin_service
 
@@ -12,6 +13,7 @@ bp = Blueprint("checkin", __name__, url_prefix="/api/v1/organizer/events")
 
 
 @bp.post("/<event_id>/checkin/verify")
+@rate_limiter.limit("60 per minute")
 @require_auth
 def verify_checkin(event_id: str) -> tuple[dict, int]:
     event_uuid = parse_uuid(event_id, "event_id")
@@ -28,6 +30,7 @@ def verify_checkin(event_id: str) -> tuple[dict, int]:
 
 
 @bp.post("/<event_id>/checkin/commit")
+@rate_limiter.limit("60 per minute")
 @require_auth
 def commit_checkin(event_id: str) -> tuple[dict, int]:
     event_uuid = parse_uuid(event_id, "event_id")
