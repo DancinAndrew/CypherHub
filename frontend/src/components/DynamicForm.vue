@@ -56,14 +56,14 @@ function toggleMultiOption(field: FormField, option: string): void {
     <div
       v-for="field in schema.fields"
       :key="field.key"
-      class="rounded-lg border border-slate-200 bg-slate-50 p-4"
+      class="rounded-lg border border-gray-200 bg-gray-50/50 p-4"
     >
       <label class="block">
-        <span class="text-sm font-semibold text-slate-800">
+        <span class="text-sm font-semibold text-gray-800">
           {{ field.label }}
-          <span v-if="field.required" class="text-rose-600">*</span>
+          <span v-if="field.required" class="text-rose-400">*</span>
         </span>
-        <span v-if="field.help_text" class="mt-1 block text-xs text-slate-500">{{ field.help_text }}</span>
+        <span v-if="field.help_text" class="mt-1 block text-xs text-gray-500">{{ field.help_text }}</span>
 
         <input
           v-if="['text', 'email', 'phone', 'url', 'date'].includes(field.type)"
@@ -71,7 +71,7 @@ function toggleMultiOption(field: FormField, option: string): void {
           :value="stringValue(field)"
           :placeholder="field.placeholder || ''"
           :disabled="disabled"
-          class="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+          class="input-field mt-2 text-sm"
           @input="updateField(field.key, ($event.target as HTMLInputElement).value)"
         />
 
@@ -81,7 +81,7 @@ function toggleMultiOption(field: FormField, option: string): void {
           :value="numberValue(field)"
           :placeholder="field.placeholder || ''"
           :disabled="disabled"
-          class="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+          class="input-field mt-2 text-sm"
           @input="updateField(field.key, ($event.target as HTMLInputElement).value)"
         />
 
@@ -89,7 +89,7 @@ function toggleMultiOption(field: FormField, option: string): void {
           v-else-if="field.type === 'single_select' || field.type === 'dropdown'"
           :value="stringValue(field)"
           :disabled="disabled"
-          class="mt-2 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
+          class="input-field mt-2 text-sm"
           @change="updateField(field.key, ($event.target as HTMLSelectElement).value)"
         >
           <option value="">Select</option>
@@ -102,12 +102,13 @@ function toggleMultiOption(field: FormField, option: string): void {
           <label
             v-for="option in field.options || []"
             :key="option"
-            class="inline-flex items-center gap-2 rounded-full border border-slate-300 bg-white px-3 py-1 text-xs text-slate-700"
+            class="inline-flex cursor-pointer items-center gap-2 rounded-full border border-gray-300 bg-white px-3 py-1.5 text-xs text-gray-700 transition-colors hover:border-brand-500 hover:bg-brand-50"
           >
             <input
               type="checkbox"
               :checked="arrayValue(field).includes(option)"
               :disabled="disabled"
+              class="rounded border-gray-300"
               @change="toggleMultiOption(field, option)"
             />
             <span>{{ option }}</span>
@@ -116,12 +117,13 @@ function toggleMultiOption(field: FormField, option: string): void {
 
         <label
           v-else-if="field.type === 'checkbox'"
-          class="mt-2 inline-flex items-center gap-2 text-sm text-slate-700"
+          class="mt-2 inline-flex cursor-pointer items-center gap-2 text-sm text-gray-700"
         >
           <input
             type="checkbox"
             :checked="checkboxValue(field)"
             :disabled="disabled"
+            class="rounded border-gray-300"
             @change="updateField(field.key, ($event.target as HTMLInputElement).checked)"
           />
           <span>{{ field.placeholder || 'I agree' }}</span>

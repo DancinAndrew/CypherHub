@@ -44,49 +44,52 @@ async function submit(): Promise<void> {
 </script>
 
 <template>
-  <main class="mx-auto flex min-h-[70vh] w-full max-w-md items-center px-4 py-10">
-    <section class="w-full rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-      <h1 class="text-2xl font-bold text-slate-900">設定新密碼</h1>
-      <p class="mt-2 text-sm text-slate-600">
+  <main class="mx-auto flex min-h-[70vh] w-full max-w-md items-center px-4 py-12 animate-fade-in">
+    <section class="card w-full p-8">
+      <h1 class="font-display text-2xl font-bold text-gray-900">設定新密碼</h1>
+      <p class="mt-2 text-sm text-gray-600">
         請輸入新密碼（至少 6 個字元）。若您是從重設密碼信點連結進來，已自動登入。
       </p>
 
       <form class="mt-6 space-y-4" @submit.prevent="submit">
         <label class="block">
-          <span class="mb-1 block text-sm text-slate-700">新密碼</span>
+          <span class="mb-2 block text-sm font-medium text-gray-700">新密碼</span>
           <input
             v-model="newPassword"
             type="password"
             minlength="6"
             autocomplete="new-password"
             placeholder="至少 6 個字元"
-            class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-brand-500"
+            class="input-field"
           />
         </label>
         <label class="block">
-          <span class="mb-1 block text-sm text-slate-700">再輸入一次</span>
+          <span class="mb-2 block text-sm font-medium text-gray-700">再輸入一次</span>
           <input
             v-model="confirmPassword"
             type="password"
             minlength="6"
             autocomplete="new-password"
             placeholder="再輸入一次新密碼"
-            class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-brand-500"
+            class="input-field"
           />
         </label>
-        <button
-          type="submit"
-          class="w-full rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-50"
-          :disabled="loading"
-        >
+        <button type="submit" class="btn-primary w-full py-3" :disabled="loading">
           {{ loading ? "處理中…" : "更新密碼" }}
         </button>
       </form>
 
-      <p v-if="successMessage" class="mt-4 text-sm text-emerald-700">{{ successMessage }}</p>
-      <p v-if="errorMessage" class="mt-4 text-sm text-rose-700">{{ errorMessage }}</p>
+      <p v-if="successMessage" role="alert" class="mt-4 rounded-lg bg-emerald-100 px-4 py-2 text-sm text-emerald-700">
+        {{ successMessage }}
+      </p>
+      <p v-if="errorMessage" role="alert" class="mt-4 rounded-lg bg-rose-50 px-4 py-2 text-sm text-rose-700">
+        {{ errorMessage }}
+      </p>
 
-      <router-link to="/login" class="mt-4 inline-block text-sm text-slate-500 hover:text-brand-600">
+      <router-link
+        to="/login"
+        class="link-back mt-4 inline-block"
+      >
         ← 返回登入
       </router-link>
     </section>

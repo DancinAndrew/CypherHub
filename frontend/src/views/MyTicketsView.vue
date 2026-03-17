@@ -78,54 +78,65 @@ onMounted(() => {
 </script>
 
 <template>
-  <main class="mx-auto w-full max-w-5xl px-4 py-10">
-    <h1 class="text-3xl font-bold text-slate-900">My Tickets</h1>
+  <main class="mx-auto w-full max-w-5xl px-4 py-12">
+    <header class="mb-8">
+      <h1 class="font-display text-3xl font-bold text-gray-900">My Tickets</h1>
+      <p class="mt-2 text-sm text-gray-600">您的票券與入場 QR Code</p>
+    </header>
 
-    <div v-if="loading" class="mt-6 rounded-xl border border-slate-200 bg-white p-5 text-slate-600">Loading tickets...</div>
-    <div v-else-if="errorMessage" class="mt-6 rounded-xl border border-rose-200 bg-rose-50 p-5 text-rose-700">
+    <div v-if="loading" class="card flex items-center justify-center p-10 text-gray-500">
+      <span class="animate-pulse">Loading tickets...</span>
+    </div>
+    <div v-else-if="errorMessage" role="alert" class="card border-rose-200 bg-rose-50 p-6 text-rose-800">
       {{ errorMessage }}
     </div>
-    <div v-else-if="tickets.length === 0" class="mt-6 rounded-xl border border-slate-200 bg-white p-5 text-slate-600">
+    <div v-else-if="tickets.length === 0" class="card flex items-center justify-center p-10 text-gray-500">
       No issued tickets.
     </div>
 
-    <div v-else class="mt-6 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-      <article v-for="ticket in tickets" :key="ticket.ticket_id" class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-        <h2 class="text-sm font-semibold text-slate-900">Ticket {{ ticket.ticket_id.slice(0, 8) }}</h2>
-        <p class="mt-1 text-xs text-slate-500">Status: {{ ticket.status }}</p>
-        <p class="mt-1 text-xs text-slate-500">Issued: {{ ticket.issued_at ? new Date(ticket.issued_at).toLocaleString() : "-" }}</p>
+    <div v-else class="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+      <article
+        v-for="ticket in tickets"
+        :key="ticket.ticket_id"
+        class="card flex flex-col p-6 transition-all duration-300 hover:border-brand-500/40"
+      >
+        <h2 class="font-display text-sm font-semibold text-brand-700">Ticket {{ ticket.ticket_id.slice(0, 8) }}</h2>
+        <p class="mt-1 text-xs text-gray-500">Status: {{ ticket.status }}</p>
+        <p class="mt-1 text-xs text-gray-500">Issued: {{ ticket.issued_at ? new Date(ticket.issued_at).toLocaleString() : "-" }}</p>
 
-        <div class="mt-4 flex justify-center rounded-lg bg-slate-50 p-3">
-          <QrcodeVue :value="qrPayload(ticket)" :size="160" level="M" />
+        <div class="mt-4 flex flex-1 flex-col items-center justify-center rounded-xl bg-gray-100 p-4">
+          <QrcodeVue :value="qrPayload(ticket)" :size="160" level="M" class="rounded-lg" />
         </div>
 
-        <button
-          type="button"
-          class="mt-4 inline-flex rounded-lg border border-brand-600 px-3 py-2 text-xs font-semibold text-brand-700 hover:bg-brand-50"
-          @click="handleResend(ticket.ticket_id)"
-        >
-          重寄票券信
-        </button>
-        <button
-          type="button"
-          class="mt-2 inline-flex rounded-lg border border-slate-400 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
-          @click="copyPayload(ticket)"
-        >
-          Copy Payload
-        </button>
-        <button
-          type="button"
-          class="mt-2 inline-flex rounded-lg border border-rose-400 px-3 py-2 text-xs font-semibold text-rose-700 hover:bg-rose-50 disabled:opacity-50"
-          :disabled="cancellingId === ticket.ticket_id"
-          @click="handleCancel(ticket.ticket_id)"
-        >
-          {{ cancellingId === ticket.ticket_id ? "取消中…" : "取消報名" }}
-        </button>
+        <div class="mt-4 flex flex-col gap-2">
+          <button
+            type="button"
+            class="btn-primary w-full py-2 text-xs"
+            @click="handleResend(ticket.ticket_id)"
+          >
+            重寄票券信
+          </button>
+          <button
+            type="button"
+            class="btn-secondary w-full py-2 text-xs"
+            @click="copyPayload(ticket)"
+          >
+            Copy Payload
+          </button>
+          <button
+            type="button"
+            class="w-full rounded-xl border border-rose-500/50 px-3 py-2 text-xs font-semibold text-rose-700 transition-colors hover:bg-rose-500/10 disabled:opacity-50"
+            :disabled="cancellingId === ticket.ticket_id"
+            @click="handleCancel(ticket.ticket_id)"
+          >
+            {{ cancellingId === ticket.ticket_id ? "取消中…" : "取消報名" }}
+          </button>
+        </div>
       </article>
     </div>
 
-    <p v-if="resendMessage" class="mt-4 text-sm text-brand-700">{{ resendMessage }}</p>
-    <p v-if="copyMessage" class="mt-2 text-sm text-slate-700">{{ copyMessage }}</p>
-    <p v-if="cancelMessage" class="mt-2 text-sm" :class="cancelMessage.startsWith('已') ? 'text-emerald-700' : 'text-rose-700'">{{ cancelMessage }}</p>
+    <p v-if="resendMessage" class="mt-4 text-sm text-brand-600">{{ resendMessage }}</p>
+    <p v-if="copyMessage" class="mt-2 text-sm text-gray-600">{{ copyMessage }}</p>
+    <p v-if="cancelMessage" class="mt-2 text-sm" :class="cancelMessage.startsWith('已') ? 'text-emerald-600' : 'text-rose-400'">{{ cancelMessage }}</p>
   </main>
 </template>

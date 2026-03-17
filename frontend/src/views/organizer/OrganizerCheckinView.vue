@@ -379,24 +379,22 @@ watch(mode, (nextMode) => {
 
 <template>
   <main class="mx-auto w-full max-w-3xl px-4 py-8 md:py-10">
-    <h1 class="text-3xl font-bold text-slate-900">Organizer Check-in</h1>
-    <p class="mt-2 text-sm text-slate-600">
-      手機可直接用相機掃碼核銷；若權限受限可切手動模式。
-    </p>
+    <h1 class="font-display text-3xl font-bold tracking-tight text-gray-900">Organizer Check-in</h1>
+    <p class="mt-2 text-gray-500">手機可直接用相機掃碼核銷；若權限受限可切手動模式。</p>
 
-    <section v-if="eventId.trim()" class="mt-6 rounded-xl border border-slate-200 bg-white p-5 shadow-sm md:p-6">
-      <h2 class="text-lg font-semibold text-slate-900">核銷統計</h2>
-      <p v-if="attendeesStatsLoading" class="mt-2 text-sm text-slate-500">載入中…</p>
-      <p v-else-if="attendeesStatsError" class="mt-2 text-sm text-rose-600">{{ attendeesStatsError }}</p>
+    <section v-if="eventId.trim()" class="card mt-6 p-5 md:p-6">
+      <h2 class="font-display text-lg font-semibold text-gray-800">核銷統計</h2>
+      <p v-if="attendeesStatsLoading" class="mt-2 text-sm text-gray-500">載入中…</p>
+      <p v-else-if="attendeesStatsError" class="mt-2 text-sm text-rose-400">{{ attendeesStatsError }}</p>
       <div v-else-if="attendeesStats" class="mt-3">
-        <p class="text-base font-medium text-slate-700">
+        <p class="text-base font-medium text-gray-600">
           已入場 <span class="text-brand-600">{{ attendeesStats.checkedIn }}</span> / 未入場
-          <span class="text-slate-600">{{ attendeesStats.notCheckedIn }}</span>
-          <span class="ml-2 text-sm text-slate-500">（總計 {{ attendeesStats.total }} 張有效票）</span>
+          <span class="text-gray-500">{{ attendeesStats.notCheckedIn }}</span>
+          <span class="ml-2 text-sm text-gray-500">（總計 {{ attendeesStats.total }} 張有效票）</span>
         </p>
         <div v-if="attendeesStats.byTicketType.length" class="mt-3 overflow-x-auto">
           <table class="min-w-full text-sm">
-            <thead class="border-b border-slate-200 text-left text-slate-600">
+            <thead class="border-b border-gray-200 text-left text-gray-600">
               <tr>
                 <th class="pb-2 pr-4">票種 ID</th>
                 <th class="pb-2 pr-4">已入場</th>
@@ -404,7 +402,7 @@ watch(mode, (nextMode) => {
               </tr>
             </thead>
             <tbody>
-              <tr v-for="row in attendeesStats.byTicketType" :key="row.ticket_type_id" class="border-b border-slate-100">
+              <tr v-for="row in attendeesStats.byTicketType" :key="row.ticket_type_id" class="border-b border-gray-200/50">
                 <td class="py-1.5 pr-4 font-mono text-xs">{{ row.ticket_type_id }}</td>
                 <td class="py-1.5 pr-4">{{ row.checkedIn }}</td>
                 <td class="py-1.5">{{ row.total }}</td>
@@ -415,7 +413,7 @@ watch(mode, (nextMode) => {
       </div>
       <button
         type="button"
-        class="mt-3 rounded-lg border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50"
+        class="btn-secondary mt-3"
         :disabled="attendeesStatsLoading"
         @click="loadAttendeesStats()"
       >
@@ -423,43 +421,40 @@ watch(mode, (nextMode) => {
       </button>
     </section>
 
-    <section class="mt-6 rounded-xl border border-slate-200 bg-white p-5 shadow-sm md:p-6">
+    <section class="card mt-6 p-5 md:p-6">
       <label class="block">
-        <span class="mb-1 block text-sm text-slate-700">Event ID</span>
-        <input
-          v-model="eventId"
-          class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-brand-500"
-        />
+        <span class="mb-1 block text-sm text-gray-600">Event ID</span>
+        <input v-model="eventId" class="input-field" />
       </label>
 
       <div class="mt-4 flex flex-wrap gap-2">
         <button
           type="button"
-          class="rounded-lg px-3 py-2 text-sm font-semibold"
-          :class="mode === 'scan' ? 'bg-brand-600 text-white' : 'border border-slate-300 text-slate-700 hover:bg-slate-50'"
+          class="rounded-xl px-3 py-2 text-sm font-semibold transition-all"
+          :class="mode === 'scan' ? 'bg-brand-500 text-white' : 'border border-gray-200 text-gray-500 hover:text-brand-600 hover:border-brand-500/50'"
           @click="mode = 'scan'"
         >
           掃碼模式
         </button>
         <button
           type="button"
-          class="rounded-lg px-3 py-2 text-sm font-semibold"
-          :class="mode === 'manual' ? 'bg-brand-600 text-white' : 'border border-slate-300 text-slate-700 hover:bg-slate-50'"
+          class="rounded-xl px-3 py-2 text-sm font-semibold transition-all"
+          :class="mode === 'manual' ? 'bg-brand-500 text-white' : 'border border-gray-200 text-gray-500 hover:text-brand-600 hover:border-brand-500/50'"
           @click="mode = 'manual'"
         >
           手動模式
         </button>
       </div>
 
-      <div v-if="mode === 'scan'" class="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-4">
-        <p class="text-xs text-slate-600">Start Scan 後請允許相機權限，掃到後會自動填入並執行 Verify。</p>
-        <div class="mt-3 overflow-hidden rounded-lg border border-slate-200 bg-black">
+      <div v-if="mode === 'scan'" class="mt-4 rounded-xl border border-gray-200 bg-gray-50 p-4">
+        <p class="text-xs text-gray-500">Start Scan 後請允許相機權限，掃到後會自動填入並執行 Verify。</p>
+        <div class="mt-3 overflow-hidden rounded-xl border border-gray-200 bg-black">
           <video ref="scannerVideoRef" class="h-64 w-full object-cover md:h-72" muted playsinline />
         </div>
         <div class="mt-3 flex flex-wrap gap-3">
           <button
             type="button"
-            class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-50"
+            class="btn-primary disabled:opacity-50"
             :disabled="scanning || loading"
             @click="startScan"
           >
@@ -467,7 +462,7 @@ watch(mode, (nextMode) => {
           </button>
           <button
             type="button"
-            class="rounded-lg border border-brand-600 px-4 py-2 text-sm font-semibold text-brand-700 hover:bg-brand-50 disabled:opacity-50"
+            class="btn-secondary disabled:opacity-50"
             :disabled="!scanning"
             @click="stopScan"
           >
@@ -478,28 +473,20 @@ watch(mode, (nextMode) => {
 
       <div class="mt-4 grid gap-4">
         <label class="block">
-          <span class="mb-1 block text-sm text-slate-700">Ticket ID</span>
-          <input
-            v-model="ticketId"
-            placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-            class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-brand-500"
-          />
+          <span class="mb-1 block text-sm text-gray-600">Ticket ID</span>
+          <input v-model="ticketId" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" class="input-field" />
         </label>
 
         <label class="block">
-          <span class="mb-1 block text-sm text-slate-700">QR Secret</span>
-          <input
-            v-model="qrSecret"
-            placeholder="ticket qr_secret"
-            class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-brand-500"
-          />
+          <span class="mb-1 block text-sm text-gray-600">QR Secret</span>
+          <input v-model="qrSecret" placeholder="ticket qr_secret" class="input-field" />
         </label>
       </div>
 
       <div class="mt-4 flex flex-wrap gap-3">
         <button
           type="button"
-          class="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-50"
+          class="btn-primary disabled:opacity-50"
           :disabled="loading"
           @click="verify"
         >
@@ -507,7 +494,7 @@ watch(mode, (nextMode) => {
         </button>
         <button
           type="button"
-          class="rounded-lg border border-brand-600 px-4 py-2 text-sm font-semibold text-brand-700 hover:bg-brand-50 disabled:opacity-50"
+          class="btn-secondary disabled:opacity-50"
           :disabled="!canCommit"
           @click="commit"
         >
@@ -515,12 +502,12 @@ watch(mode, (nextMode) => {
         </button>
       </div>
 
-      <p v-if="infoMessage" class="mt-4 text-sm text-emerald-700">{{ infoMessage }}</p>
-      <p v-if="errorMessage" class="mt-2 text-sm text-rose-700">{{ errorMessage }}</p>
+      <p v-if="infoMessage" role="status" class="mt-4 text-sm text-emerald-700">{{ infoMessage }}</p>
+      <p v-if="errorMessage" role="alert" class="mt-2 text-sm text-rose-700">{{ errorMessage }}</p>
 
-      <div v-if="verifySummary" class="mt-4 rounded-lg bg-slate-50 p-4">
-        <p class="text-xs font-semibold text-slate-600">Verify Summary</p>
-        <div class="mt-2 grid gap-1 text-sm text-slate-700">
+      <div v-if="verifySummary" class="mt-4 rounded-xl bg-gray-100 p-4">
+        <p class="text-xs font-semibold text-gray-500">Verify Summary</p>
+        <div class="mt-2 grid gap-1 text-sm text-gray-600">
           <p>valid: {{ verifySummary.valid }}</p>
           <p>can_checkin: {{ verifySummary.can_checkin }}</p>
           <p>status: {{ verifySummary.status ?? "-" }}</p>
@@ -530,9 +517,9 @@ watch(mode, (nextMode) => {
         </div>
       </div>
 
-      <div v-if="commitResult" class="mt-4 rounded-lg bg-slate-50 p-4">
-        <p class="text-xs font-semibold text-slate-600">Commit Result</p>
-        <pre class="mt-2 overflow-x-auto text-xs text-slate-700">{{ JSON.stringify(commitResult, null, 2) }}</pre>
+      <div v-if="commitResult" class="mt-4 rounded-xl bg-gray-100 p-4">
+        <p class="text-xs font-semibold text-gray-500">Commit Result</p>
+        <pre class="mt-2 overflow-x-auto text-xs text-gray-600 font-mono">{{ JSON.stringify(commitResult, null, 2) }}</pre>
       </div>
     </section>
   </main>

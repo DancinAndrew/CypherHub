@@ -95,19 +95,18 @@ async function submit(): Promise<void> {
 </script>
 
 <template>
-  <main class="mx-auto flex min-h-[70vh] w-full max-w-md items-center px-4 py-10">
-    <section class="w-full rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-      <h1 class="text-2xl font-bold text-slate-900">{{ title }}</h1>
-      <p class="mt-2 text-sm text-slate-600">Use Supabase Auth email/password.</p>
-      <div class="mt-3 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
+  <main class="mx-auto flex min-h-[70vh] w-full max-w-md items-center px-4 py-12 animate-fade-in">
+    <section class="card w-full p-8">
+      <h1 class="font-display text-2xl font-bold text-gray-900">{{ title }}</h1>
+      <p class="mt-2 text-sm text-gray-600">Email / 密碼登入</p>
+      <div class="mt-4 rounded-xl border border-gray-200 bg-gray-50 p-4 text-xs text-gray-600">
         <p>{{ emailHelp }}</p>
         <p>{{ passwordHelp }}</p>
-        <p>Sign Up 可能受 Supabase rate limit 影響（短時間內多次註冊會被暫時拒絕）。</p>
       </div>
 
       <form class="mt-6 space-y-4" @submit.prevent="submit">
         <label class="block">
-          <span class="mb-1 block text-sm text-slate-700">Email</span>
+          <span class="mb-2 block text-sm font-medium text-gray-700">Email</span>
           <input
             v-model="email"
             required
@@ -115,36 +114,32 @@ async function submit(): Promise<void> {
             inputmode="email"
             autocomplete="email"
             placeholder="name@example.com"
-            class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-brand-500"
+            class="input-field"
           />
         </label>
 
         <label v-if="mode !== 'forgot'" class="block">
-          <span class="mb-1 block text-sm text-slate-700">Password</span>
+          <span class="mb-2 block text-sm font-medium text-gray-700">Password</span>
           <input
             v-model="password"
             required
             type="password"
             minlength="6"
             :autocomplete="mode === 'signin' ? 'current-password' : 'new-password'"
-            placeholder="At least 6 characters"
-            class="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-brand-500"
+            placeholder="至少 6 個字元"
+            class="input-field"
           />
         </label>
 
-        <button
-          type="submit"
-          class="w-full rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-50"
-          :disabled="loading"
-        >
-          {{ loading ? "Please wait..." : mode === "forgot" ? "寄送重設密碼信" : title }}
+        <button type="submit" class="btn-primary w-full py-3" :disabled="loading">
+          {{ loading ? "處理中..." : mode === "forgot" ? "寄送重設密碼信" : title }}
         </button>
       </form>
 
-      <p v-if="mode !== 'forgot'" class="mt-2 text-right">
+      <p v-if="mode !== 'forgot'" class="mt-3 text-right">
         <button
           type="button"
-          class="text-sm text-slate-500 hover:text-brand-600"
+          class="text-sm text-gray-600 transition-colors hover:text-brand-600"
           @click="
             mode = 'forgot';
             errorMessage = null;
@@ -155,25 +150,29 @@ async function submit(): Promise<void> {
         </button>
       </p>
 
-      <p v-if="infoMessage" class="mt-4 text-sm text-emerald-700">{{ infoMessage }}</p>
-      <p v-if="errorMessage" class="mt-4 text-sm text-rose-700">{{ errorMessage }}</p>
+      <p v-if="infoMessage" role="alert" class="mt-4 rounded-lg bg-emerald-100 px-4 py-2 text-sm text-emerald-800">
+        {{ infoMessage }}
+      </p>
+      <p v-if="errorMessage" role="alert" class="mt-4 rounded-lg bg-rose-100 px-4 py-2 text-sm text-rose-800">
+        {{ errorMessage }}
+      </p>
 
       <button
         v-if="mode !== 'forgot'"
         type="button"
-        class="mt-4 text-sm font-medium text-brand-700 hover:text-brand-800"
+        class="mt-4 text-sm font-medium text-brand-600 transition-colors hover:text-brand-700"
         @click="
           mode = mode === 'signin' ? 'signup' : 'signin';
           errorMessage = null;
           infoMessage = null;
         "
       >
-        {{ mode === "signin" ? "Need an account? Sign up" : "Have an account? Sign in" }}
+        {{ mode === "signin" ? "還沒有帳號？註冊" : "已有帳號？登入" }}
       </button>
       <button
         v-else
         type="button"
-        class="mt-4 text-sm font-medium text-slate-600 hover:text-slate-800"
+        class="mt-4 text-sm font-medium text-gray-600 transition-colors hover:text-gray-600"
         @click="
           mode = 'signin';
           errorMessage = null;
