@@ -170,14 +170,14 @@ async function save(): Promise<void> {
 
 <template>
   <main class="mx-auto max-w-lg px-4 py-12">
-    <h1 class="font-display text-2xl font-bold text-gray-900">個人資料</h1>
-    <p class="mt-2 text-sm text-gray-600">編輯顯示名稱與聯絡方式（頭像可於之後版本上傳）。</p>
+    <h1 class="font-street text-3xl tracking-widest text-white">個人資料</h1>
+    <p class="mt-2 text-sm text-cypher-muted">編輯顯示名稱與聯絡方式（頭像可於之後版本上傳）。</p>
 
-    <div v-if="loading" class="mt-6 animate-pulse text-gray-500">載入中…</div>
+    <div v-if="loading" class="mt-6 animate-pulse text-cypher-muted">載入中…</div>
 
     <div v-else-if="profile" class="card mt-6 space-y-4 p-6">
       <div>
-        <label class="mb-1 block text-sm font-medium text-gray-700">顯示名稱 *</label>
+        <label class="mb-1 block text-sm font-medium text-gray-300">顯示名稱 *</label>
         <input
           v-model="displayName"
           type="text"
@@ -186,7 +186,7 @@ async function save(): Promise<void> {
         />
       </div>
       <div>
-        <label class="mb-1 block text-sm font-medium text-gray-700">手機</label>
+        <label class="mb-1 block text-sm font-medium text-gray-300">手機</label>
         <input
           v-model="phone"
           type="tel"
@@ -195,7 +195,7 @@ async function save(): Promise<void> {
         />
       </div>
       <div>
-        <label class="mb-1 block text-sm font-medium text-gray-700">Instagram</label>
+        <label class="mb-1 block text-sm font-medium text-gray-300">Instagram</label>
         <input
           v-model="socialInstagram"
           type="url"
@@ -204,7 +204,7 @@ async function save(): Promise<void> {
         />
       </div>
       <div>
-        <label class="mb-1 block text-sm font-medium text-gray-700">Facebook</label>
+        <label class="mb-1 block text-sm font-medium text-gray-300">Facebook</label>
         <input
           v-model="socialFacebook"
           type="url"
@@ -213,8 +213,8 @@ async function save(): Promise<void> {
         />
       </div>
 
-      <p v-if="message" class="text-sm text-emerald-700">{{ message }}</p>
-      <p v-if="errorMessage" class="text-sm text-rose-700">{{ errorMessage }}</p>
+      <p v-if="message" class="text-sm text-emerald-400">{{ message }}</p>
+      <p v-if="errorMessage" class="text-sm text-rose-400">{{ errorMessage }}</p>
 
       <button
         type="button"
@@ -228,44 +228,44 @@ async function save(): Promise<void> {
 
     <template v-if="authStore.isAuthenticated && !loading">
       <section class="card mt-8 p-6">
-        <h2 class="text-lg font-semibold text-gray-900">主辦方帳號</h2>
-        <p v-if="organizerSummaryLoading" class="mt-3 text-sm text-gray-500">載入中…</p>
+        <h2 class="font-street text-lg tracking-wider text-white">主辦方帳號</h2>
+        <p v-if="organizerSummaryLoading" class="mt-3 text-sm text-cypher-muted">載入中…</p>
         <p v-else-if="organizerSummaryError" class="mt-3 text-sm text-rose-400">{{ organizerSummaryError }}</p>
-        <div v-else-if="organizations.length === 0" class="mt-3 text-sm text-gray-600">尚無主辦方帳號。可至主辦方申請頁建立。</div>
+        <div v-else-if="organizations.length === 0" class="mt-3 text-sm text-gray-400">尚無主辦方帳號。可至主辦方申請頁建立。</div>
         <ul v-else class="mt-3 space-y-2">
           <li
             v-for="org in organizations"
             :key="org.id"
-            class="flex items-center justify-between rounded-xl border border-gray-200 px-3 py-2 text-sm"
+            class="flex items-center justify-between rounded-xl border border-cypher-border px-3 py-2 text-sm"
           >
-            <span class="font-medium text-gray-800">{{ org.name }}</span>
+            <span class="font-medium text-white">{{ org.name }}</span>
             <span class="badge-dance">{{ roleLabel(org.role) }}</span>
           </li>
         </ul>
         <router-link
           v-if="organizations.length > 0"
           to="/organizer"
-          class="mt-3 inline-block text-sm font-medium text-brand-600 transition-colors hover:text-brand-700"
+          class="mt-3 inline-block text-sm font-medium text-cypher-accent transition-colors hover:text-cypher-accent-pink"
         >
           前往主辦方後台 →
         </router-link>
       </section>
 
       <section class="card mt-6 p-6">
-        <h2 class="text-lg font-semibold text-gray-900">主辦方底下的活動</h2>
-        <p v-if="organizerSummaryLoading" class="mt-3 text-sm text-gray-500">載入中…</p>
-        <div v-else-if="events.length === 0" class="mt-3 text-sm text-gray-600">尚無活動，或您尚未加入任何主辦方。</div>
+        <h2 class="font-street text-lg tracking-wider text-white">主辦方底下的活動</h2>
+        <p v-if="organizerSummaryLoading" class="mt-3 text-sm text-cypher-muted">載入中…</p>
+        <div v-else-if="events.length === 0" class="mt-3 text-sm text-gray-400">尚無活動，或您尚未加入任何主辦方。</div>
         <ul v-else class="mt-3 space-y-2">
           <li
             v-for="ev in events"
             :key="ev.id"
-            class="rounded-xl border border-gray-200 px-3 py-2 text-sm"
+            class="rounded-xl border border-cypher-border px-3 py-2 text-sm"
           >
-            <router-link :to="{ name: 'event-detail', params: { eventId: ev.id } }" class="font-medium text-brand-600 transition-colors hover:text-brand-700">
+            <router-link :to="{ name: 'event-detail', params: { eventId: ev.id } }" class="font-medium text-cypher-accent transition-colors hover:text-cypher-accent-pink">
               {{ ev.title }}
             </router-link>
-            <span class="ml-2 text-gray-500">{{ formatEventDate(ev.start_at) }}</span>
-            <span class="ml-2 rounded px-1.5 py-0.5 text-xs" :class="ev.status === 'published' ? 'badge-type' : 'bg-gray-100 text-gray-600'">
+            <span class="ml-2 text-cypher-muted">{{ formatEventDate(ev.start_at) }}</span>
+            <span class="ml-2 rounded px-1.5 py-0.5 text-xs" :class="ev.status === 'published' ? 'badge-type' : 'bg-cypher-surface-alt text-cypher-muted'">
               {{ ev.status === "published" ? "已上架" : "草稿" }}
             </span>
           </li>
@@ -273,13 +273,13 @@ async function save(): Promise<void> {
         <router-link
           v-if="events.length > 0"
           to="/organizer"
-          class="mt-3 inline-block text-sm font-medium text-brand-600 transition-colors hover:text-brand-700"
+          class="mt-3 inline-block text-sm font-medium text-cypher-accent transition-colors hover:text-cypher-accent-pink"
         >
           管理活動 →
         </router-link>
       </section>
     </template>
 
-    <p v-if="!loading && !profile && !authStore.isAuthenticated" class="mt-6 text-gray-600">請先登入。</p>
+    <p v-if="!loading && !profile && !authStore.isAuthenticated" class="mt-6 text-cypher-muted">請先登入。</p>
   </main>
 </template>

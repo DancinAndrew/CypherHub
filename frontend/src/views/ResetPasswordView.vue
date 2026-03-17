@@ -46,14 +46,14 @@ async function submit(): Promise<void> {
 <template>
   <main class="mx-auto flex min-h-[70vh] w-full max-w-md items-center px-4 py-12 animate-fade-in">
     <section class="card w-full p-8">
-      <h1 class="font-display text-2xl font-bold text-gray-900">設定新密碼</h1>
-      <p class="mt-2 text-sm text-gray-600">
+      <h1 class="font-street text-3xl tracking-widest text-white">設定新密碼</h1>
+      <p class="mt-2 text-sm text-cypher-muted">
         請輸入新密碼（至少 6 個字元）。若您是從重設密碼信點連結進來，已自動登入。
       </p>
 
       <form class="mt-6 space-y-4" @submit.prevent="submit">
         <label class="block">
-          <span class="mb-2 block text-sm font-medium text-gray-700">新密碼</span>
+          <span class="mb-2 block text-sm font-medium text-gray-300">新密碼</span>
           <input
             v-model="newPassword"
             type="password"
@@ -64,7 +64,7 @@ async function submit(): Promise<void> {
           />
         </label>
         <label class="block">
-          <span class="mb-2 block text-sm font-medium text-gray-700">再輸入一次</span>
+          <span class="mb-2 block text-sm font-medium text-gray-300">再輸入一次</span>
           <input
             v-model="confirmPassword"
             type="password"
@@ -79,10 +79,10 @@ async function submit(): Promise<void> {
         </button>
       </form>
 
-      <p v-if="successMessage" role="alert" class="mt-4 rounded-lg bg-emerald-100 px-4 py-2 text-sm text-emerald-700">
+      <p v-if="successMessage" role="alert" class="mt-4 rounded-xl bg-emerald-500/20 px-4 py-2 text-sm text-emerald-400">
         {{ successMessage }}
       </p>
-      <p v-if="errorMessage" role="alert" class="mt-4 rounded-lg bg-rose-50 px-4 py-2 text-sm text-rose-700">
+      <p v-if="errorMessage" role="alert" class="mt-4 rounded-xl bg-rose-500/20 px-4 py-2 text-sm text-rose-400">
         {{ errorMessage }}
       </p>
 

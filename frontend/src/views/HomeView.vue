@@ -109,13 +109,13 @@ function formatDateShort(dateStr: string): string {
 function eventCardGradient(event: EventItem): string {
   const styles = event.dance_styles?.[0] || "default";
   const gradients: Record<string, string> = {
-    hiphop: "from-violet-600 to-purple-800",
-    popping: "from-amber-600 to-orange-700",
-    locking: "from-rose-600 to-pink-700",
-    breaking: "from-sky-600 to-blue-800",
-    house: "from-emerald-600 to-teal-700",
-    waacking: "from-fuchsia-600 to-purple-700",
-    default: "from-gray-600 to-gray-800",
+    hiphop: "from-cypher-accent via-purple-600 to-cypher-accent-pink",
+    popping: "from-cypher-accent-orange via-amber-500 to-yellow-500",
+    locking: "from-cypher-accent-pink via-rose-600 to-pink-500",
+    breaking: "from-cypher-accent-cyan via-sky-500 to-blue-600",
+    house: "from-emerald-500 via-teal-500 to-cypher-accent-cyan",
+    waacking: "from-cypher-accent-pink via-fuchsia-600 to-cypher-accent",
+    default: "from-cypher-accent via-purple-700 to-cypher-surface-alt",
   };
   return gradients[styles] ?? gradients.default;
 }
@@ -131,192 +131,221 @@ onMounted(() => {
 </script>
 
 <template>
-  <main class="mx-auto w-full max-w-6xl px-4 pb-16 pt-8 sm:pt-12">
-    <!-- Hero -->
-    <section class="mb-12">
-      <h1 class="font-display text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
-        街舞活動，從這裡開始
-      </h1>
-      <p class="mt-2 text-lg text-gray-600">
-        探索工作坊、賽事、社團與派對
-      </p>
+  <main class="relative min-h-screen overflow-hidden">
+    <!-- Hero: gradient mesh + bold typography -->
+    <section class="relative px-4 pt-16 pb-12 sm:pt-24 sm:pb-20">
+      <div class="absolute inset-0 bg-gradient-mesh" aria-hidden="true" />
+      <div class="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(168,85,247,0.25),transparent)]" aria-hidden="true" />
 
-      <!-- Search + Filter Toggle -->
-      <div class="mt-6 flex flex-col gap-4 sm:flex-row sm:items-center">
-        <div class="relative flex-1">
-          <input
-            v-model="searchQuery"
-            type="text"
-            placeholder="搜尋活動名稱、地點..."
-            class="w-full rounded-lg border border-gray-300 bg-white py-3 pl-4 pr-10 text-gray-900 placeholder-gray-400 shadow-sm outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20"
-            @keydown.enter="applyFilters"
-          />
+      <div class="relative mx-auto max-w-6xl">
+        <div class="animate-slide-up">
+          <p class="font-street text-cypher-accent-cyan text-sm uppercase tracking-[0.4em]">
+            Street Dance · 你的下一場 Battle
+          </p>
+          <h1 class="mt-4 font-street text-5xl leading-[1.05] tracking-wide text-white sm:text-7xl md:text-8xl">
+            街舞活動<br />
+            <span class="bg-gradient-to-r from-cypher-accent via-cypher-accent-pink to-cypher-accent-cyan bg-clip-text text-transparent">
+              從這裡開始
+            </span>
+          </h1>
+          <p class="mt-6 max-w-xl text-lg text-gray-400 animate-slide-up-delay">
+            工作坊 · 賽事 · 社團 · 派對 — 探索、報名、站上舞台
+          </p>
+        </div>
+
+        <!-- Search + Filter -->
+        <div class="mt-10 flex flex-col gap-4 sm:flex-row sm:items-stretch animate-slide-up-delay-2">
+          <div class="relative flex-1">
+            <input
+              v-model="searchQuery"
+              type="text"
+              placeholder="搜尋活動名稱、地點..."
+              class="input-field w-full py-3.5 pl-5 pr-28"
+              @keydown.enter="applyFilters"
+            />
+            <button
+              type="button"
+              class="btn-primary absolute right-2 top-1/2 -translate-y-1/2 py-2.5 text-sm"
+              @click="applyFilters"
+            >
+              搜尋
+            </button>
+          </div>
           <button
             type="button"
-            class="btn-primary absolute right-1.5 top-1/2 -translate-y-1/2 py-2 text-sm"
-            @click="applyFilters"
+            class="flex shrink-0 items-center justify-center gap-2 rounded-xl border border-cypher-border bg-cypher-surface px-5 py-3.5 font-medium text-gray-300 transition-all hover:border-cypher-accent/50 hover:text-white"
+            @click="filterOpen = !filterOpen"
           >
-            搜尋
+            <span class="text-lg transition-transform duration-300" :class="filterOpen ? 'rotate-180' : ''">▼</span>
+            篩選
+            <span
+              v-if="selectedStyles.length || selectedTypes.length"
+              class="rounded-full bg-cypher-accent px-2.5 py-0.5 text-xs font-bold text-white"
+            >
+              {{ selectedStyles.length + selectedTypes.length }}
+            </span>
           </button>
         </div>
-        <button
-          type="button"
-          class="flex shrink-0 items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
-          @click="filterOpen = !filterOpen"
+
+        <!-- Collapsible Filters -->
+        <Transition
+          enter-active-class="transition-all duration-300 ease-out"
+          enter-from-class="opacity-0 max-h-0"
+          enter-to-class="opacity-100 max-h-[500px]"
+          leave-active-class="transition-all duration-200 ease-in"
+          leave-from-class="opacity-100 max-h-[500px]"
+          leave-to-class="opacity-0 max-h-0"
         >
-          <span class="inline-block transition" :class="filterOpen ? 'rotate-180' : ''">▼</span>
-          篩選
-          <span v-if="selectedStyles.length || selectedTypes.length" class="rounded-full bg-brand-100 px-2 py-0.5 text-xs font-semibold text-brand-700">
-            {{ selectedStyles.length + selectedTypes.length }}
-          </span>
-        </button>
-      </div>
-
-      <!-- Collapsible Filters -->
-      <div
-        v-show="filterOpen"
-        class="mt-4 overflow-hidden rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition-all"
-      >
-        <div class="flex items-center justify-between">
-          <span class="text-sm font-medium text-gray-700">舞風 · 活動類型 · 日期</span>
-          <button
-            type="button"
-            class="text-sm font-medium text-brand-600 hover:text-brand-700"
-            @click="clearFilters"
+          <div
+            v-show="filterOpen"
+            class="mt-6 overflow-hidden rounded-2xl border border-cypher-border bg-cypher-surface/80 p-6 backdrop-blur-sm"
           >
-            清除
-          </button>
-        </div>
-        <div class="mt-4 grid gap-4 sm:grid-cols-2">
-          <div>
-            <label class="mb-1 block text-xs font-medium text-gray-500">開始日期</label>
-            <input
-              v-model="dateFrom"
-              type="date"
-              class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
-            />
+            <div class="flex items-center justify-between">
+              <span class="text-sm font-medium text-gray-300">舞風 · 活動類型 · 日期</span>
+              <button type="button" class="text-sm font-semibold text-cypher-accent hover:text-cypher-accent-pink" @click="clearFilters">
+                清除
+              </button>
+            </div>
+            <div class="mt-5 grid gap-4 sm:grid-cols-2">
+              <div>
+                <label class="mb-2 block text-xs font-medium text-cypher-muted">開始日期</label>
+                <input v-model="dateFrom" type="date" class="input-field py-2.5 text-sm" />
+              </div>
+              <div>
+                <label class="mb-2 block text-xs font-medium text-cypher-muted">結束日期</label>
+                <input v-model="dateTo" type="date" class="input-field py-2.5 text-sm" />
+              </div>
+            </div>
+            <div class="mt-5">
+              <p class="mb-3 text-xs font-medium text-cypher-muted">舞風</p>
+              <div class="flex flex-wrap gap-2">
+                <button
+                  v-for="style in DANCE_STYLES"
+                  :key="style.key"
+                  type="button"
+                  class="rounded-full px-4 py-2 text-xs font-semibold transition-all duration-200"
+                  :class="
+                    selectedStyles.includes(style.key)
+                      ? 'bg-gradient-to-r from-cypher-accent to-cypher-accent-pink text-white shadow-glow-sm'
+                      : 'bg-cypher-surface-alt text-gray-400 hover:border hover:border-cypher-accent/50 hover:text-gray-200'
+                  "
+                  @click="toggleStyle(style.key)"
+                >
+                  {{ style.label }}
+                </button>
+              </div>
+            </div>
+            <div class="mt-5">
+              <p class="mb-3 text-xs font-medium text-cypher-muted">活動類型</p>
+              <div class="flex flex-wrap gap-2">
+                <button
+                  v-for="type in EVENT_TYPES"
+                  :key="type.key"
+                  type="button"
+                  class="rounded-full px-4 py-2 text-xs font-semibold transition-all duration-200"
+                  :class="
+                    selectedTypes.includes(type.key)
+                      ? 'bg-cypher-accent-pink text-white'
+                      : 'bg-cypher-surface-alt text-gray-400 hover:border hover:border-cypher-accent-pink/50 hover:text-gray-200'
+                  "
+                  @click="toggleType(type.key)"
+                >
+                  {{ type.label }}
+                </button>
+              </div>
+            </div>
           </div>
-          <div>
-            <label class="mb-1 block text-xs font-medium text-gray-500">結束日期</label>
-            <input
-              v-model="dateTo"
-              type="date"
-              class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
-            />
-          </div>
-        </div>
-        <div class="mt-4">
-          <p class="mb-2 text-xs font-medium text-gray-500">舞風</p>
-          <div class="flex flex-wrap gap-2">
-            <button
-              v-for="style in DANCE_STYLES"
-              :key="style.key"
-              type="button"
-              class="rounded-full px-3 py-1.5 text-xs font-medium transition"
-              :class="
-                selectedStyles.includes(style.key)
-                  ? 'bg-brand-600 text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              "
-              @click="toggleStyle(style.key)"
-            >
-              {{ style.label }}
-            </button>
-          </div>
-        </div>
-        <div class="mt-4">
-          <p class="mb-2 text-xs font-medium text-gray-500">活動類型</p>
-          <div class="flex flex-wrap gap-2">
-            <button
-              v-for="type in EVENT_TYPES"
-              :key="type.key"
-              type="button"
-              class="rounded-full px-3 py-1.5 text-xs font-medium transition"
-              :class="
-                selectedTypes.includes(type.key)
-                  ? 'bg-emerald-600 text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              "
-              @click="toggleType(type.key)"
-            >
-              {{ type.label }}
-            </button>
-          </div>
-        </div>
+        </Transition>
       </div>
     </section>
 
     <!-- Events List -->
-    <section>
-      <h2 class="mb-6 font-display text-xl font-semibold text-gray-900">
-        所有活動
-      </h2>
+    <section class="relative px-4 pb-24 pt-4">
+      <div class="mx-auto max-w-6xl">
+        <h2 class="mb-8 font-street text-3xl tracking-wider text-white sm:text-4xl">
+          <span class="text-cypher-muted">//</span> 所有活動
+        </h2>
 
-      <div v-if="loading" class="flex flex-col items-center justify-center py-16">
-        <span class="h-8 w-8 animate-spin rounded-full border-2 border-brand-500 border-t-transparent" />
-        <p class="mt-3 text-gray-500">載入活動中...</p>
-      </div>
+        <div v-if="loading" class="flex flex-col items-center justify-center py-24">
+          <div class="h-12 w-12 animate-spin rounded-full border-2 border-cypher-accent border-t-transparent" />
+          <p class="mt-5 font-medium text-cypher-muted">載入活動中...</p>
+        </div>
 
-      <div v-else-if="errorMessage" class="rounded-xl border border-rose-200 bg-rose-50 p-6 text-rose-700">
-        {{ errorMessage }}
-      </div>
-
-      <div v-else-if="events.length === 0" class="rounded-xl border border-gray-200 bg-white py-16 text-center text-gray-500">
-        目前沒有符合條件的活動
-      </div>
-
-      <div v-else class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        <RouterLink
-          v-for="event in events"
-          :key="event.id"
-          :to="{ name: 'event-detail', params: { eventId: event.id } }"
-          class="group overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-all hover:border-gray-300 hover:shadow-md"
+        <div
+          v-else-if="errorMessage"
+          class="rounded-2xl border border-rose-500/50 bg-rose-950/50 p-8 text-center text-rose-300"
         >
-          <!-- Image placeholder (Eventbrite-style: image first) -->
-          <div
-            class="relative aspect-[16/9] w-full shrink-0"
-            :class="`bg-gradient-to-br ${eventCardGradient(event)}`"
-          >
-            <div class="absolute inset-0 flex items-center justify-center opacity-30">
-              <svg class="h-16 w-16 text-white" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-              </svg>
-            </div>
-            <span
-              class="absolute left-3 top-3 rounded-md bg-white/95 px-2.5 py-1 text-xs font-semibold text-gray-800 shadow"
-            >
-              {{ formatDateShort(event.start_at) }}
-            </span>
-          </div>
+          {{ errorMessage }}
+        </div>
 
-          <div class="p-4">
-            <h3 class="font-display line-clamp-2 text-lg font-semibold text-gray-900 group-hover:text-brand-600">
-              {{ event.title }}
-            </h3>
-            <p class="mt-1 line-clamp-2 text-sm text-gray-600">
-              {{ event.short_desc || event.description || "無描述" }}
-            </p>
-            <p class="mt-2 text-xs text-gray-500">
-              {{ event.location_name || "地點待定" }}
-            </p>
-            <div class="mt-3 flex flex-wrap gap-1.5">
+        <div
+          v-else-if="events.length === 0"
+          class="rounded-2xl border border-cypher-border bg-cypher-surface py-24 text-center text-cypher-muted"
+        >
+          目前沒有符合條件的活動
+        </div>
+
+        <div v-else class="grid gap-8 sm:grid-cols-2 lg:grid-cols-3">
+          <RouterLink
+            v-for="(event, idx) in events"
+            :key="event.id"
+            :to="{ name: 'event-detail', params: { eventId: event.id } }"
+            class="group relative overflow-hidden rounded-2xl border border-cypher-border bg-cypher-surface transition-all duration-300 hover:scale-[1.02] hover:border-cypher-accent/50 hover:shadow-glow-sm"
+            :style="{ animationDelay: `${idx * 0.05}s` }"
+          >
+            <!-- Card Image -->
+            <div
+              class="relative aspect-[16/9] w-full overflow-hidden"
+              :class="`bg-gradient-to-br ${eventCardGradient(event)}`"
+            >
+              <div class="absolute inset-0 bg-gradient-to-t from-cypher-bg/90 via-transparent to-transparent" />
+              <div class="absolute inset-0 flex items-center justify-center opacity-20 transition-opacity group-hover:opacity-40">
+                <svg class="h-20 w-20 text-white" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+                </svg>
+              </div>
               <span
-                v-for="style in (event.dance_styles || []).slice(0, 2)"
-                :key="style"
-                class="rounded-full bg-brand-50 px-2 py-0.5 text-[11px] font-medium text-brand-700"
+                class="absolute left-4 top-4 rounded-lg border border-white/30 bg-black/40 px-3 py-1.5 text-xs font-bold text-white backdrop-blur-sm"
               >
-                {{ styleLabelFromKey(style) }}
+                {{ formatDateShort(event.start_at) }}
               </span>
               <span
-                v-for="type in (event.event_types || []).slice(0, 1)"
-                :key="type"
-                class="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700"
+                class="absolute bottom-4 right-4 rounded-md bg-cypher-accent/90 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white opacity-0 transition-all duration-300 group-hover:opacity-100"
               >
-                {{ eventTypeLabelFromKey(type) }}
+                查看 →
               </span>
             </div>
-          </div>
-        </RouterLink>
+
+            <div class="p-5">
+              <h3 class="font-display line-clamp-2 text-xl font-bold text-white transition-colors group-hover:text-cypher-accent-cyan">
+                {{ event.title }}
+              </h3>
+              <p class="mt-2 line-clamp-2 text-sm text-gray-400">
+                {{ event.short_desc || event.description || "無描述" }}
+              </p>
+              <p class="mt-3 flex items-center gap-1.5 text-xs text-cypher-muted">
+                <span class="inline-block h-1 w-1 rounded-full bg-cypher-accent" />
+                {{ event.location_name || "地點待定" }}
+              </p>
+              <div class="mt-4 flex flex-wrap gap-2">
+                <span
+                  v-for="style in (event.dance_styles || []).slice(0, 2)"
+                  :key="style"
+                  class="badge-dance"
+                >
+                  {{ styleLabelFromKey(style) }}
+                </span>
+                <span
+                  v-for="type in (event.event_types || []).slice(0, 1)"
+                  :key="type"
+                  class="badge-type"
+                >
+                  {{ eventTypeLabelFromKey(type) }}
+                </span>
+              </div>
+            </div>
+          </RouterLink>
+        </div>
       </div>
     </section>
   </main>

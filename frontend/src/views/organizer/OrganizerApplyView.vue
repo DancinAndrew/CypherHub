@@ -69,24 +69,24 @@ async function submit() {
       <router-link to="/organizer" class="link-back">← 回主辦方主頁</router-link>
     </div>
 
-    <h1 class="font-display text-3xl font-bold tracking-tight text-gray-900">步驟 1：申請成為主辦方</h1>
-    <p class="mt-2 text-gray-500">填寫主辦方資料即可建立（目前免審核）。</p>
+    <h1 class="font-street text-3xl tracking-widest text-white">步驟 1：申請成為主辦方</h1>
+    <p class="mt-2 text-cypher-muted">填寫主辦方資料即可建立（目前免審核）。</p>
 
     <div class="card mt-6 space-y-4 p-6">
       <div>
-        <label class="mb-1 block text-sm font-medium text-gray-700">主辦方名稱 *</label>
+        <label class="mb-1 block text-sm font-medium text-gray-300">主辦方名稱 *</label>
         <input v-model="form.name" placeholder="例如：街舞工作室" class="input-field" />
       </div>
       <div>
-        <label class="mb-1 block text-sm font-medium text-gray-700">聯絡信箱</label>
+        <label class="mb-1 block text-sm font-medium text-gray-300">聯絡信箱</label>
         <input v-model="form.contact_email" type="email" placeholder="contact@example.com" class="input-field" />
       </div>
       <div>
-        <label class="mb-1 block text-sm font-medium text-gray-700">Logo URL</label>
+        <label class="mb-1 block text-sm font-medium text-gray-300">Logo URL</label>
         <input v-model="form.logo_url" placeholder="https://..." class="input-field" />
       </div>
       <div>
-        <label class="mb-1 block text-sm font-medium text-gray-700">簡介</label>
+        <label class="mb-1 block text-sm font-medium text-gray-300">簡介</label>
         <textarea
           v-model="form.description"
           rows="3"
@@ -105,7 +105,7 @@ async function submit() {
 
     <p class="mt-4 text-center text-sm text-gray-500">
       已有主辦方？
-      <router-link to="/organizer/events/create" class="text-brand-400 transition-colors hover:text-brand-700">直接建立活動</router-link>
+      <router-link to="/organizer/events/create" class="text-cypher-accent transition-colors hover:text-cypher-accent-pink">直接建立活動</router-link>
     </p>
   </main>
 </template>

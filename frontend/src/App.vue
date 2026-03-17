@@ -29,48 +29,48 @@ function clearError() {
 </script>
 
 <template>
-  <div class="min-h-screen bg-slate-50">
+  <div class="min-h-screen bg-cypher-bg">
     <a
       href="#main-content"
-      class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-brand-600 focus:px-4 focus:py-2 focus:text-white focus:outline-none focus:ring-2 focus:ring-brand-400"
+      class="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-cypher-accent focus:px-4 focus:py-2 focus:text-white focus:outline-none focus:ring-2 focus:ring-cypher-accent-pink"
     >
       跳至主內容
     </a>
-    <header class="sticky top-0 z-50 border-b border-gray-200 bg-white/95 backdrop-blur-sm">
-      <nav class="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-3">
-        <div class="flex items-center gap-8">
+    <header class="sticky top-0 z-50 border-b border-white/10 bg-cypher-bg/90 backdrop-blur-xl transition-all duration-300">
+      <nav class="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-4">
+        <div class="flex items-center gap-10">
           <RouterLink
             :to="{ name: 'home' }"
-            class="font-display text-lg font-bold tracking-tight text-gray-900 transition-colors hover:text-brand-600"
+            class="font-street text-2xl tracking-[0.2em] text-white transition-all duration-300 hover:text-cypher-accent-pink hover:tracking-[0.25em]"
           >
-            CypherHub
+            CYPHERHUB
           </RouterLink>
-          <div class="hidden items-center gap-6 md:flex">
+          <div class="hidden items-center gap-8 md:flex">
             <RouterLink
               :to="{ name: 'my-tickets' }"
-              class="text-sm font-medium text-gray-600 transition-colors hover:text-gray-900"
+              class="text-sm font-medium text-gray-400 transition-colors hover:text-cypher-accent-cyan"
             >
               My Tickets
             </RouterLink>
             <RouterLink
               :to="{ name: 'profile' }"
-              class="text-sm font-medium text-gray-600 transition-colors hover:text-gray-900"
+              class="text-sm font-medium text-gray-400 transition-colors hover:text-cypher-accent-cyan"
             >
               個人資料
             </RouterLink>
             <RouterLink
               :to="{ name: 'organizer-home' }"
-              class="text-sm font-medium text-gray-600 transition-colors hover:text-gray-900"
+              class="text-sm font-medium text-gray-400 transition-colors hover:text-cypher-accent-cyan"
             >
               Organizer
             </RouterLink>
           </div>
         </div>
 
-        <div class="flex items-center gap-3">
+        <div class="flex items-center gap-4">
           <p
             v-if="authStore.user"
-            class="hidden max-w-[140px] truncate text-xs text-gray-500 md:block"
+            class="hidden max-w-[140px] truncate text-xs text-cypher-muted md:block"
           >
             {{ authStore.user.email }}
           </p>
@@ -93,14 +93,14 @@ function clearError() {
       </nav>
     </header>
 
-    <main id="main-content" class="relative min-h-[calc(100vh-3.5rem)]" tabindex="-1">
+    <main id="main-content" class="relative min-h-[calc(100vh-4rem)]" tabindex="-1">
       <div v-if="captureError" class="mx-auto max-w-2xl p-6">
-        <div class="rounded-xl border border-rose-200 bg-rose-50 p-6">
-          <p class="font-display font-semibold text-rose-800">頁面載入錯誤</p>
-          <p class="mt-2 text-sm text-rose-800">{{ captureError.message }}</p>
+        <div class="rounded-xl border border-rose-500/50 bg-rose-950/80 p-6 backdrop-blur-sm">
+          <p class="font-display font-semibold text-rose-300">頁面載入錯誤</p>
+          <p class="mt-2 text-sm text-rose-200">{{ captureError.message }}</p>
           <RouterLink
             to="/"
-            class="mt-4 inline-block rounded-lg bg-rose-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-rose-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-500"
+            class="mt-4 inline-block rounded bg-rose-500 px-4 py-2.5 text-sm font-semibold text-white transition-all hover:bg-rose-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-400"
             @click="clearError"
           >
             返回首頁

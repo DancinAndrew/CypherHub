@@ -97,16 +97,16 @@ async function submit(): Promise<void> {
 <template>
   <main class="mx-auto flex min-h-[70vh] w-full max-w-md items-center px-4 py-12 animate-fade-in">
     <section class="card w-full p-8">
-      <h1 class="font-display text-2xl font-bold text-gray-900">{{ title }}</h1>
-      <p class="mt-2 text-sm text-gray-600">Email / 密碼登入</p>
-      <div class="mt-4 rounded-xl border border-gray-200 bg-gray-50 p-4 text-xs text-gray-600">
+      <h1 class="font-street text-3xl tracking-widest text-white">{{ title }}</h1>
+      <p class="mt-2 text-sm text-cypher-muted">Email / 密碼登入</p>
+      <div class="mt-4 rounded-xl border border-cypher-border bg-cypher-surface-alt/50 p-4 text-xs text-gray-400">
         <p>{{ emailHelp }}</p>
         <p>{{ passwordHelp }}</p>
       </div>
 
       <form class="mt-6 space-y-4" @submit.prevent="submit">
         <label class="block">
-          <span class="mb-2 block text-sm font-medium text-gray-700">Email</span>
+          <span class="mb-2 block text-sm font-medium text-gray-300">Email</span>
           <input
             v-model="email"
             required
@@ -119,7 +119,7 @@ async function submit(): Promise<void> {
         </label>
 
         <label v-if="mode !== 'forgot'" class="block">
-          <span class="mb-2 block text-sm font-medium text-gray-700">Password</span>
+          <span class="mb-2 block text-sm font-medium text-gray-300">Password</span>
           <input
             v-model="password"
             required
@@ -139,7 +139,7 @@ async function submit(): Promise<void> {
       <p v-if="mode !== 'forgot'" class="mt-3 text-right">
         <button
           type="button"
-          class="text-sm text-gray-600 transition-colors hover:text-brand-600"
+          class="text-sm text-cypher-muted transition-colors hover:text-cypher-accent"
           @click="
             mode = 'forgot';
             errorMessage = null;
@@ -150,17 +150,17 @@ async function submit(): Promise<void> {
         </button>
       </p>
 
-      <p v-if="infoMessage" role="alert" class="mt-4 rounded-lg bg-emerald-100 px-4 py-2 text-sm text-emerald-800">
+      <p v-if="infoMessage" role="alert" class="mt-4 rounded-xl bg-emerald-500/20 px-4 py-2 text-sm text-emerald-400">
         {{ infoMessage }}
       </p>
-      <p v-if="errorMessage" role="alert" class="mt-4 rounded-lg bg-rose-100 px-4 py-2 text-sm text-rose-800">
+      <p v-if="errorMessage" role="alert" class="mt-4 rounded-xl bg-rose-500/20 px-4 py-2 text-sm text-rose-400">
         {{ errorMessage }}
       </p>
 
       <button
         v-if="mode !== 'forgot'"
         type="button"
-        class="mt-4 text-sm font-medium text-brand-600 transition-colors hover:text-brand-700"
+        class="mt-4 text-sm font-medium text-cypher-accent transition-colors hover:text-cypher-accent-pink"
         @click="
           mode = mode === 'signin' ? 'signup' : 'signin';
           errorMessage = null;
@@ -172,7 +172,7 @@ async function submit(): Promise<void> {
       <button
         v-else
         type="button"
-        class="mt-4 text-sm font-medium text-gray-600 transition-colors hover:text-gray-600"
+        class="mt-4 text-sm font-medium text-cypher-muted transition-colors hover:text-cypher-accent link-back"
         @click="
           mode = 'signin';
           errorMessage = null;
