@@ -169,6 +169,17 @@
 - **JWT 驗證**：Backend 必須驗 JWT（JWKS）或將 JWT 帶入 Supabase；`user_id` 僅從 token 解析，**禁止信任 client 傳入**
 - **錯誤格式**：`{ "error": { "code": "...", "message": "...", "details": ... } }`
 
+### 架構擴充評估（API 層）
+
+> **目前**：全程 REST API，單一 Flask 後端對前端。無規劃 GraphQL。
+>
+> **未來可擴充時機**：若出現以下情況，建議重新評估是否引入 **GraphQL** 或 **BFF + 彈性查詢**（不一定要換掉 REST，可並存或僅對特定情境加一層）：
+> - **一頁多資源**：同一畫面需湊齊多個資源（例如活動詳情 = 活動 + 主辦方 + 同主辦方其他活動 + 票種 + 表單 + 圖片），若目前需多次 REST 請求且難以合併成單一 endpoint，可評估用 GraphQL 一次 query 指定形狀，減少 round-trip 與 over-fetch。
+> - **Admin / 報表 endpoint 過多**：全站訂單、銷售概覽、時間序列、匯出等列表與報表形狀各異，REST 容易變成大量類似 endpoint 或胖 API；可評估以單一 GraphQL schema 讓各畫面自訂查詢欄位與篩選。
+> - **多 client 需不同資料形狀**：若有第三方、App 或對外 API 要讀同一套資料但各自要不同欄位，可評估 GraphQL 讓 client 自訂查詢，避免為每個 client 加參數或 endpoint。
+>
+> **建議**：做到 **MVP-3.4（平台治理與進階報表）** 或開始實作 **Admin 全站查詢／多種報表** 時，做一次「是否引入 GraphQL/BFF」的評估；若當時 REST endpoint 已明顯膨脹或一頁多請求成常態，再決定是否擴充。
+
 ### 完整 RBAC（角色與權限，來自 note.md）
 
 | 角色 | 檢視邊界 | 可執行操作 |
@@ -656,6 +667,8 @@
 
 **Done 條件**：Critical 操作寫入 audit_logs；Admin 有全站查詢與 Comp；平台設定與進階報表可選實作。
 
+**架構提醒**：實作本階段「全站訂單總覽、進階分析報表、多種匯出」時，若發現 REST endpoint 數量或單一胖 API 參數過多，請回到 [架構擴充評估（API 層）](#架構擴充評估api-層) 做一次是否引入 GraphQL 或 BFF 的評估。
+
 ---
 
 ## MVP-3.5 使用者端擴充（來自 note.md M3）⬜
@@ -820,6 +833,7 @@
 
 3. **MVP-3** 依序  
    - 3.1 成員權限 → 3.2 審核 → 3.3 結算提款 → 3.4 Audit 與治理  
+   - 進入 3.4 時可一併評估 [架構擴充（GraphQL/BFF）](#架構擴充評估api-層) 是否納入  
 
 4. **上線前：Phase SEC 資安驗證**（見 [Phase SEC](#phase-sec上線前資安驗證)）  
    - SEC-4 → SEC-3 → SEC-2 → SEC-1，完成檢查清單後再對外開放  
