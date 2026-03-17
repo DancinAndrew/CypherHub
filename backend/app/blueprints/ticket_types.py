@@ -16,6 +16,7 @@ from app.domain.schemas import (
     OrganizerEventDetailResponse,
     TicketTypeResponse,
     UpdateEventRequest,
+    UpdateTicketTypeRequest,
     UpsertEventFormRequest,
 )
 from app.services.auth_service import require_auth
@@ -135,6 +136,36 @@ def create_ticket_type(event_id: str) -> tuple[dict, int]:
     )
     payload = TicketTypeResponse(**ticket_type)
     return jsonify({"ticket_type": payload.model_dump(mode="json")}), 201
+
+
+@bp.patch("/events/<event_id>/ticket-types/<ticket_type_id>")
+@require_auth
+def patch_ticket_type(event_id: str, ticket_type_id: str) -> tuple[dict, int]:
+    event_uuid = parse_uuid(event_id, "event_id")
+    ticket_type_uuid = parse_uuid(ticket_type_id, "ticket_type_id")
+    request_model = parse_json(UpdateTicketTypeRequest)
+
+    ticket_type = events_service.update_ticket_type(
+        jwt=g.jwt,
+        event_id=event_uuid,
+        ticket_type_id=ticket_type_uuid,
+        payload=request_model.model_dump(mode="json", exclude_none=True),
+    )
+    payload = TicketTypeResponse(**ticket_type)
+    return jsonify({"ticket_type": payload.model_dump(mode="json")}), 200
+
+
+@bp.delete("/events/<event_id>/ticket-types/<ticket_type_id>")
+@require_auth
+def delete_ticket_type(event_id: str, ticket_type_id: str) -> tuple[dict, int]:
+    event_uuid = parse_uuid(event_id, "event_id")
+    ticket_type_uuid = parse_uuid(ticket_type_id, "ticket_type_id")
+    events_service.delete_ticket_type(
+        jwt=g.jwt,
+        event_id=event_uuid,
+        ticket_type_id=ticket_type_uuid,
+    )
+    return jsonify({"ok": True}), 204
 
 
 @bp.get("/events/<event_id>/attendees")

@@ -32,11 +32,34 @@ class SupabaseClientWrapper:
         self._initialized = True
 
     @staticmethod
+    def _email_from_user_like(obj: dict) -> str | None:
+        """Extract email from a user-like dict: email key or identities[].identity_data.email."""
+        if not isinstance(obj, dict):
+            return None
+        email = (obj.get("email") or "").strip()
+        if email:
+            return email
+        for ident in obj.get("identities") or []:
+            if not isinstance(ident, dict):
+                continue
+            id_data = ident.get("identity_data") or {}
+            if isinstance(id_data, dict):
+                em = (id_data.get("email") or "").strip()
+                if em:
+                    return em
+        return None
+
+    @staticmethod
     def get_user_email_by_id(user_id: str) -> str | None:
-        """Resolve user email by id via Auth Admin API (requires SUPABASE_SERVICE_ROLE_KEY)."""
+        """Resolve user email by id via Auth Admin API (requires SUPABASE_SERVICE_ROLE_KEY).
+        Handles both response shapes: { \"user\": {...} } or top-level user object.
+        """
         url = current_app.config.get("SUPABASE_URL", "").rstrip("/")
         key = current_app.config.get("SUPABASE_SERVICE_ROLE_KEY", "").strip()
         if not url or not key:
+            current_app.logger.warning(
+                "[auth] get_user_email_by_id: SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY not set, cannot resolve email by user_id"
+            )
             return None
         req = urllib.request.Request(
             f"{url}/auth/v1/admin/users/{user_id}",
@@ -46,11 +69,13 @@ class SupabaseClientWrapper:
         try:
             with urllib.request.urlopen(req, timeout=10) as resp:
                 data = json.loads(resp.read().decode())
-            user = data.get("user") if isinstance(data, dict) else None
-            if isinstance(user, dict):
-                return user.get("email") or None
-            return None
-        except Exception:
+            if not isinstance(data, dict):
+                return None
+            # Some versions return { "user": {...} }, others return the user at top level
+            user = data.get("user") if data.get("user") is not None else data
+            return SupabaseClientWrapper._email_from_user_like(user)
+        except Exception as exc:
+            current_app.logger.warning("[auth] get_user_email_by_id failed for %s: %s", user_id, exc)
             return None
 
     @property

@@ -674,6 +674,30 @@ class EventsService:
             ticket = rows[0]
             user_id = str(ticket.get("user_id", ""))
             to_email = supabase_client.get_user_email_by_id(user_id)
+            if not to_email or not to_email.strip():
+                # Fallback: email from registration form answers (e.g. 報名表單有 email 欄位且參加者有填)
+                try:
+                    ans_resp = (
+                        client.table("ticket_form_responses")
+                        .select("answers")
+                        .eq("ticket_id", str(ticket_id))
+                        .eq("event_id", str(event_id))
+                        .limit(1)
+                        .execute()
+                    )
+                    ans_rows = supabase_client.extract_data(ans_resp) or []
+                    answers = (ans_rows[0] or {}).get("answers") if ans_rows else {}
+                    if isinstance(answers, dict):
+                        to_email = (answers.get("email") or answers.get("信箱") or "").strip()
+                except Exception:
+                    to_email = ""
+            if not to_email or not to_email.strip():
+                raise AppError(
+                    code="ATTENDEE_NO_EMAIL",
+                    message="該參加者帳號無信箱，無法重寄票券",
+                    details={"ticket_id": str(ticket_id), "user_id": user_id},
+                    http_status=400,
+                )
             event_title = self.get_event_title(event_id)
             frontend_base_url = current_app.config.get("FRONTEND_BASE_URL", "http://localhost:5173")
             email_service.send_ticket_email(to_email, event_title, ticket, frontend_base_url)
