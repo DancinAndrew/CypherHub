@@ -1,6 +1,6 @@
 # CypherHub - 街舞活動整合平台
 
-專為街舞圈打造的**活動資訊整合與售票平台**（街舞版 Accupass）：主辦方發活動、設票種與報名表單，使用者報名取得票券與 QR，主辦方核銷入場。MVP 階段規劃與未實作功能詳見 [docs/develop.md](docs/develop.md)。
+專為街舞圈打造的**活動資訊整合與售票平台**（街舞版 Accupass）：主辦方發活動、設票種與報名表單，使用者報名取得票券與 QR，主辦方核銷入場。MVP 階段規劃與未實作功能詳見 [docs/development/develop.md](docs/development/develop.md)。
 
 ---
 
@@ -21,7 +21,7 @@
 
 - **一般使用者**：瀏覽首頁活動 → 點活動詳情 → 登入後報名（免費）→ 在「我的票券」取得 QR → 活動當天出示給主辦核銷。
 - **主辦方**：申請主辦方 → 建立活動與票種、設定報名表單 → 活動當天在核銷頁掃碼或手動輸入完成入場。
-- **開發/部署**：見下方 Quick Start 與 [docs/local-cloud-switch.md](docs/local-cloud-switch.md)（本地 Supabase vs 雲端 Supabase 切換）。
+- **開發/部署**：見下方 Quick Start 與 [docs/setup/local-cloud-switch.md](docs/setup/local-cloud-switch.md)（本地 Supabase vs 雲端 Supabase 切換）。
 
 ---
 
@@ -33,11 +33,11 @@
 | **Frontend** | Vue 3、Vite、TypeScript、Vue Router、Pinia、TailwindCSS、Axios、@supabase/supabase-js、qrcode.vue、@zxing/browser（QR 掃碼） |
 | **Infra / DB** | Docker Compose、Supabase（Postgres + Auth + Storage + RLS + RPC） |
 
-依功能對應的推薦工具（郵件、金流、監控、部署等）與未實作功能的替代方案見 [docs/Tools.md](docs/Tools.md) 與 [docs/develop.md](docs/develop.md#推薦套件與工具對照-toolsmd)。
+依功能對應的推薦工具（郵件、金流、監控、部署等）與未實作功能的替代方案見 [docs/development/Tools.md](docs/development/Tools.md) 與 [docs/development/develop.md](docs/development/develop.md#推薦套件與工具對照-toolsmd)。
 
 ## Quickstart (Docker-first)
 
-專案支援 **本地** 與 **雲端** Supabase，可依情境切換。詳見 [docs/local-cloud-switch.md](docs/local-cloud-switch.md)。
+專案支援 **本地** 與 **雲端** Supabase，可依情境切換。詳見 [docs/setup/local-cloud-switch.md](docs/setup/local-cloud-switch.md)。
 
 ### 方案 A：本地 Supabase（開發測試用）
 
@@ -373,7 +373,7 @@ curl -sS http://localhost:8000/api/v1/me/tickets
 ## Environment Variables & Migrations
 
 - **環境變數**：範本為 `backend/.env.example`、`frontend/.env.example`；本地/雲端切換時由 `use-local-supabase.sh` 或 `use-cloud-supabase.sh` 複製對應 `.env.local.example` / `.env.cloud.example`。勿提交真實 secrets。
-- **Migrations（MVP-1）**：見下方清單與套用方式；開發階段與 DB 設計詳見 [docs/develop.md](docs/develop.md)。
+- **Migrations（MVP-1）**：見下方清單與套用方式；開發階段與 DB 設計詳見 [docs/development/develop.md](docs/development/develop.md)。
 
 ### Supabase Migrations 清單
 
@@ -484,7 +484,7 @@ supabase db diff --linked > supabase/drift_check.sql
 
 ## 參考
 
-- [docs/develop.md](docs/develop.md) — 開發路線圖、MVP 階段、推薦套件與未實作功能替代方案
-- [docs/Tools.md](docs/Tools.md) — 金流／郵件／監控／部署等工具選單
-- [docs/local-cloud-switch.md](docs/local-cloud-switch.md) — 本地與雲端 Supabase 切換
+- [docs/development/develop.md](docs/development/develop.md) — 開發路線圖、MVP 階段、推薦套件與未實作功能替代方案
+- [docs/development/Tools.md](docs/development/Tools.md) — 金流／郵件／監控／部署等工具選單
+- [docs/setup/local-cloud-switch.md](docs/setup/local-cloud-switch.md) — 本地與雲端 Supabase 切換
 - [AGENTS.md](AGENTS.md) — 專案規範與 API
