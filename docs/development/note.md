@@ -22,4 +22,4 @@
   - 產品分析（可選）：PostHog — 事件、漏斗、Session 錄影
   - 儀表板：個人專案用 UptimeRobot + Sentry 內建頁面即可；要自建再考慮 Grafana
 
-工具細節與對照見 [docs/Tools.md](docs/Tools.md)、[docs/develop.md](docs/develop.md) 推薦套件章節。
+工具細節與對照見 [Tools.md](./Tools.md)、[develop.md](./develop.md) 推薦套件章節。

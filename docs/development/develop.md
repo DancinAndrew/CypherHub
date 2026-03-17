@@ -54,13 +54,13 @@
 | 套用 migrations（雲端） | `./scripts/push-to-cloud.sh` | `supabase db push` 到 Cloud |
 | Cloud 種子資料 | `python scripts/seed-cloud-test-data.py` | 需已填入 Cloud 的 `SUPABASE_SERVICE_ROLE_KEY` |
 
-詳見 [local-cloud-switch.md](./local-cloud-switch.md)。
+詳見 [local-cloud-switch.md](../setup/local-cloud-switch.md)。
 
 ---
 
 ## 推薦套件與工具（對照 [Tools.md](./Tools.md)）
 
-> 能用現成套件/服務就不手刻，以下對應 [docs/Tools.md](./Tools.md) 工具選單與 CypherHub 功能。
+> 能用現成套件/服務就不手刻，以下對應 [Tools.md](./Tools.md) 工具選單與 CypherHub 功能。
 
 ### Tools.md 工具 → 功能對照（建議採用）
 
@@ -97,7 +97,7 @@
 | **監控** | **UptimeRobot** + **Sentry** | UptimeRobot 對 API 與前端 URL 做 HTTP 偵測、斷線告警；Sentry 收前/後端 exception、release 對應。個人專案兩者內建頁面即夠用，不需自建 Grafana |
 | **分析（可選）** | **PostHog** | 事件、漏斗、Session 錄影；見 Tools.md |
 
-細節與待研究清單見 [note.md](../note.md)。
+細節與待研究清單見 [note.md](./note.md)。
 
 ---
 
@@ -959,8 +959,8 @@
 
 # 參考文件
 
-- [AGENTS.md](../AGENTS.md) - 專案規範、API、Supabase、防超賣
+- [AGENTS.md](../../AGENTS.md) - 專案規範、API、Supabase、防超賣
 - [Tools.md](./Tools.md) - 工具選單（金流、郵件、監控、部署等）
 - [ChatGPT-CypherHubCypherHub.md](../ChatGPT-CypherHubCypherHub.md) - 進度總覽
-- [note.md](../note.md) - M1/M2/M3 細項
-- [verification-report.md](./verification-report.md) - 功能驗證對照
+- [note.md](./note.md) - M1/M2/M3 細項
+- [verification-report.md](../verification/verification-report.md) - 功能驗證對照
