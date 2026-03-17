@@ -22,6 +22,11 @@ class HealthResponse(BaseModel):
     status: str
 
 
+class LoginRequest(BaseModel):
+    email: str = Field(min_length=1)
+    password: str = Field(min_length=1)
+
+
 class DanceStyle(str, Enum):
     hiphop = "hiphop"
     popping = "popping"

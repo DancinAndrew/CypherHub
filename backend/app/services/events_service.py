@@ -424,7 +424,23 @@ class EventsService:
             )
             event_media = supabase_client.extract_data(media_response) or []
 
-            return {"event": event_rows[0], "internal_note": note, "event_media": event_media}
+            ticket_types_response = (
+                client.table("ticket_types")
+                .select(
+                    "id,event_id,name,description,price_cents,currency,capacity,sold_count,per_user_limit,sale_start_at,sale_end_at,is_active"
+                )
+                .eq("event_id", str(event_id))
+                .order("created_at", desc=False)
+                .execute()
+            )
+            ticket_types = supabase_client.extract_data(ticket_types_response) or []
+
+            return {
+                "event": event_rows[0],
+                "internal_note": note,
+                "event_media": event_media,
+                "ticket_types": ticket_types,
+            }
         except AppError:
             raise
         except Exception as exc:

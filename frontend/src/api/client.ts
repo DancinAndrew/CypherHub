@@ -162,6 +162,7 @@ export type OrganizerEventDetail = {
   event: EventItem;
   internal_note: string;
   event_media?: EventMediaItem[];
+  ticket_types?: TicketType[];
 };
 
 export type TicketItem = {
@@ -220,6 +221,30 @@ export async function cancelTicket(ticketId: string): Promise<void> {
   await client.delete(`/api/v1/me/tickets/${ticketId}`);
 }
 
+export type MyOrganizerOrg = {
+  id: string;
+  name: string;
+  role: string;
+};
+
+export type MyOrganizerEvent = {
+  id: string;
+  org_id: string;
+  title: string;
+  status: string;
+  start_at: string | null;
+};
+
+export type MyOrganizerSummary = {
+  organizations: MyOrganizerOrg[];
+  events: MyOrganizerEvent[];
+};
+
+export async function fetchMyOrganizerSummary(): Promise<MyOrganizerSummary> {
+  const response = await client.get<MyOrganizerSummary>("/api/v1/me/organizer-summary");
+  return response.data;
+}
+
 export type OrganizerApplyPayload = {
   name: string;
   description?: string;
@@ -259,7 +284,7 @@ export type OrganizerCreateEventPayload = {
   schedule?: Array<Record<string, string>>;
   rules?: string;
   refund_policy?: string;
-  status?: "draft" | "published";
+  status?: "draft" | "published" | "ended" | "cancelled" | "disabled";
   dance_styles?: string[];
   event_types?: string[];
 };
@@ -339,6 +364,32 @@ export async function organizerCreateTicketType(
   return response.data;
 }
 
+export type OrganizerUpdateTicketTypePayload = {
+  name?: string;
+  description?: string;
+  capacity?: number;
+  per_user_limit?: number;
+  sale_start_at?: string;
+  sale_end_at?: string;
+  is_active?: boolean;
+};
+
+export async function organizerUpdateTicketType(
+  eventId: string,
+  ticketTypeId: string,
+  payload: OrganizerUpdateTicketTypePayload,
+): Promise<OrganizerCreateTicketTypeResponse> {
+  const response = await client.patch<OrganizerCreateTicketTypeResponse>(
+    `/api/v1/organizer/events/${eventId}/ticket-types/${ticketTypeId}`,
+    payload,
+  );
+  return response.data;
+}
+
+export async function organizerDeleteTicketType(eventId: string, ticketTypeId: string): Promise<void> {
+  await client.delete(`/api/v1/organizer/events/${eventId}/ticket-types/${ticketTypeId}`);
+}
+
 export type AttendeeItem = {
   ticket_id: string;
   user_id: string;
@@ -389,6 +440,18 @@ export async function organizerVerifyCheckin(eventId: string, payload: CheckinPa
 export async function organizerCommitCheckin(eventId: string, payload: CheckinPayload): Promise<CheckinCommitResult> {
   const response = await client.post<CheckinCommitResult>(`/api/v1/organizer/events/${eventId}/checkin/commit`, payload);
   return response.data;
+}
+
+export async function adminFetchEvents(params?: { q?: string; from?: string; to?: string; org_id?: string }): Promise<EventItem[]> {
+  const response = await client.get<{ items: EventItem[] }>("/api/v1/admin/events", { params });
+  return response.data.items;
+}
+
+export type AdminPatchEventResponse = { event: EventItem };
+
+export async function adminUnpublishEvent(eventId: string): Promise<EventItem> {
+  const response = await client.patch<AdminPatchEventResponse>(`/api/v1/admin/events/${eventId}`, { status: "disabled" });
+  return response.data.event;
 }
 
 export default client;
