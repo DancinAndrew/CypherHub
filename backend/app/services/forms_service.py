@@ -83,7 +83,8 @@ class FormsService:
             scoped_forms = [
                 form
                 for form in existing_forms
-                if str(form.get("ticket_type_id")) == ticket_type_value
+                if (ticket_type_value is None and form.get("ticket_type_id") is None)
+                or (ticket_type_value is not None and form.get("ticket_type_id") is not None and str(form.get("ticket_type_id")) == ticket_type_value)
             ]
             next_version = (
                 max((int(form.get("version") or 0) for form in scoped_forms), default=0) + 1
