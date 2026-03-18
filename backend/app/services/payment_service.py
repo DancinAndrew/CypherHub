@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 from flask import current_app
@@ -64,7 +64,7 @@ class PaymentService:
 
         # INSERT payment（UNIQUE provider, external_id）
         try:
-            payment_ins = (
+            (
                 svc.table("payments")
                 .insert(
                     {
@@ -82,7 +82,12 @@ class PaymentService:
             raw = str(exc).upper()
             if "UNIQUE" in raw or "DUPLICATE" in raw:
                 # 可能重複 checkout，查既有 payment 的 external_id
-                pay_resp = svc.table("payments").select("external_id").eq("order_id", str(order_id)).execute()
+                pay_resp = (
+                    svc.table("payments")
+                    .select("external_id")
+                    .eq("order_id", str(order_id))
+                    .execute()
+                )
                 pay_rows = supabase_client.extract_data(pay_resp) or []
                 if pay_rows:
                     trade_no = pay_rows[0]["external_id"]
@@ -91,7 +96,7 @@ class PaymentService:
 
         # UPDATE order → pending_payment
         svc.table("orders").update(
-            {"status": "pending_payment", "updated_at": datetime.now(timezone.utc).isoformat()}
+            {"status": "pending_payment", "updated_at": datetime.now(UTC).isoformat()}
         ).eq("id", str(order_id)).execute()
 
         # 3) 產生 ECPay Form 參數
@@ -199,7 +204,7 @@ class PaymentService:
         ).eq("external_id", merchant_trade_no).execute()
 
         svc.table("orders").update(
-            {"status": "paid", "updated_at": datetime.now(timezone.utc).isoformat()}
+            {"status": "paid", "updated_at": datetime.now(UTC).isoformat()}
         ).eq("id", order_id).execute()
 
         # 4) 出票（RPC）
@@ -210,7 +215,7 @@ class PaymentService:
             # 補償 job 會處理
 
         svc.table("webhook_events").update(
-            {"processed_at": datetime.now(timezone.utc).isoformat()}
+            {"processed_at": datetime.now(UTC).isoformat()}
         ).eq("provider", "ecpay").eq("external_event_id", merchant_trade_no).execute()
 
         return "1|OK"

@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-from uuid import UUID
-
 from flask import Blueprint, g, jsonify, request
 
 from app.domain.schemas import (

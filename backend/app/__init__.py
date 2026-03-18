@@ -10,11 +10,11 @@ from .blueprints.events import bp as events_bp
 from .blueprints.me import bp as me_bp
 from .blueprints.orders import bp as orders_bp
 from .blueprints.payments import bp as payments_bp
-from .blueprints.webhooks import bp as webhooks_bp
 from .blueprints.registrations import bp as registrations_bp
 from .blueprints.settlements import bp as settlements_bp
 from .blueprints.ticket_types import bp as ticket_types_bp
 from .blueprints.tickets import bp as tickets_bp
+from .blueprints.webhooks import bp as webhooks_bp
 from .config import Config
 from .domain.errors import AppError
 from .domain.schemas import HealthResponse

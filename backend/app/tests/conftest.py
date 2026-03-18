@@ -12,14 +12,14 @@ if _env_path.exists():
     from dotenv import load_dotenv
     load_dotenv(_env_path)
 
-from app import create_app
-from app.services.supabase_client import supabase_client
+from app import create_app  # noqa: E402
+from app.services.supabase_client import supabase_client  # noqa: E402
 
 
 @pytest.fixture()
 def app():
     application = create_app({"TESTING": True})
-    # 確保從 .env 讀到的變數會進 app.config，並讓 supabase_client 使用（pytest 時 dotenv 可能晚於 Config 載入）
+    # 從 .env 寫入 app.config 並 re-init supabase_client（pytest 時 dotenv 可能晚於 Config）
     for key in ("SUPABASE_URL", "SUPABASE_ANON_KEY", "SUPABASE_SERVICE_ROLE_KEY"):
         if key in os.environ:
             application.config[key] = os.environ[key]

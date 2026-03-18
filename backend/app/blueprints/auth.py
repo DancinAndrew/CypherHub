@@ -11,9 +11,45 @@ from ._utils import parse_json
 bp = Blueprint("auth", __name__, url_prefix="/api/v1/auth")
 
 
+def _session_from_resp(resp: object) -> object | None:
+    """Extract session from Supabase sign_in response (object or dict)."""
+    session = getattr(resp, "session", None)
+    if session is not None:
+        return session
+    data = getattr(resp, "data", None)
+    if data is None:
+        return None
+    if hasattr(data, "session"):
+        return data.session
+    if isinstance(data, dict):
+        return data.get("session")
+    return None
+
+
+def _get_attr_or_key(obj: object, key: str, default: object = None) -> object:
+    """Get attribute or dict key from session-like object."""
+    val = getattr(obj, key, None)
+    if val is not None:
+        return val
+    if isinstance(obj, dict):
+        return obj.get(key, default)
+    return default
+
+
+def _user_to_dict(user: object) -> dict:
+    """Convert Supabase User object to JSON-serializable dict."""
+    if hasattr(user, "model_dump"):
+        return user.model_dump()
+    if hasattr(user, "__dict__"):
+        return dict(user.__dict__)
+    return {"id": getattr(user, "id", None), "email": getattr(user, "email", None)}
+
+
 def _supabase_token(email: str, password: str) -> dict:
-    """Sign in via Supabase client (sign_in_with_password). Returns session dict or raises AppError."""
-    if not current_app.config.get("SUPABASE_URL") or not current_app.config.get("SUPABASE_ANON_KEY"):
+    """Sign in via Supabase client; returns session dict or raises AppError."""
+    url = current_app.config.get("SUPABASE_URL") or ""
+    anon = current_app.config.get("SUPABASE_ANON_KEY") or ""
+    if not url or not anon:
         raise AppError(
             code="CONFIG_ERROR",
             message="Auth not configured",
@@ -26,8 +62,17 @@ def _supabase_token(email: str, password: str) -> dict:
         )
     except Exception as exc:
         msg = str(exc).lower()
-        if "invalid login credentials" in msg or "invalid_credentials" in msg or "invalid_grant" in msg:
-            raise AppError(code="AUTH_FAILED", message="Invalid login credentials", http_status=400) from exc
+        invalid = (
+            "invalid login credentials" in msg
+            or "invalid_credentials" in msg
+            or "invalid_grant" in msg
+        )
+        if invalid:
+            raise AppError(
+                code="AUTH_FAILED",
+                message="Invalid login credentials",
+                http_status=400,
+            ) from exc
         detail = f": {exc!s}" if (current_app.config.get("TESTING") or current_app.debug) else ""
         raise AppError(
             code="AUTH_SERVICE_ERROR",
@@ -35,32 +80,30 @@ def _supabase_token(email: str, password: str) -> dict:
             http_status=502,
         ) from exc
 
-    session = getattr(resp, "session", None)
-    if session is None:
-        session = getattr(resp, "data", None) and (getattr(resp.data, "session", None) or (resp.data.get("session") if isinstance(getattr(resp, "data"), dict) else None))
+    session = _session_from_resp(resp)
     if not session:
         raise AppError(
             code="AUTH_FAILED",
             message="No session returned",
             http_status=400,
         )
-    access_token = getattr(session, "access_token", None) or (session.get("access_token") if isinstance(session, dict) else None)
-    refresh_token = getattr(session, "refresh_token", None) or (session.get("refresh_token") if isinstance(session, dict) else None)
+    access_token = _get_attr_or_key(session, "access_token")
+    refresh_token = _get_attr_or_key(session, "refresh_token")
     if not access_token or not refresh_token:
         raise AppError(
             code="AUTH_FAILED",
             message="Missing tokens in session",
             http_status=400,
         )
-    user = getattr(session, "user", None) or (session.get("user") if isinstance(session, dict) else None) or getattr(resp, "user", None)
+    user = _get_attr_or_key(session, "user") or getattr(resp, "user", None)
     if user is not None and not isinstance(user, dict):
-        user = getattr(user, "model_dump", lambda: None)() or getattr(user, "__dict__", None) or {"id": getattr(user, "id", None), "email": getattr(user, "email", None)}
+        user = _user_to_dict(user)
 
     return {
         "access_token": access_token,
         "refresh_token": refresh_token,
-        "expires_in": getattr(session, "expires_in", None) or (session.get("expires_in") if isinstance(session, dict) else None),
-        "token_type": getattr(session, "token_type", "bearer") or (session.get("token_type") if isinstance(session, dict) else "bearer"),
+        "expires_in": _get_attr_or_key(session, "expires_in"),
+        "token_type": _get_attr_or_key(session, "token_type") or "bearer",
         "user": user,
     }
 
