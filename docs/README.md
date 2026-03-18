@@ -67,7 +67,7 @@ docs/
 | 檔案 | 說明 |
 |------|------|
 | **mvp2-readiness-checklist.md** | 進入 MVP-2 前的檢查清單。 |
-| **payment-best-practices.md** | **金流開發必讀**。ECPay 驗簽、Form 參數、Webhook 冪等、provider 介面、安全檢查清單。 |
+| **[.cursor/skills/ecpay](../.cursor/skills/ecpay)** | **金流開發必讀**。ECPay 官方 Skill，AIO、CheckMacValue、Webhook。 |
 | **background-tasks-analysis.md** | 背景任務選型分析（RQ、Celery、pg_cron）。 |
 
 ---
@@ -110,4 +110,4 @@ docs/
 - **第一次架環境、切本地/雲端** → [setup/local-cloud-switch.md](setup/local-cloud-switch.md)、[setup/local-supabase-reference.md](setup/local-supabase-reference.md)
 - **看階段規劃、規格、推薦套件** → [development/develop.md](development/develop.md)、[development/Tools.md](development/Tools.md)
 - **跑 MVP-1 驗收** → [verification/mvp1/mvp1-verification-checklist.md](verification/mvp1/mvp1-verification-checklist.md) 或 [verification/mvp1/mvp1-manual-verification.md](verification/mvp1/mvp1-manual-verification.md)
-- **MVP-2 開發** → [development/mvp2/](development/mvp2/)（就緒檢查、金流 best practices、背景任務分析）
+- **MVP-2 開發** → [development/mvp2/](development/mvp2/)（就緒檢查、ecpay skill、背景任務分析）

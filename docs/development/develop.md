@@ -107,7 +107,7 @@
 | 功能區塊 | develop 章節 | 建議方案 | 說明 |
 |----------|--------------|----------|------|
 | **背景任務（hold 逾時、補償出票）** | MVP-2.1 / 2.4 | **Redis + RQ** 或 **Celery**；或 **Supabase pg_cron + Edge Functions** | RQ 輕量、Celery 功能多；若全在 Supabase 可考慮 pg_cron 定時掃 + Edge 出票 |
-| **金流** | MVP-2.2 / 2.7 | **ECPay**（台灣）、**Stripe**（國際）、**PayPal**（可選） | 見 [mvp2/payment-best-practices.md](./mvp2/payment-best-practices.md)、Tools.md；Webhook 驗簽與冪等需自實作，無現成「整包」可取代 |
+| **金流** | MVP-2.2 / 2.7 | **ECPay**（台灣）、**Stripe**（國際）、**PayPal**（可選） | 見 [.cursor/skills/ecpay](.cursor/skills/ecpay)、Tools.md；Webhook 驗簽與冪等需自實作 |
 | **訂單狀態機** | MVP-2.2 / 2.3 | 自實作 | 可參考 **python-statemachine** 或 **transitions** 做狀態轉換與守衛 |
 | **報名表單擴充（下拉/單選/多選/日期）** | MVP-2.5 | 擴充現有 DynamicForm schema | 不需新套件，在既有 JSON schema 加 type + options |
 | **名單匯出 CSV** | MVP-2.5 | 後端 `csv` 標準庫或 **pandas** | 簡單用 `csv.writer`；要 Excel 可 **openpyxl** |
@@ -529,7 +529,7 @@
 
 ## MVP-2.2 綠界金流 ECPay (Phase 2.2) ⬜
 
-> **開發前必讀**：[mvp2/payment-best-practices.md](./mvp2/payment-best-practices.md) — ECPay 驗簽、Form 參數、Webhook 冪等、安全檢查清單。
+> **開發前必讀**：[.cursor/skills/ecpay](.cursor/skills/ecpay) — ECPay 官方 Skill，含 AIO、CheckMacValue、Webhook 格式。
 
 ### 2.2.1 結帳流程與 Webhook
 
@@ -914,7 +914,7 @@
 
 執行任務時：
 
-1. **金流相關**：若涉及付款、Webhook、ECPay/Stripe，**必先閱讀** [mvp2/payment-best-practices.md](./mvp2/payment-best-practices.md)
+1. **金流相關**：若涉及付款、Webhook、ECPay/Stripe，**必先閱讀** [.cursor/skills/ecpay](.cursor/skills/ecpay)
 2. **先寫短 plan**：要改哪些檔、需不需要 migration、要補哪些 tests
 3. **diff 小且可跑**：每次改動可獨立驗證
 4. **絕不加入 secrets**：只改 `.env.example` 放 placeholder
@@ -978,7 +978,7 @@
 # 參考文件
 
 - [AGENTS.md](../../AGENTS.md) - 專案規範、API、Supabase、防超賣
-- [mvp2/payment-best-practices.md](./mvp2/payment-best-practices.md) - **金流開發必讀**（ECPay 驗簽、Webhook 冪等、安全清單）
+- [.cursor/skills/ecpay](.cursor/skills/ecpay) - **金流開發必讀**（ECPay 官方 Skill，AIO、CheckMacValue、Webhook）
 - [Tools.md](./Tools.md) - 工具選單（金流、郵件、監控、部署等）
 - [note.md](./note.md) - M1/M2/M3 細項
 - [verification-report.md](../verification/mvp1/verification-report.md) - 功能驗證對照

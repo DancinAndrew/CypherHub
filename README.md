@@ -476,5 +476,5 @@ supabase db diff --linked > supabase/drift_check.sql
 - [docs/development/Tools.md](docs/development/Tools.md) — 金流／郵件／監控／部署等工具選單
 - [docs/setup/local-cloud-switch.md](docs/setup/local-cloud-switch.md) — 本地與雲端 Supabase 切換
 - [docs/verification/mvp1/mvp1-verification-checklist.md](docs/verification/mvp1/mvp1-verification-checklist.md) — MVP-1 驗收清單
-- [docs/development/mvp2/](docs/development/mvp2/) — MVP-2 開發（就緒檢查、金流 best practices、背景任務）
+- [docs/development/mvp2/](docs/development/mvp2/) — MVP-2 開發（就緒檢查、[.cursor/skills/ecpay](.cursor/skills/ecpay) 金流、背景任務）
 - [AGENTS.md](AGENTS.md) — 專案規範與 API

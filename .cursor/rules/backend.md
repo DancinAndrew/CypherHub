@@ -179,7 +179,7 @@ backend/
 
 - 每個 **新 feature**：unit test + 最小 integration test
 - **Critical operations**（register、check-in、payment）：盡量補 concurrency/race tests
-- **金流開發**：必讀 [docs/development/mvp2/payment-best-practices.md](../../docs/development/mvp2/payment-best-practices.md)
+- **金流開發**：必讀 [.cursor/skills/ecpay](../skills/ecpay)
 - Mock Supabase：使用 `monkeypatch` 或 pytest fixtures 替換 `supabase_client`
 
 ### 執行

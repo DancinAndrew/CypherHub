@@ -13,8 +13,8 @@
 |------|------|
 | 文件索引 | [docs/README.md](docs/README.md) |
 | MVP 階段與規格 | [docs/development/develop.md](docs/development/develop.md) |
-| **金流開發** | [docs/development/mvp2/payment-best-practices.md](docs/development/mvp2/payment-best-practices.md) — ECPay 驗簽、Webhook 冪等、安全清單 |
+| **金流開發** | [.cursor/skills/ecpay](.cursor/skills/ecpay) — ECPay 官方 Skill（AIO、CheckMacValue、Webhook） |
 | 環境設定 | [docs/setup/local-cloud-switch.md](docs/setup/local-cloud-switch.md) |
 | MVP-1 驗收 | [docs/verification/mvp1/mvp1-verification-checklist.md](docs/verification/mvp1/mvp1-verification-checklist.md) |
-| **MVP-2 開發** | [docs/development/mvp2/](docs/development/mvp2/) — 就緒檢查、金流 best practices、背景任務分析 |
+| **MVP-2 開發** | [docs/development/mvp2/](docs/development/mvp2/) — 就緒檢查、ecpay skill、背景任務分析 |
 | 工具選單 | [docs/development/Tools.md](docs/development/Tools.md) |

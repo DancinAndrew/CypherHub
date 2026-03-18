@@ -51,7 +51,7 @@
 
 | 項目 | 說明 | 狀態 |
 |------|------|------|
-| **Best practices** | 開發前必讀 [payment-best-practices.md](./payment-best-practices.md) | ⬜ |
+| **ecpay skill** | 開發前必讀 [.cursor/skills/ecpay](../../../.cursor/skills/ecpay) | ⬜ |
 | ECPay 文件 | 研讀 Webhook 驗簽、Form 參數 | ⬜ |
 | payment_service | 抽出 provider 介面 | 目前為 stub |
 | Webhook 冪等 | webhook_event_id 去重 | ⬜ |
@@ -76,6 +76,6 @@
 1. 本地 pytest、frontend build 確認通過
 2. 完成 orders / order_items / payments migration 設計並套用
 3. ~~選定背景任務方案（RQ / pg_cron）~~ ✅ pg_cron + SQL RPC 已實作
-4. 研讀 [payment-best-practices.md](./payment-best-practices.md) 與 ECPay 文件，規劃 Webhook 架構
+4. 研讀 [.cursor/skills/ecpay](../../../.cursor/skills/ecpay) 與 ECPay 文件，規劃 Webhook 架構
 
 建議先做 MVP-2.1（訂單與 hold）的 schema 與基本 flow，再接入 ECPay。

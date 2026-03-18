@@ -177,7 +177,7 @@ CREATE INDEX idx_webhook_events_provider_external ON webhook_events(provider, ex
 
 ### 三、金流（ECPay）
 
-> **詳見** [mvp2/payment-best-practices.md](./mvp2/payment-best-practices.md) — ECPay 驗簽、Form 參數、Webhook 冪等、安全清單。
+> **詳見** [.cursor/skills/ecpay](../../.cursor/skills/ecpay) — ECPay 官方 Skill，含 AIO、CheckMacValue、Webhook。
 
 **步驟 3.1** 研讀 ECPay 文件
 
