@@ -10,6 +10,7 @@ from .blueprints.events import bp as events_bp
 from .blueprints.me import bp as me_bp
 from .blueprints.orders import bp as orders_bp
 from .blueprints.payments import bp as payments_bp
+from .blueprints.webhooks import bp as webhooks_bp
 from .blueprints.registrations import bp as registrations_bp
 from .blueprints.settlements import bp as settlements_bp
 from .blueprints.ticket_types import bp as ticket_types_bp
@@ -35,6 +36,10 @@ def create_app(test_config: dict | None = None) -> Flask:
     init_extensions(app)
     CORS(app, resources={r"/api/*": {"origins": app.config.get("CORS_ORIGINS", [])}})
     _register_blueprints(app)
+    # 避免 /api/v1/orders 被 308 重定向至 /api/v1/orders/，CORS preflight 不允許 redirect
+    for rule in app.url_map.iter_rules():
+        if rule.strict_slashes:
+            rule.strict_slashes = False
     _register_error_handlers(app)
 
     @app.get("/api/v1/health")
@@ -56,6 +61,7 @@ def _register_blueprints(app: Flask) -> None:
     app.register_blueprint(admin_bp)
     app.register_blueprint(orders_bp)
     app.register_blueprint(payments_bp)
+    app.register_blueprint(webhooks_bp)
     app.register_blueprint(settlements_bp)
 
 

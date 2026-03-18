@@ -22,3 +22,10 @@ class Config:
     }
 
     FRONTEND_BASE_URL = os.getenv("FRONTEND_BASE_URL", "http://localhost:5173").rstrip("/")
+
+    # ECPay（綠界金流）
+    ECPAY_MERCHANT_ID = os.getenv("ECPAY_MERCHANT_ID", "")
+    ECPAY_HASH_KEY = os.getenv("ECPAY_HASH_KEY", "")
+    ECPAY_HASH_IV = os.getenv("ECPAY_HASH_IV", "")
+    ECPAY_RETURN_URL = os.getenv("ECPAY_RETURN_URL", "")  # Webhook 接收網址，如 https://api.xxx.com/api/v1/webhooks/ecpay
+    ECPAY_STAGE = os.getenv("ECPAY_STAGE", "1") in {"1", "true", "True"}
