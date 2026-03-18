@@ -1,13 +1,10 @@
 from __future__ import annotations
 
-import json
-import urllib.error
-import urllib.request
-
 from flask import Blueprint, current_app, jsonify
 
 from app.domain.errors import AppError
 from app.extensions import rate_limiter
+from app.services.supabase_client import supabase_client
 
 from ._utils import parse_json
 
@@ -15,53 +12,57 @@ bp = Blueprint("auth", __name__, url_prefix="/api/v1/auth")
 
 
 def _supabase_token(email: str, password: str) -> dict:
-    """Call Supabase Auth token endpoint. Returns session dict or raises AppError."""
-    url = (current_app.config.get("SUPABASE_URL", "") or "").rstrip("/")
-    anon = (current_app.config.get("SUPABASE_ANON_KEY", "") or "").strip()
-    if not url or not anon:
+    """Sign in via Supabase client (sign_in_with_password). Returns session dict or raises AppError."""
+    if not current_app.config.get("SUPABASE_URL") or not current_app.config.get("SUPABASE_ANON_KEY"):
         raise AppError(
             code="CONFIG_ERROR",
             message="Auth not configured",
             http_status=500,
         )
-    payload = json.dumps(
-        {
-            "grant_type": "password",
-            "email": email.strip().lower(),
-            "password": password,
-        }
-    ).encode("utf-8")
-    req = urllib.request.Request(
-        f"{url}/auth/v1/token",
-        data=payload,
-        headers={
-            "Content-Type": "application/json",
-            "apikey": anon,
-        },
-        method="POST",
-    )
     try:
-        with urllib.request.urlopen(req, timeout=15) as resp:
-            data = json.loads(resp.read().decode())
-    except urllib.error.HTTPError as e:
-        body = e.read().decode() if e.fp else "{}"
-        try:
-            err_data = json.loads(body)
-            msg = err_data.get("error_description") or err_data.get("message") or body[:200]
-        except json.JSONDecodeError:
-            msg = body[:200] or str(e)
-        raise AppError(
-            code="AUTH_FAILED",
-            message=msg,
-            http_status=e.code,
-        ) from e
-    except OSError as exc:
+        client = supabase_client.public_client()
+        resp = client.auth.sign_in_with_password(
+            {"email": email.strip().lower(), "password": password.strip()}
+        )
+    except Exception as exc:
+        msg = str(exc).lower()
+        if "invalid login credentials" in msg or "invalid_credentials" in msg or "invalid_grant" in msg:
+            raise AppError(code="AUTH_FAILED", message="Invalid login credentials", http_status=400) from exc
+        detail = f": {exc!s}" if (current_app.config.get("TESTING") or current_app.debug) else ""
         raise AppError(
             code="AUTH_SERVICE_ERROR",
-            message="Unable to reach auth service",
+            message=f"Unable to reach auth service{detail}",
             http_status=502,
         ) from exc
-    return data
+
+    session = getattr(resp, "session", None)
+    if session is None:
+        session = getattr(resp, "data", None) and (getattr(resp.data, "session", None) or (resp.data.get("session") if isinstance(getattr(resp, "data"), dict) else None))
+    if not session:
+        raise AppError(
+            code="AUTH_FAILED",
+            message="No session returned",
+            http_status=400,
+        )
+    access_token = getattr(session, "access_token", None) or (session.get("access_token") if isinstance(session, dict) else None)
+    refresh_token = getattr(session, "refresh_token", None) or (session.get("refresh_token") if isinstance(session, dict) else None)
+    if not access_token or not refresh_token:
+        raise AppError(
+            code="AUTH_FAILED",
+            message="Missing tokens in session",
+            http_status=400,
+        )
+    user = getattr(session, "user", None) or (session.get("user") if isinstance(session, dict) else None) or getattr(resp, "user", None)
+    if user is not None and not isinstance(user, dict):
+        user = getattr(user, "model_dump", lambda: None)() or getattr(user, "__dict__", None) or {"id": getattr(user, "id", None), "email": getattr(user, "email", None)}
+
+    return {
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "expires_in": getattr(session, "expires_in", None) or (session.get("expires_in") if isinstance(session, dict) else None),
+        "token_type": getattr(session, "token_type", "bearer") or (session.get("token_type") if isinstance(session, dict) else "bearer"),
+        "user": user,
+    }
 
 
 @bp.post("/login")

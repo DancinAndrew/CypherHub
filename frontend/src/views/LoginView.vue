@@ -74,9 +74,9 @@ async function submit(): Promise<void> {
 
   try {
     if (mode.value === "signin") {
-      await authStore.signIn(normalizedEmail, password.value);
+      await authStore.signIn(normalizedEmail, password.value.trim());
     } else {
-      const result = await authStore.signUp(normalizedEmail, password.value);
+      const result = await authStore.signUp(normalizedEmail, password.value.trim());
       if (result.requiresEmailConfirmation) {
         infoMessage.value = `註冊成功。此專案目前需要 Email 驗證，請先到 ${result.email} 收信並點擊確認連結，再回來 Sign In。`;
         mode.value = "signin";
