@@ -65,6 +65,8 @@ export type EventItem = {
   rules?: string | null;
   refund_policy?: string | null;
   map_url?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
   contact_email?: string | null;
   contact_phone?: string | null;
   registration_start_at?: string | null;
@@ -79,6 +81,7 @@ export type EventItem = {
   published_at?: string | null;
   dance_styles: string[];
   event_types: string[];
+  thumbnail_path?: string | null;
 };
 
 export type TicketType = {

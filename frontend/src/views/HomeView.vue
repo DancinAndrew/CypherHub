@@ -29,6 +29,13 @@ const dateTo = ref("");
 
 const styleKeys = new Set(DANCE_STYLES.map((item) => item.key));
 const typeKeys = new Set(EVENT_TYPES.map((item) => item.key));
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL ?? "";
+
+function eventMediaUrl(path: string): string {
+  if (!path) return "";
+  const base = supabaseUrl.replace(/\/$/, "");
+  return `${base}/storage/v1/object/public/event-media/${path}`;
+}
 
 function parseQueryList(raw: unknown, allowed: Set<string>): string[] {
   if (typeof raw !== "string") {
@@ -295,11 +302,21 @@ onMounted(() => {
           >
             <!-- Card Image -->
             <div
-              class="relative aspect-[16/9] w-full overflow-hidden"
+              class="relative aspect-[16/9] w-full overflow-hidden bg-cypher-surface"
               :class="`bg-gradient-to-br ${eventCardGradient(event)}`"
             >
+              <img
+                v-if="event.thumbnail_path"
+                :src="eventMediaUrl(event.thumbnail_path)"
+                :alt="event.title"
+                class="absolute inset-0 h-full w-full object-cover"
+                @error="($event.target as HTMLImageElement).style.display = 'none'"
+              />
               <div class="absolute inset-0 bg-gradient-to-t from-cypher-bg/90 via-transparent to-transparent" />
-              <div class="absolute inset-0 flex items-center justify-center opacity-20 transition-opacity group-hover:opacity-40">
+              <div
+                v-if="!event.thumbnail_path"
+                class="absolute inset-0 flex items-center justify-center opacity-20 transition-opacity group-hover:opacity-40"
+              >
                 <svg class="h-20 w-20 text-white" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
                 </svg>
