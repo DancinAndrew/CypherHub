@@ -86,10 +86,39 @@ function asSocialEntries(raw: Record<string, string> | undefined): Array<{ key: 
     .map(([key, value]) => ({ key, value }));
 }
 
+const SOCIAL_LABELS: Record<string, string> = {
+  ig: "Instagram",
+  fb: "Facebook",
+  youtube: "YouTube",
+  line: "LINE",
+  website: "官網",
+};
+
+const SOCIAL_STYLES: Record<string, string> = {
+  ig: "border-l-pink-500/50 bg-pink-500/5 hover:bg-pink-500/10 hover:border-pink-500/60",
+  fb: "border-l-blue-500/50 bg-blue-500/5 hover:bg-blue-500/10 hover:border-blue-500/60",
+  youtube: "border-l-red-500/50 bg-red-500/5 hover:bg-red-500/10 hover:border-red-500/60",
+  line: "border-l-emerald-500/50 bg-emerald-500/5 hover:bg-emerald-500/10 hover:border-emerald-500/60",
+  website: "border-l-cyan-500/50 bg-cyan-500/5 hover:bg-cyan-500/10 hover:border-cyan-500/60",
+};
+
 function asScheduleItems(raw: Array<Record<string, string>> | undefined): Array<Record<string, string>> {
   if (!Array.isArray(raw)) return [];
   return raw.filter((item) => item && typeof item === "object");
 }
+
+/** 導航 URL：有 lat/lng 則用 Google Maps 導航，否則用 map_url（為 note 待辦鋪路） */
+const navigateUrl = computed<string | null>(() => {
+  if (!detail.value?.event) return null;
+  const e = detail.value.event;
+  const lat = e.latitude;
+  const lng = e.longitude;
+  if (typeof lat === "number" && typeof lng === "number" && !Number.isNaN(lat) && !Number.isNaN(lng)) {
+    return `https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`;
+  }
+  const url = e.map_url?.trim();
+  return url || null;
+});
 
 function validateClientAnswers(): string | null {
   if (!selectedForm.value) return null;
@@ -197,7 +226,7 @@ onMounted(() => {
     <template v-else-if="detail">
       <!-- Hero: Full-width image with gradient overlay -->
       <section v-if="detail.event_media?.length" class="-mx-4 overflow-hidden rounded-2xl sm:-mx-6 lg:-mx-8">
-        <div class="relative aspect-[16/9] w-full overflow-hidden bg-cypher-surface">
+        <div class="relative aspect-[16/9] w-full overflow-hidden bg-gradient-to-br from-cypher-accent/30 via-cypher-accent-pink/20 to-cypher-accent-cyan/20">
           <img
             v-for="(item, idx) in detail.event_media"
             :key="item.id"
@@ -205,6 +234,7 @@ onMounted(() => {
             :alt="`${detail.event.title} ${idx + 1}`"
             class="absolute inset-0 h-full w-full object-cover transition-opacity duration-500"
             :class="carouselIndex === idx ? 'opacity-100' : 'opacity-0'"
+            @error="(e) => ((e.target as HTMLImageElement).style.opacity = '0')"
           />
           <div class="absolute inset-0 bg-gradient-to-t from-cypher-bg via-transparent to-transparent" />
           <div v-if="detail.event_media.length > 1" class="absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-3 rounded-full border border-white/20 bg-black/60 px-4 py-2 text-sm text-white backdrop-blur-sm">
@@ -280,9 +310,26 @@ onMounted(() => {
             </div>
           </section>
 
-          <!-- Event info, schedule, etc -->
-          <section v-if="detail.event.eligibility || detail.event.event_language || asScheduleItems(detail.event.schedule).length" class="card p-6 animate-slide-up" style="animation-delay: 0.1s">
+          <!-- Event info, schedule, socials -->
+          <section v-if="detail.event.eligibility || detail.event.event_language || asScheduleItems(detail.event.schedule).length || asSocialEntries(detail.event.socials).length" class="card p-6 animate-slide-up" style="animation-delay: 0.1s">
             <h2 class="font-street text-lg tracking-wider text-white">活動詳情</h2>
+            <div v-if="asSocialEntries(detail.event.socials).length" class="mt-4">
+              <h3 class="text-sm font-medium text-gray-400">社群連結</h3>
+              <div class="mt-2 flex flex-wrap gap-2">
+                <a
+                  v-for="entry in asSocialEntries(detail.event.socials)"
+                  :key="entry.key"
+                  :href="entry.value.startsWith('http') ? entry.value : `https://${entry.value}`"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="inline-flex items-center gap-2 rounded-lg border border-cypher-border border-l-4 px-4 py-2 text-sm text-gray-200 transition-all"
+                  :class="SOCIAL_STYLES[entry.key] ?? 'border-l-cypher-accent/50 bg-cypher-accent/5 hover:bg-cypher-accent/10'"
+                >
+                  {{ SOCIAL_LABELS[entry.key] ?? entry.key }}
+                  <span class="text-cypher-muted">→</span>
+                </a>
+              </div>
+            </div>
             <div class="mt-4 space-y-2 text-sm text-gray-400">
               <p v-if="detail.event.eligibility"><span class="font-medium text-gray-300">參加資格：</span>{{ detail.event.eligibility }}</p>
               <p v-if="detail.event.event_language"><span class="font-medium text-gray-300">活動語言：</span>{{ detail.event.event_language }}</p>
@@ -360,13 +407,14 @@ onMounted(() => {
                 <p class="mt-0.5 font-medium text-white">{{ detail.event.location_name || "待公佈" }}</p>
                 <p v-if="detail.event.location_address" class="mt-0.5 text-sm text-gray-400">{{ detail.event.location_address }}</p>
                 <a
-                  v-if="detail.event.map_url"
-                  :href="detail.event.map_url"
+                  v-if="navigateUrl"
+                  :href="navigateUrl"
                   target="_blank"
                   rel="noopener noreferrer"
-                  class="mt-2 inline-block text-sm font-medium text-cypher-accent transition-colors hover:text-cypher-accent-pink"
+                  class="mt-2 inline-flex items-center gap-2 rounded-xl border border-cypher-border bg-cypher-surface px-3 py-2 text-sm font-medium text-gray-200 transition-colors hover:border-cypher-accent hover:bg-cypher-surface-alt"
                 >
-                  開啟地圖 →
+                  <span aria-hidden="true">🧭</span>
+                  導航
                 </a>
               </div>
               <div v-if="detail.event.registration_end_at">
