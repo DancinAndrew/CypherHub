@@ -75,6 +75,7 @@ const internalNote = ref("");
 const ticketTypeForm = ref({
   name: "",
   description: "",
+  price_yuan: 0,
   capacity: 100,
   per_user_limit: 1,
   sale_start_at: "",
@@ -94,6 +95,7 @@ const editingTicketTypeId = ref<string | null>(null);
 const editTicketTypeForm = ref({
   name: "",
   description: "",
+  price_yuan: 0,
   capacity: 100,
   per_user_limit: 1,
   sale_start_at: "",
@@ -453,6 +455,7 @@ async function submitTicketType() {
     await organizerCreateTicketType(eventId, {
       name,
       description: optionalText(ticketTypeForm.value.description),
+      price_cents: Math.max(0, Math.round((ticketTypeForm.value.price_yuan ?? 0) * 100)),
       capacity: ticketTypeForm.value.capacity,
       per_user_limit: ticketTypeForm.value.per_user_limit,
       sale_start_at: ticketTypeForm.value.sale_start_at ? new Date(ticketTypeForm.value.sale_start_at).toISOString() : undefined,
@@ -462,6 +465,7 @@ async function submitTicketType() {
     message.value = "票種建立成功！";
     ticketTypeForm.value.name = "";
     ticketTypeForm.value.description = "";
+    ticketTypeForm.value.price_yuan = 0;
     ticketTypeForm.value.capacity = 100;
     ticketTypeForm.value.per_user_limit = 1;
     await loadEvent();
@@ -477,6 +481,7 @@ function startEditTicketType(tt: TicketType) {
   editTicketTypeForm.value = {
     name: tt.name,
     description: tt.description || "",
+    price_yuan: ((tt.price_cents ?? 0) / 100),
     capacity: tt.capacity,
     per_user_limit: tt.per_user_limit,
     sale_start_at: toDatetimeLocal(tt.sale_start_at),
@@ -514,6 +519,7 @@ async function handleUpdateTicketType() {
     const payload: Record<string, unknown> = {
       name,
       description: optionalText(editTicketTypeForm.value.description),
+      price_cents: Math.max(0, Math.round((editTicketTypeForm.value.price_yuan ?? 0) * 100)),
       capacity: editTicketTypeForm.value.capacity,
       per_user_limit: editTicketTypeForm.value.per_user_limit,
       is_active: editTicketTypeForm.value.is_active,
@@ -814,7 +820,11 @@ async function handleDeleteTicketType(tt: TicketType) {
           <div v-if="editingTicketTypeId !== tt.id" class="flex flex-wrap items-center justify-between gap-3">
             <div>
               <span class="font-medium text-gray-100">{{ tt.name }}</span>
-              <span class="ml-2 text-sm text-gray-400">名額 {{ tt.capacity }} / 已售 {{ tt.sold_count }} · 每人限購 {{ tt.per_user_limit }}</span>
+              <span class="ml-2 text-sm text-gray-400">
+                名額 {{ tt.capacity }} / 已售 {{ tt.sold_count }} · 每人限購 {{ tt.per_user_limit }}
+                <span v-if="tt.price_cents > 0"> · {{ (tt.price_cents / 100).toLocaleString() }} 元</span>
+                <span v-else> · 免費</span>
+              </span>
             </div>
             <div class="flex gap-2">
               <button
@@ -837,13 +847,32 @@ async function handleDeleteTicketType(tt: TicketType) {
           </div>
           <div v-else class="space-y-3">
             <div class="grid gap-3 sm:grid-cols-2">
-              <input v-model="editTicketTypeForm.name" placeholder="票種名稱 *" class="input-field px-3 py-2 text-sm" />
-              <input v-model.number="editTicketTypeForm.capacity" type="number" min="0" placeholder="名額" class="input-field px-3 py-2 text-sm" />
-              <input v-model.number="editTicketTypeForm.per_user_limit" type="number" min="1" placeholder="每人限購" class="input-field px-3 py-2 text-sm" />
+              <div>
+                <label class="mb-1 block text-sm font-medium text-gray-300">票種名稱 *</label>
+                <input v-model="editTicketTypeForm.name" placeholder="例如：一般票" class="input-field w-full px-3 py-2 text-sm" />
+              </div>
+              <div>
+                <label class="mb-1 block text-sm font-medium text-gray-300">價格（元）</label>
+                <input v-model.number="editTicketTypeForm.price_yuan" type="number" min="0" step="1" placeholder="0 為免費" class="input-field w-full px-3 py-2 text-sm" />
+              </div>
+              <div>
+                <label class="mb-1 block text-sm font-medium text-gray-300">名額</label>
+                <input v-model.number="editTicketTypeForm.capacity" type="number" min="0" placeholder="100" class="input-field w-full px-3 py-2 text-sm" />
+              </div>
+              <div>
+                <label class="mb-1 block text-sm font-medium text-gray-300">每人限購</label>
+                <input v-model.number="editTicketTypeForm.per_user_limit" type="number" min="1" placeholder="1" class="input-field w-full px-3 py-2 text-sm" />
+              </div>
             </div>
             <div class="grid gap-3 sm:grid-cols-2">
-              <input v-model="editTicketTypeForm.sale_start_at" type="datetime-local" placeholder="開賣時間" class="input-field px-3 py-2 text-sm" />
-              <input v-model="editTicketTypeForm.sale_end_at" type="datetime-local" placeholder="結束販售" class="input-field px-3 py-2 text-sm" />
+              <div>
+                <label class="mb-1 block text-sm font-medium text-gray-300">開賣時間</label>
+                <input v-model="editTicketTypeForm.sale_start_at" type="datetime-local" class="input-field w-full px-3 py-2 text-sm" />
+              </div>
+              <div>
+                <label class="mb-1 block text-sm font-medium text-gray-300">結束販售</label>
+                <input v-model="editTicketTypeForm.sale_end_at" type="datetime-local" class="input-field w-full px-3 py-2 text-sm" />
+              </div>
             </div>
             <label class="flex items-center gap-2 text-sm text-gray-300">
               <input v-model="editTicketTypeForm.is_active" type="checkbox" />
@@ -874,9 +903,22 @@ async function handleDeleteTicketType(tt: TicketType) {
 
       <h2 class="mt-6 text-lg font-semibold text-gray-100">建立票種</h2>
       <div class="mt-4 grid gap-4 sm:grid-cols-2">
-        <input v-model="ticketTypeForm.name" placeholder="票種名稱 *" class="input-field px-4 py-2 text-sm" />
-        <input v-model.number="ticketTypeForm.capacity" type="number" min="1" placeholder="名額" class="input-field px-4 py-2 text-sm" />
-        <input v-model.number="ticketTypeForm.per_user_limit" type="number" min="1" placeholder="每人限購" class="input-field px-4 py-2 text-sm" />
+        <div>
+          <label class="mb-1 block text-sm font-medium text-gray-300">票種名稱 *</label>
+          <input v-model="ticketTypeForm.name" placeholder="例如：一般票" class="input-field w-full px-4 py-2 text-sm" />
+        </div>
+        <div>
+          <label class="mb-1 block text-sm font-medium text-gray-300">價格（元）</label>
+          <input v-model.number="ticketTypeForm.price_yuan" type="number" min="0" step="1" placeholder="0 為免費" class="input-field w-full px-4 py-2 text-sm" />
+        </div>
+        <div>
+          <label class="mb-1 block text-sm font-medium text-gray-300">名額</label>
+          <input v-model.number="ticketTypeForm.capacity" type="number" min="1" placeholder="100" class="input-field w-full px-4 py-2 text-sm" />
+        </div>
+        <div>
+          <label class="mb-1 block text-sm font-medium text-gray-300">每人限購</label>
+          <input v-model.number="ticketTypeForm.per_user_limit" type="number" min="1" placeholder="1" class="input-field w-full px-4 py-2 text-sm" />
+        </div>
       </div>
       <button
         class="mt-4 rounded-lg bg-cypher-accent px-4 py-2 font-semibold text-white hover:bg-cypher-accent/90 disabled:opacity-50"
