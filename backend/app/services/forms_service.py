@@ -80,11 +80,15 @@ class FormsService:
                     )
 
             existing_forms = self.list_organizer_forms(jwt, event_id)
+            def _form_matches(f: dict, tt_val: str | None) -> bool:
+                if tt_val is None and f.get("ticket_type_id") is None:
+                    return True
+                if tt_val is not None and f.get("ticket_type_id") is not None:
+                    return str(f.get("ticket_type_id")) == tt_val
+                return False
+
             scoped_forms = [
-                form
-                for form in existing_forms
-                if (ticket_type_value is None and form.get("ticket_type_id") is None)
-                or (ticket_type_value is not None and form.get("ticket_type_id") is not None and str(form.get("ticket_type_id")) == ticket_type_value)
+                form for form in existing_forms if _form_matches(form, ticket_type_value)
             ]
             next_version = (
                 max((int(form.get("version") or 0) for form in scoped_forms), default=0) + 1
