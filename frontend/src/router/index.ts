@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from "vue-router";
 
 import AdminView from "../views/AdminView.vue";
 import EventDetailView from "../views/EventDetailView.vue";
+import OrderDetailView from "../views/OrderDetailView.vue";
 import HomeView from "../views/HomeView.vue";
 import LoginView from "../views/LoginView.vue";
 import MyTicketsView from "../views/MyTicketsView.vue";
@@ -38,6 +39,12 @@ const router = createRouter({
       path: "/reset-password",
       name: "reset-password",
       component: ResetPasswordView,
+    },
+    {
+      path: "/orders/:orderId",
+      name: "order-detail",
+      component: OrderDetailView,
+      meta: { requiresAuth: true },
     },
     {
       path: "/tickets",

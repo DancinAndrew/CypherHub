@@ -28,11 +28,16 @@ client.interceptors.response.use(
   (res) => res,
   (err) => {
     if (err.response?.status === 401) {
-      const authStore = useAuthStore(pinia);
-      authStore.clearSession();
-      const path = window.location.pathname + window.location.search;
-      const redirect = path && path !== "/login" ? path : "/";
-      window.location.href = `/login?redirect=${encodeURIComponent(redirect)}`;
+      // 登入請求的 401 不導向，讓 LoginView 顯示錯誤（例如帳密錯誤時 Supabase 可能回 401）
+      const requestUrl = err.config?.url ?? "";
+      const isLoginRequest = typeof requestUrl === "string" && requestUrl.includes("/auth/login");
+      if (!isLoginRequest) {
+        const authStore = useAuthStore(pinia);
+        authStore.clearSession();
+        const path = window.location.pathname + window.location.search;
+        const redirect = path && path !== "/login" ? path : "/";
+        window.location.href = `/login?redirect=${encodeURIComponent(redirect)}`;
+      }
     }
     return Promise.reject(err);
   },
@@ -348,6 +353,7 @@ export async function organizerUpsertInternalNote(eventId: string, note: string)
 export type OrganizerCreateTicketTypePayload = {
   name: string;
   description?: string;
+  price_cents?: number;
   capacity: number;
   per_user_limit: number;
   sale_start_at?: string;
@@ -370,6 +376,7 @@ export async function organizerCreateTicketType(
 export type OrganizerUpdateTicketTypePayload = {
   name?: string;
   description?: string;
+  price_cents?: number;
   capacity?: number;
   per_user_limit?: number;
   sale_start_at?: string;
@@ -455,6 +462,88 @@ export type AdminPatchEventResponse = { event: EventItem };
 export async function adminUnpublishEvent(eventId: string): Promise<EventItem> {
   const response = await client.patch<AdminPatchEventResponse>(`/api/v1/admin/events/${eventId}`, { status: "disabled" });
   return response.data.event;
+}
+
+// --- MVP-2: Orders & Payments (develop.md 2.2.1) ---
+
+export type OrderItem = {
+  id: string;
+  order_id: string;
+  ticket_type_id: string;
+  quantity: number;
+  price_cents: number;
+  created_at?: string | null;
+};
+
+export type Order = {
+  id: string;
+  user_id: string;
+  status: string;
+  total_cents: number;
+  currency: string;
+  hold_expires_at: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+};
+
+export type OrderDetail = {
+  order: Order;
+  items: OrderItem[];
+  payments: Array<{
+    id: string;
+    order_id: string;
+    provider: string;
+    external_id: string;
+    amount_cents: number;
+    currency: string;
+    status: string;
+    created_at?: string | null;
+  }>;
+};
+
+export type CheckoutResponse = {
+  form_params: Record<string, string | number>;
+  cashier_url: string;
+};
+
+export async function createHoldOrder(payload: {
+  items: Array<{ ticket_type_id: string; quantity: number }>;
+  hold_minutes?: number;
+}): Promise<OrderDetail> {
+  const response = await client.post<OrderDetail>("/api/v1/orders", {
+    items: payload.items,
+    hold_minutes: payload.hold_minutes ?? 15,
+  });
+  return response.data;
+}
+
+export async function fetchOrderDetail(orderId: string): Promise<OrderDetail> {
+  const response = await client.get<OrderDetail>(`/api/v1/orders/${orderId}`);
+  return response.data;
+}
+
+export async function createCheckout(orderId: string): Promise<CheckoutResponse> {
+  const response = await client.post<CheckoutResponse>("/api/v1/payments/checkout", {
+    order_id: orderId,
+  });
+  return response.data;
+}
+
+/** 建立隱藏表單並 POST 導向 ECPay 金流頁 */
+export function redirectToEcpay(formParams: Record<string, string | number>, cashierUrl: string): void {
+  const form = document.createElement("form");
+  form.method = "POST";
+  form.action = cashierUrl;
+  form.style.display = "none";
+  for (const [key, value] of Object.entries(formParams)) {
+    const input = document.createElement("input");
+    input.type = "hidden";
+    input.name = key;
+    input.value = String(value);
+    form.appendChild(input);
+  }
+  document.body.appendChild(form);
+  form.submit();
 }
 
 export default client;

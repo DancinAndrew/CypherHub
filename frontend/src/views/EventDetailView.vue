@@ -4,9 +4,12 @@ import { useRoute, useRouter } from "vue-router";
 
 import DynamicForm from "../components/DynamicForm.vue";
 import {
+  createCheckout,
+  createHoldOrder,
   fetchEventDetail,
   fetchEventForm,
   registerFree,
+  redirectToEcpay,
   type EventDetail,
   type EventForm,
   type TicketType,
@@ -64,6 +67,10 @@ const selectedTicketType = computed<TicketType | null>(() => {
   }
   return detail.value.ticket_types.find((item) => item.id === selectedTicketTypeId.value) ?? null;
 });
+
+const isPaidTicket = computed(() => (selectedTicketType.value?.price_cents ?? 0) > 0);
+
+const checkoutQuantity = ref(1);
 
 function formatDateTime(value?: string | null): string {
   if (!value) return "-";
@@ -203,6 +210,32 @@ async function handleRegister(): Promise<void> {
     formAnswers.value = {};
   } catch (error: unknown) {
     registerMessage.value = toApiErrorMessage(error, "Registration failed");
+  } finally {
+    registerLoading.value = false;
+  }
+}
+
+async function handleCheckout(): Promise<void> {
+  registerMessage.value = null;
+  if (!selectedTicketType.value) {
+    registerMessage.value = "請先選擇票種。";
+    return;
+  }
+  if (!authStore.isAuthenticated) {
+    await router.push({ name: "login", query: { redirect: route.fullPath } });
+    return;
+  }
+  const qty = Math.max(1, Math.min(20, checkoutQuantity.value));
+  registerLoading.value = true;
+  try {
+    const orderDetail = await createHoldOrder({
+      items: [{ ticket_type_id: selectedTicketType.value.id, quantity: qty }],
+      hold_minutes: 15,
+    });
+    const { form_params, cashier_url } = await createCheckout(orderDetail.order.id);
+    redirectToEcpay(form_params, cashier_url);
+  } catch (error: unknown) {
+    registerMessage.value = toApiErrorMessage(error, "結帳失敗");
   } finally {
     registerLoading.value = false;
   }
@@ -354,10 +387,9 @@ onMounted(() => {
             </div>
           </section>
 
-          <!-- Ticket types + registration form -->
+          <!-- Ticket types + registration / checkout -->
           <section class="card p-6 animate-slide-up" style="animation-delay: 0.15s">
             <h2 class="font-street text-lg tracking-wider text-white">票種與報名</h2>
-            <p class="mt-1 text-sm text-cypher-muted">MVP-1 僅支援免費票</p>
             <div v-if="!detail.ticket_types.length" class="mt-4 text-cypher-muted">暫無可選票種</div>
             <div v-else class="mt-4 space-y-3">
               <button
@@ -370,13 +402,17 @@ onMounted(() => {
               >
                 <div>
                   <p class="font-semibold text-white">{{ tt.name }}</p>
-                  <p class="mt-0.5 text-xs text-cypher-muted">名額 {{ tt.capacity }} · 已報 {{ tt.sold_count }} · 每人限 {{ tt.per_user_limit }}</p>
+                  <p class="mt-0.5 text-xs text-cypher-muted">
+                    名額 {{ tt.capacity }} · 已報 {{ tt.sold_count }} · 每人限 {{ tt.per_user_limit }}
+                    <span v-if="tt.price_cents > 0"> · {{ (tt.price_cents / 100).toLocaleString() }} 元</span>
+                  </p>
                 </div>
                 <span v-if="selectedTicketTypeId === tt.id" class="text-cypher-accent">✓ 已選</span>
               </button>
             </div>
 
-            <div v-if="selectedTicketType" class="mt-6 border-t border-cypher-border pt-6">
+            <!-- 免費票：報名表單 + 立即報名 -->
+            <div v-if="selectedTicketType && !isPaidTicket" class="mt-6 border-t border-cypher-border pt-6">
               <h3 class="font-medium text-white">報名表單 · {{ selectedTicketType.name }}</h3>
               <div v-if="formLoading" class="mt-4 rounded-xl border border-cypher-border bg-cypher-surface-alt/50 p-4 text-sm text-cypher-muted">載入表單中...</div>
               <div v-else-if="formError" class="mt-4 rounded-xl border border-rose-500/40 bg-rose-950/40 p-4 text-sm text-rose-300">{{ formError }}</div>
@@ -385,6 +421,23 @@ onMounted(() => {
               </div>
               <div v-else class="mt-4 rounded-xl border border-cypher-border bg-cypher-surface-alt/50 p-4 text-sm text-cypher-muted">此票種無需填寫額外資料，可直接報名。</div>
               <p v-if="registerMessage" class="mt-3 text-sm" :class="registerMessage.startsWith('報名成功') ? 'text-emerald-400' : 'text-rose-400'">{{ registerMessage }}</p>
+            </div>
+
+            <!-- 付費票：數量 + 結帳說明 -->
+            <div v-else-if="selectedTicketType && isPaidTicket" class="mt-6 border-t border-cypher-border pt-6">
+              <h3 class="font-medium text-white">結帳 · {{ selectedTicketType.name }}</h3>
+              <div class="mt-4 flex items-center gap-4">
+                <label class="text-sm text-gray-400">數量</label>
+                <input
+                  v-model.number="checkoutQuantity"
+                  type="number"
+                  min="1"
+                  max="20"
+                  class="w-20 rounded-lg border border-cypher-border bg-cypher-surface px-3 py-2 text-white"
+                />
+              </div>
+              <p class="mt-2 text-sm text-cypher-muted">總計 {{ ((selectedTicketType.price_cents * checkoutQuantity) / 100).toLocaleString() }} 元 · 點擊「前往結帳」將導向綠界金流頁完成付款</p>
+              <p v-if="registerMessage" class="mt-3 text-sm text-rose-400">{{ registerMessage }}</p>
             </div>
           </section>
         </div>
@@ -426,12 +479,22 @@ onMounted(() => {
             <!-- Sticky CTA - glowing -->
             <div class="mt-6 space-y-3">
               <button
+                v-if="!isPaidTicket"
                 type="button"
                 class="btn-primary w-full py-4 text-base"
                 :disabled="registerLoading || formLoading"
                 @click="handleRegister"
               >
                 {{ registerLoading ? "報名中..." : "立即報名" }}
+              </button>
+              <button
+                v-else
+                type="button"
+                class="btn-primary w-full py-4 text-base"
+                :disabled="registerLoading"
+                @click="handleCheckout"
+              >
+                {{ registerLoading ? "導向付款中..." : "前往結帳" }}
               </button>
               <button
                 type="button"

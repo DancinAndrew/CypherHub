@@ -76,6 +76,7 @@ export function toAuthErrorMessage(error: unknown, mode: "signin" | "signup" | "
   if (status === 429) return "操作過於頻繁，請稍後再試。";
   const apiError = extractApiErrorPayload(error);
   if (apiError?.code === "AUTH_FAILED") return "登入失敗：帳號或密碼不正確。";
+  if (mode === "signin" && status === 401) return "登入失敗：帳號或密碼不正確。";
 
   const rawMessage = ((error as { message?: string })?.message || "").toLowerCase();
   const code = ((error as { code?: string })?.code || "").toLowerCase();
