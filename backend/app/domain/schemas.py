@@ -109,6 +109,7 @@ class EventResponse(BaseModel):
     published_at: datetime | None = None
     dance_styles: list[DanceStyle] = Field(default_factory=list)
     event_types: list[EventType] = Field(default_factory=list)
+    thumbnail_path: str | None = None
 
 
 class EventMediaResponse(BaseModel):

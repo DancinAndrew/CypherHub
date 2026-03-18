@@ -61,9 +61,40 @@ class EventsService:
 
         try:
             response = query.order("start_at", desc=False).execute()
-            return supabase_client.extract_data(response) or []
+            events = supabase_client.extract_data(response) or []
+            if not events:
+                return []
+            event_ids = [str(e["id"]) for e in events]
+            thumbs = self._fetch_first_thumbnail_per_event(client, event_ids)
+            for e in events:
+                e["thumbnail_path"] = thumbs.get(str(e["id"]))
+            return events
         except Exception as exc:
             raise map_supabase_error(exc, fallback_code="EVENTS_LIST_FAILED") from exc
+
+    @staticmethod
+    def _fetch_first_thumbnail_per_event(client, event_ids: list[str]) -> dict[str, str]:
+        """Return {event_id: path} for first media (by sort_order) per event."""
+        if not event_ids:
+            return {}
+        try:
+            resp = (
+                client.table("event_media")
+                .select("event_id,path,sort_order")
+                .in_("event_id", event_ids)
+                .order("event_id")
+                .order("sort_order")
+                .execute()
+            )
+            rows = supabase_client.extract_data(resp) or []
+            seen: dict[str, str] = {}
+            for r in rows:
+                eid = str(r.get("event_id", ""))
+                if eid and eid not in seen:
+                    seen[eid] = str(r.get("path", ""))
+            return seen
+        except Exception:
+            return {}
 
     def list_public_events(
         self,
