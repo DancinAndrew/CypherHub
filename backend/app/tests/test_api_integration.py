@@ -1,7 +1,8 @@
 """API 整合測試：未 mock，直連 Supabase。
 
 依據 note.md 低優先級建議：選 1–2 個關鍵 public endpoint 做整合測試。
-需 SUPABASE_URL、SUPABASE_ANON_KEY；POST /register 另需 SUPABASE_SERVICE_ROLE_KEY、TEST_USER_EMAIL、TEST_USER_PASSWORD。
+需 SUPABASE_URL、SUPABASE_ANON_KEY；POST /register 另需
+SUPABASE_SERVICE_ROLE_KEY、TEST_USER_EMAIL、TEST_USER_PASSWORD。
 """
 
 from __future__ import annotations
@@ -41,7 +42,10 @@ def test_get_events_integration(client) -> None:
 
 
 @pytest.mark.integration
-@pytest.mark.skipif(not _register_integration_configured(), reason="SUPABASE_SERVICE_ROLE_KEY + TEST_USER_* required")
+@pytest.mark.skipif(
+    not _register_integration_configured(),
+    reason="SUPABASE_SERVICE_ROLE_KEY + TEST_USER_* required",
+)
 def test_post_register_integration(client, app) -> None:
     """POST /api/v1/events/<id>/register：未 mock，直連 Supabase + seed 資料。"""
     from app.services.supabase_client import supabase_client
@@ -59,7 +63,10 @@ def test_post_register_integration(client, app) -> None:
         }
     )
     if hasattr(sign_in, "session") and sign_in.session:
-        jwt_token = getattr(sign_in.session, "access_token", None) or (sign_in.session.get("access_token") if isinstance(sign_in.session, dict) else None)
+        sess = sign_in.session
+        jwt_token = getattr(sess, "access_token", None) or (
+            sess.get("access_token") if isinstance(sess, dict) else None
+        )
     if hasattr(sign_in, "user") and sign_in.user:
         user = sign_in.user
         user_id = getattr(user, "id", None) or (user.get("id") if isinstance(user, dict) else None)
