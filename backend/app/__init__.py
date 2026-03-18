@@ -82,7 +82,8 @@ def _register_error_handlers(app: Flask) -> None:
 
         @app.errorhandler(RateLimitExceeded)
         def handle_rate_limit_exceeded(exc: Exception) -> tuple[dict, int]:
-            return jsonify(AppError(code="RATE_LIMIT_EXCEEDED", message="Too Many Requests", http_status=429).to_dict()), 429
+            err = AppError(code="RATE_LIMIT_EXCEEDED", message="Too Many Requests", http_status=429)
+            return jsonify(err.to_dict()), 429
 
     @app.errorhandler(Exception)
     def handle_unexpected_error(error: Exception) -> tuple[dict, int]:
