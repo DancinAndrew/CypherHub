@@ -177,6 +177,9 @@ router.beforeEach(async (to) => {
 
 ## 九、參考
 
+- 文件索引：`docs/README.md`
 - 開發藍圖：`docs/development/develop.md`
+- MVP-2 開發：`docs/development/mvp2/`（金流、訂單、背景任務）
 - 本地/雲端切換：`docs/setup/local-cloud-switch.md`
+- MVP-1 驗收：`docs/verification/mvp1/mvp1-verification-checklist.md`
 - 後端規範：`.cursor/rules/backend.md`

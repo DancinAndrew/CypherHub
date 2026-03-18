@@ -39,6 +39,8 @@
 
 專案支援 **本地** 與 **雲端** Supabase，可依情境切換。詳見 [docs/setup/local-cloud-switch.md](docs/setup/local-cloud-switch.md)。
 
+**Docker 執行環境**：可使用 Docker Desktop 或 [OrbStack](https://orbstack.dev/)（Mac 上較輕量、相容）。使用 OrbStack 時請先**開啟 OrbStack app** 後再執行 `docker compose`；`host.docker.internal` 已支援，本地 Supabase 連線無需改設定。
+
 ### 方案 A：本地 Supabase（開發測試用）
 
 1. 切換到本地模式並取得 keys：
@@ -314,9 +316,11 @@ git grep -n "SUPABASE_ACCESS_TOKEN" .
 
 ### Backend
 
+專案需要 **Python 3.12+**（`pyproject.toml` 設定 `target-version = "py312"`）。若本機為 3.9，請先 `brew install python@3.12`。
+
 ```bash
 cd backend
-python -m venv .venv
+python3.12 -m venv .venv   # 或 pyenv 時：python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 flask --app app run --debug --host 0.0.0.0 --port 8000
@@ -378,17 +382,13 @@ curl -sS http://localhost:8000/api/v1/me/tickets
 ### Supabase Migrations 清單
 
 Migrations:
-- `supabase/migrations/0001_mvp1_init.sql`
-- `supabase/migrations/0002_mvp1_rls.sql`
-- `supabase/migrations/0003_mvp1_rpc.sql`
-- `supabase/migrations/0004_mvp1_patch_drift.sql`
-- `supabase/migrations/0005_mvp1_patch_register_pgcrypto_search_path.sql`
-- `supabase/migrations/0006_mvp11_event_taxonomy.sql`
-- `supabase/migrations/0007_mvp15a_event_metadata.sql`
-- `supabase/migrations/0008_mvp15a_event_internal_notes.sql`
-- `supabase/migrations/0009_mvp15b_forms_tables.sql`
-- `supabase/migrations/0010_mvp15b_forms_rls.sql`
-- `supabase/migrations/0011_mvp15b_register_free_v2_rpc.sql`
+- `0001_mvp1_init.sql` ～ `0011_mvp15b_register_free_v2_rpc.sql`（MVP-1 核心）
+- `0012_cancel_ticket_rpc.sql`（使用者取消報名）
+- `0013_org_public_select_for_published_events.sql`
+- `0014_storage_event_media_bucket.sql`
+- `0015_platform_governance.sql`（disabled 狀態、核銷阻擋 ended/cancelled）
+- `0016_storage_event_media_public_read.sql`
+- `0017_mvp2_orders_payments_webhooks.sql`（orders、order_items、payments、webhook_events、ticket_types.hold_count）
 
 ### 套用方式（local Supabase）
 
@@ -397,7 +397,7 @@ supabase start
 supabase db reset
 ```
 
-`supabase db reset` 會依序套用 migration（0001 -> 0002 -> 0003 -> 0004 -> 0005 -> 0006 -> 0007 -> 0008 -> 0009 -> 0010 -> 0011）與 `supabase/seed.sql`。
+`supabase db reset` 會依序套用 migration（0001 → 0017）與 `supabase/seed.sql`。
 
 ### DB migrations（cloud）
 
@@ -424,20 +424,7 @@ supabase migration list
 
 ### 套用方式（Supabase SQL Editor）
 
-請依序貼上執行：
-1. `0001_mvp1_init.sql`
-2. `0002_mvp1_rls.sql`
-3. `0003_mvp1_rpc.sql`
-4. `0004_mvp1_patch_drift.sql`
-5. `0005_mvp1_patch_register_pgcrypto_search_path.sql`
-6. `0006_mvp11_event_taxonomy.sql`
-7. `0007_mvp15a_event_metadata.sql`
-8. `0008_mvp15a_event_internal_notes.sql`
-9. `0009_mvp15b_forms_tables.sql`
-10. `0010_mvp15b_forms_rls.sql`
-11. `0011_mvp15b_register_free_v2_rpc.sql`
-
-順序不可顛倒（RLS 依賴 tables；RPC 依賴 tables 與 helper functions）。  
+請依序貼上 0001 ～ 0017 共 17 檔。順序不可顛倒（RLS 依賴 tables；RPC 依賴 tables 與 helper functions）。  
 若 CLI 登入/token 卡住，SQL Editor 是官方可行 fallback。
 
 ### Drift check（cloud）
@@ -479,12 +466,15 @@ supabase db diff --linked > supabase/drift_check.sql
 ## Known Limitations (MVP-1)
 
 - Organizer check-in 已支援相機掃碼，但需瀏覽器提供相機權限；部分裝置/瀏覽器在非 `localhost` 的 `http` 會限制相機。
-- `POST /api/v1/me/tickets/{ticket_id}/resend` 目前為 email service stub（log），未串第三方郵件供應商。
+- `POST /api/v1/me/tickets/{ticket_id}/resend` 由 Resend 寄送；若未設定 `RESEND_API_KEY` 則僅 log，不寄信，不影響報名流程。
 - Admin endpoint 目前只保留最小 allowlist 讀取能力，管理功能維持 MVP-1 最小化。
 
 ## 參考
 
+- [docs/README.md](docs/README.md) — 完整文件索引（development、verification、setup 結構）
 - [docs/development/develop.md](docs/development/develop.md) — 開發路線圖、MVP 階段、推薦套件與未實作功能替代方案
 - [docs/development/Tools.md](docs/development/Tools.md) — 金流／郵件／監控／部署等工具選單
 - [docs/setup/local-cloud-switch.md](docs/setup/local-cloud-switch.md) — 本地與雲端 Supabase 切換
+- [docs/verification/mvp1/mvp1-verification-checklist.md](docs/verification/mvp1/mvp1-verification-checklist.md) — MVP-1 驗收清單
+- [docs/development/mvp2/](docs/development/mvp2/) — MVP-2 開發（就緒檢查、金流 best practices、背景任務）
 - [AGENTS.md](AGENTS.md) — 專案規範與 API
