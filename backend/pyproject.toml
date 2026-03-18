@@ -13,3 +13,4 @@ select = ["E", "F", "I", "UP", "B"]
 minversion = "8.0"
 testpaths = ["app/tests"]
 addopts = "-q"
+markers = ["integration: marks tests as integration (require SUPABASE env)"]

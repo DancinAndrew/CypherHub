@@ -19,6 +19,11 @@ from .domain.errors import AppError
 from .domain.schemas import HealthResponse
 from .extensions import init_extensions
 
+try:
+    from flask_limiter.errors import RateLimitExceeded
+except ImportError:
+    RateLimitExceeded = None  # type: ignore[misc, assignment]
+
 
 def create_app(test_config: dict | None = None) -> Flask:
     app = Flask(__name__)
@@ -73,8 +78,25 @@ def _register_error_handlers(app: Flask) -> None:
         )
         return jsonify(error.to_dict()), 405
 
+    if RateLimitExceeded is not None:
+
+        @app.errorhandler(RateLimitExceeded)
+        def handle_rate_limit_exceeded(exc: Exception) -> tuple[dict, int]:
+            return jsonify(AppError(code="RATE_LIMIT_EXCEEDED", message="Too Many Requests", http_status=429).to_dict()), 429
+
     @app.errorhandler(Exception)
     def handle_unexpected_error(error: Exception) -> tuple[dict, int]:
+        if RateLimitExceeded is not None and isinstance(error, RateLimitExceeded):
+            return (
+                jsonify(
+                    AppError(
+                        code="RATE_LIMIT_EXCEEDED",
+                        message="操作過於頻繁，請稍後再試。",
+                        http_status=429,
+                    ).to_dict()
+                ),
+                429,
+            )
         app.logger.exception("Unexpected error: %s", error)
         internal_error = AppError(
             code="INTERNAL_SERVER_ERROR",
