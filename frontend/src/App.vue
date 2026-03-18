@@ -1,17 +1,20 @@
 <script setup lang="ts">
-import { onErrorCaptured, ref } from "vue";
+import { computed, onErrorCaptured } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
 import { useAuthStore } from "./stores/auth";
+import { useErrorStore } from "./stores/error";
 
 const route = useRoute();
 const router = useRouter();
 const authStore = useAuthStore();
-const captureError = ref<Error | null>(null);
+const errorStore = useErrorStore();
+
+const displayError = computed(() => errorStore.globalError);
 
 onErrorCaptured((err) => {
-  captureError.value = err;
-  return false;
+  errorStore.setError(err);
+  return false; // stop propagation
 });
 
 async function handleSignOut(): Promise<void> {
@@ -24,7 +27,7 @@ async function handleSignOut(): Promise<void> {
 }
 
 function clearError() {
-  captureError.value = null;
+  errorStore.clearError();
 }
 </script>
 
@@ -98,10 +101,10 @@ function clearError() {
     </header>
 
     <main id="main-content" class="relative min-h-[calc(100vh-4rem)]" tabindex="-1">
-      <div v-if="captureError" class="mx-auto max-w-2xl p-6">
+      <div v-if="displayError" class="mx-auto max-w-2xl p-6">
         <div class="rounded-xl border border-rose-500/50 bg-rose-950/80 p-6 backdrop-blur-sm">
           <p class="font-display font-semibold text-rose-300">頁面載入錯誤</p>
-          <p class="mt-2 text-sm text-rose-200">{{ captureError.message }}</p>
+          <p class="mt-2 text-sm text-rose-200">{{ displayError.message }}</p>
           <RouterLink
             to="/"
             class="mt-4 inline-block rounded bg-rose-500 px-4 py-2.5 text-sm font-semibold text-white transition-all hover:bg-rose-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-400"

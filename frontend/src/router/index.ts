@@ -121,6 +121,15 @@ const router = createRouter({
       component: OrganizerManageView,
       meta: { requiresAuth: true },
     },
+    ...(import.meta.env.DEV
+      ? [
+          {
+            path: "/__test-error",
+            name: "error-boundary-test",
+            component: () => import("../views/ErrorBoundaryTestView.vue"),
+          },
+        ]
+      : []),
   ],
 });
 
