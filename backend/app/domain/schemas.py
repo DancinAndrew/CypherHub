@@ -361,3 +361,74 @@ class MyOrganizerEventResponse(BaseModel):
 class MyOrganizerSummaryResponse(BaseModel):
     organizations: list[MyOrganizerOrgResponse]
     events: list[MyOrganizerEventResponse]
+
+
+# --- MVP-2: Orders / Payments (develop.md 2.1.1) ---
+
+
+class OrderStatus(str, Enum):
+    created = "created"
+    holding = "holding"
+    pending_payment = "pending_payment"
+    paid = "paid"
+    issued = "issued"
+    cancelled = "cancelled"
+    refunded = "refunded"
+
+
+class PaymentStatus(str, Enum):
+    pending = "pending"
+    completed = "completed"
+    failed = "failed"
+    refunded = "refunded"
+
+
+class OrderItemResponse(BaseModel):
+    id: UUID
+    order_id: UUID
+    ticket_type_id: UUID
+    quantity: int
+    price_cents: int
+    created_at: datetime | None = None
+
+
+class OrderResponse(BaseModel):
+    id: UUID
+    user_id: UUID
+    status: str
+    total_cents: int
+    currency: str = "TWD"
+    hold_expires_at: datetime | None = None
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+
+
+class PaymentResponse(BaseModel):
+    id: UUID
+    order_id: UUID
+    provider: str
+    external_id: str
+    amount_cents: int
+    currency: str = "TWD"
+    status: str
+    created_at: datetime | None = None
+
+
+class OrderDetailResponse(BaseModel):
+    order: OrderResponse
+    items: list[OrderItemResponse] = Field(default_factory=list)
+    payments: list[PaymentResponse] = Field(default_factory=list)
+
+
+class OrdersListResponse(BaseModel):
+    items: list[OrderResponse]
+
+
+class CreateHoldOrderItem(BaseModel):
+    ticket_type_id: UUID
+    quantity: int = Field(ge=1, le=20)
+
+
+class CreateHoldOrderRequest(BaseModel):
+    items: list[CreateHoldOrderItem] = Field(min_length=1)
+    hold_minutes: int = Field(default=15, ge=1, le=60)

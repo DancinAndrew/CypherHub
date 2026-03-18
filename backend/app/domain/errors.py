@@ -46,6 +46,11 @@ _RPC_ERROR_MAP: dict[str, tuple[int, str]] = {
     "SOLD_OUT": (409, "Tickets are sold out"),
     "PER_USER_LIMIT_EXCEEDED": (409, "Per-user limit exceeded"),
     "PAID_TICKET_NOT_ALLOWED_IN_MVP1": (400, "Paid tickets are not available in MVP-1"),
+    "ORDER_NOT_FOUND": (404, "Order not found"),
+    "ORDER_NOT_HOLDING": (409, "Only holding orders can be cancelled"),
+    "HOLD_ITEMS_EMPTY": (400, "Hold items cannot be empty"),
+    "INVALID_HOLD_MINUTES": (400, "Hold minutes must be between 1 and 60"),
+    "INVALID_ITEM": (400, "Invalid item: ticket_type_id and quantity required"),
     "QR_MISMATCH": (400, "QR payload does not match ticket"),
     "INVALID_STATUS": (409, "Ticket status does not allow this operation"),
 }
@@ -87,7 +92,9 @@ def map_supabase_error(error: Exception, fallback_code: str = "SUPABASE_ERROR") 
             http_status=500,
         )
 
-    if "VIOLATES CHECK CONSTRAINT" in normalized and "TICKET_TYPES_SOLD_CHECK" in normalized:
+    if "VIOLATES CHECK CONSTRAINT" in normalized and (
+        "TICKET_TYPES_SOLD_CHECK" in normalized or "TICKET_TYPES_INVENTORY_CHECK" in normalized
+    ):
         return AppError(
             code="SOLD_OUT",
             message="Tickets are sold out",
