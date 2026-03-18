@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import {
   fetchMyOrganizerSummary,
@@ -69,7 +69,7 @@ const eventForm = ref<OrganizerCreateEventPayload>({
   schedule: [],
 });
 const socialForm = ref({ ig: "", fb: "", youtube: "", line: "", website: "" });
-const scheduleJson = ref("[]");
+const scheduleItems = ref<Array<{ time: string; title: string; desc: string }>>([{ time: "", title: "", desc: "" }]);
 const internalNote = ref("");
 
 const ticketTypeForm = ref({
@@ -123,6 +123,16 @@ function formatEventOption(ev: MyOrganizerEvent): string {
   return `${ev.title}（${date}・${status}）`;
 }
 
+watch(
+  () => route.name,
+  (name) => {
+    if (name === "organizer-event-create") {
+      scheduleItems.value = [{ time: "", title: "", desc: "" }];
+    }
+  },
+  { immediate: true }
+);
+
 onMounted(async () => {
   summaryLoading.value = true;
   try {
@@ -174,19 +184,24 @@ function parseOptionalDate(input: string): string | undefined {
   const d = new Date(input);
   return Number.isNaN(d.getTime()) ? undefined : d.toISOString();
 }
-function parseSchedule(): Array<Record<string, string>> | null {
-  const raw = scheduleJson.value.trim();
-  if (!raw) return [];
-  try {
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) {
-      errorMessage.value = "schedule 必須是 JSON array。";
-      return null;
-    }
-    return parsed as Array<Record<string, string>>;
-  } catch {
-    errorMessage.value = "schedule JSON 無法解析。";
-    return null;
+function parseSchedule(): Array<Record<string, string>> {
+  return scheduleItems.value
+    .map((item) => ({
+      time: (item.time || "").trim(),
+      title: (item.title || "").trim(),
+      desc: (item.desc || "").trim(),
+    }))
+    .filter((item) => item.time || item.title || item.desc);
+}
+
+function addScheduleItem() {
+  scheduleItems.value.push({ time: "", title: "", desc: "" });
+}
+
+function removeScheduleItem(idx: number) {
+  scheduleItems.value.splice(idx, 1);
+  if (scheduleItems.value.length === 0) {
+    scheduleItems.value.push({ time: "", title: "", desc: "" });
   }
 }
 function getSocials(): Record<string, string> {
@@ -230,7 +245,6 @@ function buildPayload(requireOrgId: boolean): OrganizerCreateEventPayload | null
     return null;
   }
   const schedule = parseSchedule();
-  if (schedule === null) return null;
   const socials = getSocials();
   const payload: OrganizerCreateEventPayload = {
     org_id: eventForm.value.org_id,
@@ -307,7 +321,17 @@ async function loadEvent() {
       line: so.line || "",
       website: so.website || "",
     };
-    scheduleJson.value = JSON.stringify(e.schedule || [], null, 2);
+    const sch = e.schedule || [];
+    scheduleItems.value =
+      Array.isArray(sch) && sch.length > 0
+        ? sch.map((s: Record<string, string>) => {
+            const raw = String(s?.time ?? "");
+            const timeVal = raw.includes("~") ? raw.split("~")[0]?.trim() ?? "" : raw;
+            const m = timeVal.match(/^(\d{1,2}):(\d{2})/);
+            const normalized = m ? `${m[1]!.padStart(2, "0")}:${m[2]}` : timeVal;
+            return { time: normalized, title: String(s?.title ?? ""), desc: String(s?.desc ?? "") };
+          })
+        : [{ time: "", title: "", desc: "" }];
     internalNote.value = detail.internal_note || "";
     eventMediaList.value = detail.event_media ?? [];
     ticketTypesList.value = detail.ticket_types ?? [];
@@ -545,14 +569,14 @@ async function handleDeleteTicketType(tt: TicketType) {
       <router-link to="/organizer" class="link-back">← 回主辦方主頁</router-link>
     </div>
 
-    <h1 class="font-display text-3xl font-bold tracking-tight text-gray-900 animate-slide-up">{{ isCreatePage ? "步驟 2：建立活動" : "步驟 3：編輯活動" }}</h1>
-    <p class="mt-2 text-gray-600 animate-slide-up-delay">
+    <h1 class="font-display text-3xl font-bold tracking-tight text-white animate-slide-up">{{ isCreatePage ? "步驟 2：建立活動" : "步驟 3：編輯活動" }}</h1>
+    <p class="mt-2 text-gray-400 animate-slide-up-delay">
       {{ isCreatePage ? "填寫活動資料與票種，建立新活動。" : "從下拉選擇既有活動載入後編輯。" }}
     </p>
 
     <!-- Load Event (edit only) -->
     <section v-if="isEditPage" class="card mt-6 p-6 animate-slide-up" style="animation-delay: 0.1s; animation-fill-mode: both;">
-      <h2 class="font-display text-lg font-semibold text-gray-800">載入既有活動</h2>
+      <h2 class="font-display text-lg font-semibold text-gray-100">載入既有活動</h2>
       <div class="mt-3 flex flex-wrap items-center gap-3">
         <select
           v-model="editEventId"
@@ -573,8 +597,8 @@ async function handleDeleteTicketType(tt: TicketType) {
           {{ submitting === "load" ? "載入中..." : "載入活動" }}
         </button>
       </div>
-      <p v-if="summaryLoading" class="mt-2 text-sm text-gray-500">載入活動列表中…</p>
-      <p v-else-if="myEvents.length === 0" class="mt-2 text-sm text-gray-500">尚無活動，請先至「建立活動」建立。</p>
+      <p v-if="summaryLoading" class="mt-2 text-sm text-cypher-muted">載入活動列表中…</p>
+      <p v-else-if="myEvents.length === 0" class="mt-2 text-sm text-cypher-muted">尚無活動，請先至「建立活動」建立。</p>
     </section>
 
     <!-- Event Form -->
@@ -585,10 +609,10 @@ async function handleDeleteTicketType(tt: TicketType) {
       >
         此活動已上架或已結束。修改活動時間、報名時間等欄位時請特別留意，可能影響已報名參加者。
       </div>
-      <h2 class="font-display text-lg font-semibold text-gray-800">活動資料</h2>
+      <h2 class="font-display text-lg font-semibold text-gray-100">活動資料</h2>
       <div class="mt-4 space-y-4">
         <div>
-          <label class="mb-1 block text-sm font-medium text-gray-600">主辦方 *</label>
+          <label class="mb-1 block text-sm font-medium text-gray-300">主辦方 *</label>
           <select
             v-model="eventForm.org_id"
             class="input-field w-full"
@@ -599,16 +623,16 @@ async function handleDeleteTicketType(tt: TicketType) {
               {{ org.name }}（{{ org.role }}）
             </option>
           </select>
-          <p v-if="summaryLoading" class="mt-1 text-xs text-gray-500">載入主辦方列表中…</p>
-          <p v-else-if="myOrgs.length === 0" class="mt-1 text-xs text-amber-600">尚無主辦方，請先完成步驟 1 申請主辦方。</p>
+          <p v-if="summaryLoading" class="mt-1 text-xs text-cypher-muted">載入主辦方列表中…</p>
+          <p v-else-if="myOrgs.length === 0" class="mt-1 text-xs text-amber-400">尚無主辦方，請先完成步驟 1 申請主辦方。</p>
         </div>
         <div class="grid gap-4 sm:grid-cols-2">
           <div>
-            <label class="mb-1 block text-sm font-medium text-gray-600">活動名稱 *</label>
+            <label class="mb-1 block text-sm font-medium text-gray-300">活動名稱 *</label>
             <input v-model="eventForm.title" placeholder="活動標題" class="input-field w-full" />
           </div>
           <div>
-            <label class="mb-1 block text-sm font-medium text-gray-600">狀態</label>
+            <label class="mb-1 block text-sm font-medium text-gray-300">狀態</label>
             <select v-model="eventForm.status" class="input-field w-full">
               <option value="draft">草稿</option>
               <option value="published">已上架</option>
@@ -619,61 +643,61 @@ async function handleDeleteTicketType(tt: TicketType) {
         </div>
         <div class="grid gap-4 sm:grid-cols-2">
           <div>
-            <label class="mb-1 block text-sm font-medium text-gray-700">開始時間 *</label>
-            <input v-model="eventForm.start_at" type="datetime-local" class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm" />
+            <label class="mb-1 block text-sm font-medium text-gray-300">開始時間 *</label>
+            <input v-model="eventForm.start_at" type="datetime-local" class="input-field w-full" />
           </div>
           <div>
-            <label class="mb-1 block text-sm font-medium text-gray-700">結束時間 *</label>
-            <input v-model="eventForm.end_at" type="datetime-local" class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm" />
+            <label class="mb-1 block text-sm font-medium text-gray-300">結束時間 *</label>
+            <input v-model="eventForm.end_at" type="datetime-local" class="input-field w-full" />
           </div>
         </div>
         <div class="grid gap-4 sm:grid-cols-2">
           <div>
-            <label class="mb-1 block text-sm font-medium text-gray-700">報名開始</label>
-            <input v-model="eventForm.registration_start_at" type="datetime-local" class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm" />
+            <label class="mb-1 block text-sm font-medium text-gray-300">報名開始</label>
+            <input v-model="eventForm.registration_start_at" type="datetime-local" class="input-field w-full" />
           </div>
           <div>
-            <label class="mb-1 block text-sm font-medium text-gray-700">報名結束</label>
-            <input v-model="eventForm.registration_end_at" type="datetime-local" class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm" />
+            <label class="mb-1 block text-sm font-medium text-gray-300">報名結束</label>
+            <input v-model="eventForm.registration_end_at" type="datetime-local" class="input-field w-full" />
           </div>
         </div>
         <div class="grid gap-4 sm:grid-cols-2">
           <div>
-            <label class="mb-1 block text-sm font-medium text-gray-700">地點名稱</label>
-            <input v-model="eventForm.location_name" placeholder="場地名稱" class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm" />
+            <label class="mb-1 block text-sm font-medium text-gray-300">地點名稱</label>
+            <input v-model="eventForm.location_name" placeholder="場地名稱" class="input-field w-full" />
           </div>
           <div>
-            <label class="mb-1 block text-sm font-medium text-gray-700">地址</label>
-            <input v-model="eventForm.location_address" placeholder="詳細地址" class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm" />
+            <label class="mb-1 block text-sm font-medium text-gray-300">地址</label>
+            <input v-model="eventForm.location_address" placeholder="詳細地址" class="input-field w-full" />
           </div>
         </div>
         <div>
-          <label class="mb-1 block text-sm font-medium text-gray-700">地圖連結</label>
-          <input v-model="eventForm.map_url" placeholder="https://maps.google.com/..." class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm" />
+          <label class="mb-1 block text-sm font-medium text-gray-300">地圖連結</label>
+          <input v-model="eventForm.map_url" placeholder="https://maps.google.com/..." class="input-field w-full" />
         </div>
         <div class="grid gap-4 sm:grid-cols-2">
           <div>
-            <label class="mb-1 block text-sm font-medium text-gray-700">聯絡信箱</label>
-            <input v-model="eventForm.contact_email" type="email" placeholder="contact@example.com" class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm" />
+            <label class="mb-1 block text-sm font-medium text-gray-300">聯絡信箱</label>
+            <input v-model="eventForm.contact_email" type="email" placeholder="contact@example.com" class="input-field w-full" />
           </div>
           <div>
-            <label class="mb-1 block text-sm font-medium text-gray-700">聯絡電話</label>
-            <input v-model="eventForm.contact_phone" placeholder="0900-000-000" class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm" />
+            <label class="mb-1 block text-sm font-medium text-gray-300">聯絡電話</label>
+            <input v-model="eventForm.contact_phone" placeholder="0900-000-000" class="input-field w-full" />
           </div>
         </div>
         <div>
-          <label class="mb-1 block text-sm font-medium text-gray-700">活動描述</label>
-          <textarea v-model="eventForm.description" rows="4" placeholder="活動介紹..." class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm" />
+          <label class="mb-1 block text-sm font-medium text-gray-300">活動描述</label>
+          <textarea v-model="eventForm.description" rows="4" placeholder="活動介紹..." class="input-field w-full" />
         </div>
         <div>
-          <label class="mb-1 block text-sm font-medium text-gray-700">舞風</label>
+          <label class="mb-1 block text-sm font-medium text-gray-300">舞風</label>
           <div class="mt-2 flex flex-wrap gap-2">
             <button
               v-for="s in DANCE_STYLES"
               :key="s.key"
               type="button"
               class="rounded-full border px-3 py-1 text-xs font-semibold"
-              :class="(eventForm.dance_styles || []).includes(s.key) ? 'border-brand-600 bg-brand-50 text-brand-700' : 'border-gray-300 text-gray-600 hover:bg-gray-50'"
+              :class="(eventForm.dance_styles || []).includes(s.key) ? 'border-cypher-accent bg-cypher-accent/20 text-cypher-accent' : 'border-cypher-border text-gray-300 hover:border-cypher-accent/50 hover:bg-cypher-surface-alt'"
               @click="toggleDanceStyle(s.key)"
             >
               {{ s.label }}
@@ -681,14 +705,14 @@ async function handleDeleteTicketType(tt: TicketType) {
           </div>
         </div>
         <div>
-          <label class="mb-1 block text-sm font-medium text-gray-700">活動類型</label>
+          <label class="mb-1 block text-sm font-medium text-gray-300">活動類型</label>
           <div class="mt-2 flex flex-wrap gap-2">
             <button
               v-for="t in EVENT_TYPES"
               :key="t.key"
               type="button"
               class="rounded-full border px-3 py-1 text-xs font-semibold"
-              :class="(eventForm.event_types || []).includes(t.key) ? 'border-brand-600 bg-brand-50 text-brand-700' : 'border-gray-300 text-gray-600 hover:bg-gray-50'"
+              :class="(eventForm.event_types || []).includes(t.key) ? 'border-cypher-accent bg-cypher-accent/20 text-cypher-accent' : 'border-cypher-border text-gray-300 hover:border-cypher-accent/50 hover:bg-cypher-surface-alt'"
               @click="toggleEventType(t.key)"
             >
               {{ t.label }}
@@ -696,22 +720,37 @@ async function handleDeleteTicketType(tt: TicketType) {
           </div>
         </div>
         <div>
-          <label class="mb-1 block text-sm font-medium text-gray-700">社群連結 (IG, FB, YouTube, LINE, Website)</label>
+          <label class="mb-1 block text-sm font-medium text-gray-300">社群連結 (IG, FB, YouTube, LINE, Website)</label>
           <div class="mt-2 grid gap-2 sm:grid-cols-2">
-            <input v-model="socialForm.ig" placeholder="Instagram" class="rounded-lg border border-gray-300 px-3 py-2 text-sm" />
-            <input v-model="socialForm.fb" placeholder="Facebook" class="rounded-lg border border-gray-300 px-3 py-2 text-sm" />
-            <input v-model="socialForm.youtube" placeholder="YouTube" class="rounded-lg border border-gray-300 px-3 py-2 text-sm" />
-            <input v-model="socialForm.line" placeholder="LINE" class="rounded-lg border border-gray-300 px-3 py-2 text-sm" />
-            <input v-model="socialForm.website" placeholder="Website" class="rounded-lg border border-gray-300 px-3 py-2 text-sm sm:col-span-2" />
+            <input v-model="socialForm.ig" placeholder="Instagram" class="input-field py-2 text-sm" />
+            <input v-model="socialForm.fb" placeholder="Facebook" class="input-field py-2 text-sm" />
+            <input v-model="socialForm.youtube" placeholder="YouTube" class="input-field py-2 text-sm" />
+            <input v-model="socialForm.line" placeholder="LINE" class="input-field py-2 text-sm" />
+            <input v-model="socialForm.website" placeholder="Website" class="input-field py-2 text-sm sm:col-span-2" />
           </div>
         </div>
         <div>
-          <label class="mb-1 block text-sm font-medium text-gray-700">流程 (JSON)</label>
-          <textarea v-model="scheduleJson" rows="3" placeholder='[{"time":"13:00","title":"Check-in","desc":"報到"}]' class="w-full rounded-lg border border-gray-300 px-4 py-2 font-mono text-xs" />
+          <label class="mb-1 block text-sm font-medium text-gray-300">活動流程</label>
+          <p class="mb-3 text-xs text-cypher-muted">可新增多個時段項目，將顯示於活動詳情頁。</p>
+          <div class="space-y-3">
+            <div
+              v-for="(item, idx) in scheduleItems"
+              :key="idx"
+              class="flex flex-wrap items-start gap-2 rounded-xl border border-cypher-border bg-cypher-surface-alt p-3"
+            >
+              <input v-model="item.time" type="time" class="input-field w-32 shrink-0 py-2 text-sm" />
+              <input v-model="item.title" placeholder="標題（如 報到）" class="input-field min-w-[120px] flex-1 py-2 text-sm" />
+              <input v-model="item.desc" placeholder="說明（選填）" class="input-field min-w-[120px] flex-1 py-2 text-sm" />
+              <button type="button" class="rounded-lg px-3 py-2 text-sm text-rose-400 transition-colors hover:bg-rose-500/20" title="刪除此項目" @click="removeScheduleItem(idx)">
+                刪除
+              </button>
+            </div>
+            <button type="button" class="btn-secondary text-sm" @click="addScheduleItem">＋ 新增流程項目</button>
+          </div>
         </div>
         <div>
-          <label class="mb-1 block text-sm font-medium text-gray-700">主辦方私密備註</label>
-          <textarea v-model="internalNote" rows="3" placeholder="僅主辦方可見" class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm" />
+          <label class="mb-1 block text-sm font-medium text-gray-300">主辦方私密備註</label>
+          <textarea v-model="internalNote" rows="3" placeholder="僅主辦方可見" class="input-field w-full" />
         </div>
       </div>
 
@@ -720,6 +759,7 @@ async function handleDeleteTicketType(tt: TicketType) {
 
       <div class="mt-4 flex flex-wrap gap-3">
         <button
+          v-if="isCreatePage"
           class="rounded-lg bg-brand-600 px-4 py-2 font-semibold text-white hover:bg-brand-700 disabled:opacity-50"
           :disabled="submitting === 'event'"
           @click="submitCreate"
@@ -728,7 +768,7 @@ async function handleDeleteTicketType(tt: TicketType) {
         </button>
         <button
           v-if="mode === 'edit'"
-          class="rounded-lg border border-brand-600 px-4 py-2 font-semibold text-brand-700 hover:bg-brand-50 disabled:opacity-50"
+          class="rounded-lg bg-brand-600 px-4 py-2 font-semibold text-white hover:bg-brand-700 disabled:opacity-50"
           :disabled="submitting === 'event'"
           @click="submitUpdate"
         >
@@ -737,7 +777,7 @@ async function handleDeleteTicketType(tt: TicketType) {
         <router-link
           v-if="mode === 'edit' && editEventId"
           :to="{ name: 'organizer-forms-with-event', params: { eventId: editEventId } }"
-          class="rounded-lg border border-gray-500 px-4 py-2 font-semibold text-gray-700 hover:bg-gray-50"
+          class="rounded-lg border border-gray-500 px-4 py-2 font-semibold text-gray-300 hover:bg-gray-50"
         >
           前往表單設定 →
         </router-link>
@@ -746,7 +786,7 @@ async function handleDeleteTicketType(tt: TicketType) {
 
     <!-- 活動圖片獨立區塊（有活動 ID 時顯示，與表單同層級較醒目） -->
     <section v-if="editEventId" class="card mt-6 p-6">
-      <h2 class="font-display text-lg font-semibold text-gray-800">活動圖片</h2>
+      <h2 class="font-display text-lg font-semibold text-gray-100">活動圖片</h2>
       <p class="mt-1 text-sm text-gray-400">上傳後會顯示於活動詳情頁輪播。限 JPEG/PNG/WebP/GIF，單檔 5MB。</p>
       <div class="mt-4 flex flex-wrap items-center gap-4">
         <label class="inline-block cursor-pointer rounded-xl border-2 border-brand-500 px-4 py-2 text-sm font-semibold text-brand-700 transition-colors hover:bg-brand-500/20">
@@ -764,29 +804,29 @@ async function handleDeleteTicketType(tt: TicketType) {
 
     <!-- Ticket Type (when in edit mode) -->
     <section v-if="mode === 'edit' && editEventId" class="card mt-6 p-6">
-      <h2 class="font-display text-lg font-semibold text-gray-800">既有票種</h2>
+      <h2 class="font-display text-lg font-semibold text-gray-100">既有票種</h2>
       <div v-if="ticketTypesList.length > 0" class="mt-4 space-y-4">
         <div
           v-for="tt in ticketTypesList"
           :key="tt.id"
-          class="rounded-lg border border-gray-200 bg-gray-50/50 p-4"
+          class="rounded-xl border border-cypher-border bg-cypher-surface-alt p-4"
         >
           <div v-if="editingTicketTypeId !== tt.id" class="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <span class="font-medium text-gray-800">{{ tt.name }}</span>
-              <span class="ml-2 text-sm text-gray-600">名額 {{ tt.capacity }} / 已售 {{ tt.sold_count }} · 每人限購 {{ tt.per_user_limit }}</span>
+              <span class="font-medium text-gray-100">{{ tt.name }}</span>
+              <span class="ml-2 text-sm text-gray-400">名額 {{ tt.capacity }} / 已售 {{ tt.sold_count }} · 每人限購 {{ tt.per_user_limit }}</span>
             </div>
             <div class="flex gap-2">
               <button
                 type="button"
-                class="rounded border border-gray-400 px-3 py-1 text-sm text-gray-700 hover:bg-gray-100"
+                class="btn-secondary px-3 py-1 text-sm"
                 @click="startEditTicketType(tt)"
               >
                 編輯
               </button>
               <button
                 type="button"
-                class="rounded border border-rose-300 px-3 py-1 text-sm text-rose-700 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-50"
+                class="rounded border border-rose-500/50 px-3 py-1 text-sm text-rose-400 hover:bg-rose-500/20 disabled:cursor-not-allowed disabled:opacity-50"
                 :disabled="tt.sold_count > 0"
                 :title="tt.sold_count > 0 ? '已售出不可刪除' : ''"
                 @click="handleDeleteTicketType(tt)"
@@ -797,22 +837,22 @@ async function handleDeleteTicketType(tt: TicketType) {
           </div>
           <div v-else class="space-y-3">
             <div class="grid gap-3 sm:grid-cols-2">
-              <input v-model="editTicketTypeForm.name" placeholder="票種名稱 *" class="rounded-lg border border-gray-300 px-3 py-2 text-sm" />
-              <input v-model.number="editTicketTypeForm.capacity" type="number" min="0" placeholder="名額" class="rounded-lg border border-gray-300 px-3 py-2 text-sm" />
-              <input v-model.number="editTicketTypeForm.per_user_limit" type="number" min="1" placeholder="每人限購" class="rounded-lg border border-gray-300 px-3 py-2 text-sm" />
+              <input v-model="editTicketTypeForm.name" placeholder="票種名稱 *" class="input-field px-3 py-2 text-sm" />
+              <input v-model.number="editTicketTypeForm.capacity" type="number" min="0" placeholder="名額" class="input-field px-3 py-2 text-sm" />
+              <input v-model.number="editTicketTypeForm.per_user_limit" type="number" min="1" placeholder="每人限購" class="input-field px-3 py-2 text-sm" />
             </div>
             <div class="grid gap-3 sm:grid-cols-2">
-              <input v-model="editTicketTypeForm.sale_start_at" type="datetime-local" placeholder="開賣時間" class="rounded-lg border border-gray-300 px-3 py-2 text-sm" />
-              <input v-model="editTicketTypeForm.sale_end_at" type="datetime-local" placeholder="結束販售" class="rounded-lg border border-gray-300 px-3 py-2 text-sm" />
+              <input v-model="editTicketTypeForm.sale_start_at" type="datetime-local" placeholder="開賣時間" class="input-field px-3 py-2 text-sm" />
+              <input v-model="editTicketTypeForm.sale_end_at" type="datetime-local" placeholder="結束販售" class="input-field px-3 py-2 text-sm" />
             </div>
-            <label class="flex items-center gap-2 text-sm">
+            <label class="flex items-center gap-2 text-sm text-gray-300">
               <input v-model="editTicketTypeForm.is_active" type="checkbox" />
               開放販售
             </label>
             <div class="flex gap-2">
               <button
                 type="button"
-                class="rounded bg-gray-700 px-3 py-1.5 text-sm font-semibold text-white hover:bg-gray-800 disabled:opacity-50"
+                class="rounded-lg bg-cypher-accent px-3 py-1.5 text-sm font-semibold text-white hover:bg-cypher-accent/90 disabled:opacity-50"
                 :disabled="submitting === 'ticket'"
                 @click="handleUpdateTicketType"
               >
@@ -820,7 +860,7 @@ async function handleDeleteTicketType(tt: TicketType) {
               </button>
               <button
                 type="button"
-                class="rounded border border-gray-400 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100"
+                class="btn-secondary px-3 py-1.5 text-sm"
                 :disabled="submitting === 'ticket'"
                 @click="cancelEditTicketType"
               >
@@ -830,16 +870,16 @@ async function handleDeleteTicketType(tt: TicketType) {
           </div>
         </div>
       </div>
-      <p v-else class="mt-2 text-sm text-gray-500">尚無票種，請於下方建立。</p>
+      <p v-else class="mt-2 text-sm text-cypher-muted">尚無票種，請於下方建立。</p>
 
-      <h2 class="mt-6 text-lg font-semibold text-gray-800">建立票種</h2>
+      <h2 class="mt-6 text-lg font-semibold text-gray-100">建立票種</h2>
       <div class="mt-4 grid gap-4 sm:grid-cols-2">
-        <input v-model="ticketTypeForm.name" placeholder="票種名稱 *" class="rounded-lg border border-gray-300 px-4 py-2 text-sm" />
-        <input v-model.number="ticketTypeForm.capacity" type="number" min="1" placeholder="名額" class="rounded-lg border border-gray-300 px-4 py-2 text-sm" />
-        <input v-model.number="ticketTypeForm.per_user_limit" type="number" min="1" placeholder="每人限購" class="rounded-lg border border-gray-300 px-4 py-2 text-sm" />
+        <input v-model="ticketTypeForm.name" placeholder="票種名稱 *" class="input-field px-4 py-2 text-sm" />
+        <input v-model.number="ticketTypeForm.capacity" type="number" min="1" placeholder="名額" class="input-field px-4 py-2 text-sm" />
+        <input v-model.number="ticketTypeForm.per_user_limit" type="number" min="1" placeholder="每人限購" class="input-field px-4 py-2 text-sm" />
       </div>
       <button
-        class="mt-4 rounded-lg bg-gray-700 px-4 py-2 font-semibold text-white hover:bg-gray-800 disabled:opacity-50"
+        class="mt-4 rounded-lg bg-cypher-accent px-4 py-2 font-semibold text-white hover:bg-cypher-accent/90 disabled:opacity-50"
         :disabled="submitting === 'ticket'"
         @click="submitTicketType"
       >
