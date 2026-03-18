@@ -52,14 +52,14 @@ function toggleMultiOption(field: FormField, option: string): void {
 </script>
 
 <template>
-  <div class="grid gap-4">
+  <div class="dynamic-form grid gap-4">
     <div
       v-for="field in schema.fields"
       :key="field.key"
-      class="rounded-xl border border-cypher-border bg-cypher-surface-alt/50 p-4"
+      class="rounded-xl border border-cypher-border bg-cypher-surface-alt p-4"
     >
       <label class="block">
-        <span class="text-sm font-semibold text-gray-200">
+        <span class="text-sm font-semibold text-gray-300">
           {{ field.label }}
           <span v-if="field.required" class="text-rose-400">*</span>
         </span>
@@ -71,7 +71,7 @@ function toggleMultiOption(field: FormField, option: string): void {
           :value="stringValue(field)"
           :placeholder="field.placeholder || ''"
           :disabled="disabled"
-          class="input-field mt-2 text-sm"
+          class="input-field mt-2"
           @input="updateField(field.key, ($event.target as HTMLInputElement).value)"
         />
 
@@ -81,7 +81,7 @@ function toggleMultiOption(field: FormField, option: string): void {
           :value="numberValue(field)"
           :placeholder="field.placeholder || ''"
           :disabled="disabled"
-          class="input-field mt-2 text-sm"
+          class="input-field mt-2"
           @input="updateField(field.key, ($event.target as HTMLInputElement).value)"
         />
 
@@ -89,10 +89,10 @@ function toggleMultiOption(field: FormField, option: string): void {
           v-else-if="field.type === 'single_select' || field.type === 'dropdown'"
           :value="stringValue(field)"
           :disabled="disabled"
-          class="input-field mt-2 text-sm"
+          class="input-field mt-2"
           @change="updateField(field.key, ($event.target as HTMLSelectElement).value)"
         >
-          <option value="" class="bg-cypher-surface">Select</option>
+          <option value="">Select</option>
           <option v-for="option in field.options || []" :key="option" :value="option">
             {{ option }}
           </option>

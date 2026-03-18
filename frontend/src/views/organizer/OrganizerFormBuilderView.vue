@@ -250,10 +250,10 @@ watch(
     <div class="card mt-6 space-y-6 p-6 animate-slide-up" style="animation-delay: 0.1s; animation-fill-mode: both;">
       <div class="grid gap-4 sm:grid-cols-2">
         <div>
-          <label class="mb-1 block text-sm font-medium text-gray-700">活動 *</label>
+          <label class="mb-1 block text-sm font-medium text-gray-300">活動 *</label>
           <select
             v-model="eventId"
-            class="w-full rounded-lg border border-gray-300 px-4 py-2 text-sm"
+            class="input-field w-full"
             :disabled="summaryLoading"
           >
             <option value="">— 請選擇活動 —</option>
@@ -261,11 +261,11 @@ watch(
               {{ formatEventOption(ev) }}
             </option>
           </select>
-          <p v-if="summaryLoading" class="mt-1 text-xs text-gray-500">載入活動列表中…</p>
+          <p v-if="summaryLoading" class="mt-1 text-xs text-cypher-muted">載入活動列表中…</p>
           <p v-else-if="myEvents.length === 0" class="mt-1 text-xs text-amber-400">尚無活動，請先建立活動。</p>
         </div>
         <div>
-          <label class="mb-1 block text-sm font-medium text-gray-600">票種 ID（選填）</label>
+          <label class="mb-1 block text-sm font-medium text-gray-300">票種 ID（選填）</label>
           <input
             v-model="ticketTypeId"
             placeholder="留空為整場活動共用"
@@ -302,75 +302,75 @@ watch(
 
       <div>
         <div class="mb-3 flex items-center justify-between">
-          <h2 class="font-display text-lg font-semibold text-gray-800">報名欄位</h2>
+          <h2 class="font-display text-lg font-semibold text-gray-100">報名欄位</h2>
           <button
             type="button"
-            class="rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-medium text-white transition-colors hover:bg-emerald-700"
+            class="rounded-xl border border-cypher-accent bg-cypher-accent/20 px-3 py-1.5 text-sm font-medium text-cypher-accent transition-colors hover:bg-cypher-accent/30"
             @click="addField"
           >
             ＋ 新增欄位
           </button>
         </div>
-        <p class="mb-4 text-xs text-gray-500">欄位代碼（key）用於後台辨識，建議英文或數字，勿重複。</p>
+        <p class="mb-4 text-xs text-cypher-muted">欄位代碼（key）用於後台辨識，建議英文或數字，勿重複。</p>
 
         <div class="space-y-4">
           <div
             v-for="(field, index) in editorFields"
             :key="field.id"
-            class="rounded-xl border border-gray-200 bg-gray-50 p-4"
+            class="rounded-xl border border-cypher-border bg-cypher-surface-alt p-4"
           >
             <div class="mb-3 flex items-center justify-between">
-              <span class="text-sm font-medium text-gray-600">欄位 {{ index + 1 }}</span>
+              <span class="text-sm font-medium text-gray-300">欄位 {{ index + 1 }}</span>
               <div class="flex gap-1">
-                <button type="button" class="rounded px-2 py-1 text-xs text-gray-500 transition-colors hover:bg-gray-200 hover:text-gray-800" :disabled="index === 0" @click="moveField(index, -1)">↑</button>
-                <button type="button" class="rounded px-2 py-1 text-xs text-gray-500 transition-colors hover:bg-gray-200 hover:text-gray-800" :disabled="index === editorFields.length - 1" @click="moveField(index, 1)">↓</button>
-                <button type="button" class="rounded px-2 py-1 text-xs text-rose-600 transition-colors hover:bg-rose-500/20 hover:text-rose-700" @click="removeField(index)">刪除</button>
+                <button type="button" class="rounded px-2 py-1 text-xs text-cypher-muted transition-colors hover:bg-cypher-surface hover:text-gray-200" :disabled="index === 0" @click="moveField(index, -1)">↑</button>
+                <button type="button" class="rounded px-2 py-1 text-xs text-cypher-muted transition-colors hover:bg-cypher-surface hover:text-gray-200" :disabled="index === editorFields.length - 1" @click="moveField(index, 1)">↓</button>
+                <button type="button" class="rounded px-2 py-1 text-xs text-rose-400 transition-colors hover:bg-rose-500/20 hover:text-rose-300" @click="removeField(index)">刪除</button>
               </div>
             </div>
             <div class="grid gap-3 sm:grid-cols-2">
               <div>
-                <label class="mb-0.5 block text-xs font-medium text-gray-500">欄位名稱（顯示給報名者）*</label>
+                <label class="mb-0.5 block text-xs font-medium text-gray-300">欄位名稱（顯示給報名者）*</label>
                 <input v-model="field.label" type="text" placeholder="例：姓名" class="input-field py-2" />
               </div>
               <div>
-                <label class="mb-0.5 block text-xs font-medium text-gray-500">欄位代碼（key）*</label>
+                <label class="mb-0.5 block text-xs font-medium text-gray-300">欄位代碼（key）*</label>
                 <input v-model="field.key" type="text" placeholder="例：full_name" class="input-field py-2 font-mono" />
-                <p class="mt-0.5 text-xs text-gray-500">可填英文/數字，儲存時會用於辨識</p>
+                <p class="mt-0.5 text-xs text-cypher-muted">可填英文/數字，儲存時會用於辨識</p>
               </div>
             </div>
             <div class="mt-3 grid gap-3 sm:grid-cols-2">
               <div>
-                <label class="mb-0.5 block text-xs font-medium text-gray-500">欄位類型</label>
+                <label class="mb-0.5 block text-xs font-medium text-gray-300">欄位類型</label>
                 <select v-model="field.type" class="input-field py-2">
                   <option v-for="opt in FIELD_TYPES" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
                 </select>
               </div>
               <div class="flex items-end">
                 <label class="flex items-center gap-2">
-                  <input v-model="field.required" type="checkbox" class="rounded border-gray-300" />
-                  <span class="text-sm text-gray-600">必填</span>
+                  <input v-model="field.required" type="checkbox" class="rounded border-cypher-border" />
+                  <span class="text-sm text-gray-300">必填</span>
                 </label>
               </div>
             </div>
             <div class="mt-3 grid gap-3 sm:grid-cols-2">
               <div>
-                <label class="mb-0.5 block text-xs font-medium text-gray-500">佔位文字（選填）</label>
+                <label class="mb-0.5 block text-xs font-medium text-gray-300">佔位文字（選填）</label>
                 <input v-model="field.placeholder" type="text" placeholder="例：請輸入姓名" class="input-field py-2" />
               </div>
               <div>
-                <label class="mb-0.5 block text-xs font-medium text-gray-500">說明文字（選填）</label>
+                <label class="mb-0.5 block text-xs font-medium text-gray-300">說明文字（選填）</label>
                 <input v-model="field.help_text" type="text" placeholder="例：請填寫真實姓名" class="input-field py-2" />
               </div>
             </div>
             <!-- 選項（單選/多選/下拉） -->
             <div v-if="needsOptions(field.type)" class="mt-3">
-              <label class="mb-1 block text-xs font-medium text-gray-500">選項</label>
+              <label class="mb-1 block text-xs font-medium text-gray-300">選項</label>
               <div class="space-y-2">
                 <div v-for="(opt, optIndex) in field.options" :key="optIndex" class="flex items-center gap-2">
                   <input v-model="field.options[optIndex]" type="text" placeholder="選項內容" class="input-field w-48 py-2" />
-                  <button type="button" class="text-gray-500 transition-colors hover:text-rose-400" title="移除選項" @click="removeOption(field, optIndex)">×</button>
+                  <button type="button" class="text-cypher-muted transition-colors hover:text-rose-400" title="移除選項" @click="removeOption(field, optIndex)">×</button>
                 </div>
-                <button type="button" class="rounded border border-dashed border-gray-300 px-2 py-1 text-xs text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-600" @click="addOption(field)">＋ 新增選項</button>
+                <button type="button" class="rounded border border-dashed border-cypher-border px-2 py-1 text-xs text-cypher-muted transition-colors hover:border-cypher-accent/50 hover:bg-cypher-surface hover:text-gray-300" @click="addOption(field)">＋ 新增選項</button>
               </div>
             </div>
           </div>
@@ -378,13 +378,13 @@ watch(
         <p v-if="editorFields.length === 0" class="rounded-xl bg-amber-500/10 py-4 text-center text-sm text-amber-300">尚無欄位，請點「新增欄位」或「填入預設欄位」。</p>
       </div>
 
-      <p v-if="message" role="alert" class="rounded-xl bg-emerald-100 px-4 py-2 text-sm text-emerald-800">{{ message }}</p>
-      <p v-if="errorMessage" role="alert" class="rounded-xl bg-rose-100 px-4 py-2 text-sm text-rose-800">{{ errorMessage }}</p>
+      <p v-if="message" role="alert" class="rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-sm text-emerald-300">{{ message }}</p>
+      <p v-if="errorMessage" role="alert" class="rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-2 text-sm text-rose-300">{{ errorMessage }}</p>
 
-      <div v-if="forms.length > 0" class="rounded-xl border border-gray-200 overflow-hidden">
-        <p class="bg-gray-100 px-3 py-2 text-sm font-medium text-gray-800">已儲存表單</p>
+      <div v-if="forms.length > 0" class="rounded-xl border border-cypher-border overflow-hidden">
+        <p class="bg-cypher-surface-alt px-3 py-2 text-sm font-medium text-gray-200">已儲存表單</p>
         <table class="min-w-full text-sm">
-          <thead class="bg-gray-100 text-left text-gray-500">
+          <thead class="bg-cypher-surface-alt text-left text-cypher-muted">
             <tr>
               <th class="px-3 py-2">票種</th>
               <th class="px-3 py-2">版本</th>
@@ -392,13 +392,13 @@ watch(
               <th class="px-3 py-2">操作</th>
             </tr>
           </thead>
-          <tbody>
-            <tr v-for="f in forms" :key="f.id" class="border-t border-gray-200">
+          <tbody class="text-gray-200">
+            <tr v-for="f in forms" :key="f.id" class="border-t border-cypher-border">
               <td class="px-3 py-2">{{ f.ticket_type_id ? f.ticket_type_id.slice(0, 8) + "…" : "整場活動" }}</td>
               <td class="px-3 py-2">{{ f.version }}</td>
               <td class="px-3 py-2">{{ f.schema.fields.length }}</td>
               <td class="px-3 py-2">
-                <button type="button" class="text-brand-600 hover:underline" @click="loadFormIntoEditor(f)">載入到編輯器</button>
+                <button type="button" class="text-cypher-accent transition-colors hover:text-cypher-accent-cyan" @click="loadFormIntoEditor(f)">載入到編輯器</button>
               </td>
             </tr>
           </tbody>
