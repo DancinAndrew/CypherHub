@@ -15,7 +15,7 @@ docker compose -f infra/docker-compose.yml up -d
 supabase db reset   # 或 supabase migration up
 
 # 3. 啟動後端
-cd backend && pip install -r requirements.txt && flask run
+cd backend && python3.12 -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt && flask run
 
 # 4. 啟動前端
 cd frontend && npm install && npm run dev
@@ -190,11 +190,11 @@ cd frontend && npm install && npm run dev
 | 2 | `curl "http://localhost:8000/api/v1/events?from=2025-01-01&to=2025-12-31"` | 日期區間篩選 |
 | 3 | 首頁 UI | ⚠️ 若尚無關鍵字/日期 UI，可僅驗證 API |
 
-### 1.5.2f 活動分享連結
+### 1.5.2f 活動分享連結 ✅
 
 | 步驟 | 操作 | 預期 |
 |------|------|------|
-| 1 | 活動詳情頁 | ⚠️ 需有「分享」按鈕 |
+| 1 | 活動詳情頁 | 有「分享活動」按鈕 |
 | 2 | 點分享 → 複製 URL | 可複製 `/events/:eventId` 永久網址 |
 | 3 | 貼到新分頁 | 可開啟活動詳情 |
 
@@ -215,7 +215,7 @@ cd frontend && npm install && npm run dev
 | 3 | 已 ended/cancelled 活動 | 不可報名、不可核銷 |
 | 4 | Admin（allowlist 用戶）開 `/admin` | 可進，看到全站活動列表 |
 | 5 | Admin 對 published 活動點「下架」 | status=disabled，首頁不再顯示 |
-| 6 | 短時間大量報名/核銷請求 | 超過限額回 429 |
+| 6 | 短時間大量報名/核銷請求 | 超過限額回 429 ✅（flask-limiter 已實作） |
 
 ---
 
@@ -224,8 +224,9 @@ cd frontend && npm install && npm run dev
 | 項目 | 說明 |
 |------|------|
 | 1.5.2e 前端 | Backend 有 `q`, `from`, `to`，HomeView 若無搜尋與日期 UI 則需補上 |
-| 1.5.2f 分享鈕 | EventDetailView 若無「分享」按鈕需補上 |
 | 1.5.2g 編輯限制 | 已上架活動的敏感欄位警告，以及 capacity &lt; sold_count 的 API/前端阻擋需確認 |
+
+**近期已完成**：1.5.2f 分享鈕 ✅、1.5.3 步驟 6 Rate limit ✅、導航按鈕 ✅、Error boundary ✅
 
 ---
 

@@ -132,7 +132,7 @@ Tech：Supabase（Postgres/Auth/Storage；Edge Functions optional）+ Flask（Py
 
 ### 2.3 Backend（non-docker option）
 - `cd backend`
-- `python -m venv .venv && source .venv/bin/activate`
+- `python3.12 -m venv .venv && source .venv/bin/activate`（需 Python 3.12+）
 - `pip install -r requirements.txt`
 - `flask --app app run --debug`
 

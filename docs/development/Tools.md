@@ -20,7 +20,7 @@
 | 工具 | MVP-1 | MVP-2+ |
 |------|-------|--------|
 | Supabase | ✓ Auth + DB + Storage | ✓ |
-| Resend | 可串接（取代 email stub） | ✓ |
+| Resend | ✓ 已串接（可選 RESEND_API_KEY，未設定則僅 log） | ✓ |
 | Stripe | - | 付費票 |
 | Sentry | 可選（上線前建議） | ✓ |
 | Vercel | 可部署 frontend | ✓ |

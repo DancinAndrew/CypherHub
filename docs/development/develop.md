@@ -1,6 +1,6 @@
 # CypherHub 開發路線圖
 
-> 整合自 AGENTS.md、ChatGPT-CypherHubCypherHub.md、note.md、GroovePass 藍圖  
+> 整合自 AGENTS.md、note.md、GroovePass 藍圖  
 > 原則：**可驗證、可執行**，每個項目都有明確的 Done 條件與驗收方式。
 
 ---
@@ -10,7 +10,6 @@
 | 來源 | 內容 |
 |------|------|
 | **AGENTS.md** | 專案規範、Repo 結構、API 規格、Supabase 規則、防超賣、Non-Goals |
-| **ChatGPT-CypherHubCypherHub.md** | MVP 進度、已完成/未完成清單、技術速查 |
 | **note.md** | M1/M2/M3 細項拆解、RBAC、功能邊界 |
 | **GroovePass 藍圖** | Phase 分組、Definition of Done、金流與庫存安全細節 |
 
@@ -25,7 +24,7 @@
 | **MVP-1.2** | 活動 metadata、私密備註 | ✅ 完成 |
 | **MVP-1.3** | 自訂報名表單 | ✅ 完成 |
 | **MVP-1.4** | 主辦方多頁流程 | ✅ 完成 |
-| **MVP-1.5** | MVP-1 缺口補齊 | ⬜ 未做 |
+| **MVP-1.5** | MVP-1 缺口補齊 | ✅ 完成（程式碼確認 2025-03） |
 | **MVP-2.1** | 訂單與 hold 機制 | ⬜ 未做 |
 | **MVP-2.2** | 金流（ECPay） | ⬜ 未做 |
 | **MVP-2.3** | 訂單狀態機 + 出票 | ⬜ 未做 |
@@ -39,7 +38,7 @@
 | **MVP-3.4** | 平台治理與 Audit | ⬜ 未做 |
 | **SEC-1** | 傳輸與端點安全（HTTPS、CORS、Headers） | ⬜ 未做 |
 | **SEC-2** | 身份與資料保護（帳密、URL、敏感資料） | ⬜ 未做 |
-| **SEC-3** | 注入與攻擊防護（SQL、XSS、CSRF、Rate limit） | ⬜ 未做 |
+| **SEC-3** | 注入與攻擊防護（SQL、XSS、CSRF、Rate limit） | 🟡 部分完成（Rate limit ✅） |
 | **SEC-4** | Secrets 與部署檢查（環境變數、錯誤、日誌） | ⬜ 未做 |
 
 ---
@@ -108,7 +107,7 @@
 | 功能區塊 | develop 章節 | 建議方案 | 說明 |
 |----------|--------------|----------|------|
 | **背景任務（hold 逾時、補償出票）** | MVP-2.1 / 2.4 | **Redis + RQ** 或 **Celery**；或 **Supabase pg_cron + Edge Functions** | RQ 輕量、Celery 功能多；若全在 Supabase 可考慮 pg_cron 定時掃 + Edge 出票 |
-| **金流** | MVP-2.2 / 2.7 | **ECPay**（台灣）、**Stripe**（國際）、**PayPal**（可選） | 見 Tools.md；Webhook 驗簽與冪等需自實作，無現成「整包」可取代 |
+| **金流** | MVP-2.2 / 2.7 | **ECPay**（台灣）、**Stripe**（國際）、**PayPal**（可選） | 見 [mvp2/payment-best-practices.md](./mvp2/payment-best-practices.md)、Tools.md；Webhook 驗簽與冪等需自實作，無現成「整包」可取代 |
 | **訂單狀態機** | MVP-2.2 / 2.3 | 自實作 | 可參考 **python-statemachine** 或 **transitions** 做狀態轉換與守衛 |
 | **報名表單擴充（下拉/單選/多選/日期）** | MVP-2.5 | 擴充現有 DynamicForm schema | 不需新套件，在既有 JSON schema 加 type + options |
 | **名單匯出 CSV** | MVP-2.5 | 後端 `csv` 標準庫或 **pandas** | 簡單用 `csv.writer`；要 Excel 可 **openpyxl** |
@@ -133,7 +132,7 @@
 |------|------|
 | **Docker Compose（推薦）** | `docker compose -f infra/docker-compose.yml up --build` |
 | 停止 | `docker compose -f infra/docker-compose.yml down` |
-| **Backend 本機** | `cd backend` → `python -m venv .venv && source .venv/bin/activate` → `pip install -r requirements.txt` → `flask --app app run --debug` |
+| **Backend 本機** | `cd backend` → `python3.12 -m venv .venv && source .venv/bin/activate` → `pip install -r requirements.txt` → `flask --app app run --debug`（需 Python 3.12+） |
 | **Frontend 本機** | `cd frontend` → `npm i` → `npm run dev` |
 
 ---
@@ -157,6 +156,23 @@
 | 名單查詢（含 answers） | Attendees | `GET /organizer/events/:id/attendees` |
 | QR 核銷（掃碼 + 手動） | 核銷頁 | `OrganizerCheckinView.vue`、verify + commit API |
 | Admin 活動列表 | Admin | `GET /admin/events`、allowlist 驗證 |
+| Admin 下架 | AdminView | PATCH /admin/events/:id status=disabled |
+| 忘記密碼 | LoginView | mode=forgot、ResetPasswordView |
+| 個人資料編輯 | ProfileView | display_name、phone、social_links |
+| Resend 寄信 | email_service | 報名成功、重寄票券 |
+| 活動圖片 | OrganizerEventView | 上傳、EventDetailView 輪播 |
+| 主辦方區塊 | EventDetailView | organizer、other_events |
+| 主辦方重寄 | OrganizerManageView | POST attendees/:id/resend |
+| 核銷統計 | Manage/Checkin | 已入場 N / 未入場 M、按票種 |
+| 搜尋/日期 | HomeView | q、from、to |
+| 活動編輯限制 | events_service、OrganizerEventView | capacity<sold_count 阻擋、刪除 disabled、黃色警告 |
+| 活動狀態機 | OrganizerEventView、0015 | draft/published/ended/cancelled/disabled |
+| Rate limiting | flask-limiter | auth 10/min、register 20/min、checkin 60/min，超限 429 |
+| 活動分享 | EventDetailView | 「分享活動」按鈕 |
+| 導航按鈕 | EventDetailView | map_url / lat,lng → Google Maps |
+| Error boundary | 前端 | stores/error.ts、main.ts、App.vue onErrorCaptured |
+| API 整合測試 | backend | test_api_integration.py |
+| Email 單元測試 | backend | test_email_service.py |
 
 **DB 原子性**：`register_free_v2` 使用 `FOR UPDATE` 鎖定 ticket_type，防止超賣。**QR 安全性**：payload 含 `ticket_id` + 隨機 `qr_secret`（`encode(gen_random_bytes(16), 'hex')`），查表比對；可選 HMAC(ticket_id, server_secret)。禁止可猜 id、自增 id、短碼無簽名。
 
@@ -325,159 +341,158 @@
 
 ---
 
-## MVP-1.5 MVP-1 收尾與穩定化 (Phase 1: Polish) ⬜
+## MVP-1.5 MVP-1 收尾與穩定化 (Phase 1: Polish) ✅
 
 > **GroovePass Phase 1**：補齊遺漏的基礎體驗，為後續金流打底。
 
-以下為規格中應有但尚未實作，**可驗證、可執行**。依 GroovePass 藍圖分為三組：
+**程式碼確認（2025-03）**：1.5.1～1.5.3 皆已實作 ✅，含忘記密碼、個人資料、Resend、活動圖片、主辦方資訊、重寄票券、核銷統計、搜尋/日期篩選、活動分享、導航按鈕、編輯限制、狀態機、Admin、下架 API、Rate limit、Error boundary。
 
 ### 1.5 帳號與通知基礎（Phase 1.1）
 
-#### 1.5.1 忘記密碼 / 重設密碼
+#### 1.5.1 忘記密碼 / 重設密碼 ✅
 
 | 項目 | 說明 | 驗證方式 |
 |------|------|----------|
-| 忘記密碼連結 | 登入頁「忘記密碼」 | 點擊導向 Supabase password reset |
-| 重設密碼頁 | 或 Supabase 內建連結 | 收信後可設新密碼 |
-| 依賴 | Supabase Auth `resetPasswordForEmail` | 需設定 Site URL / Redirect |
+| 忘記密碼連結 | 登入頁「忘記密碼？」 | LoginView mode=forgot、resetPasswordForEmail |
+| 重設密碼頁 | `/reset-password` | ResetPasswordView.vue、auth redirectTo |
 
-**Done 條件**：登入頁有「忘記密碼」→ 輸入 email → 收信 → 點連結可重設密碼。
+**Done 條件**：登入頁有「忘記密碼」→ 輸入 email → 收信 → 點連結可重設密碼。**已實作**。
 
-**實作備註**：重設密碼信中的連結會導向前端 `/reset-password`。請在 Supabase Dashboard → Authentication → URL Configuration → Redirect URLs 加入 `http://localhost:5173/reset-password`（及正式環境網址）。
+**實作備註**：Supabase Dashboard → Authentication → URL Configuration → Redirect URLs 需含 `http://localhost:5173/reset-password`。
 
-#### 1.5.1b 個人資料編輯
-
-| 項目 | 說明 | 驗證方式 |
-|------|------|----------|
-| profiles 表 | 已有 display_name, avatar_url, phone 等 | - |
-| 前端 | /profile 或設定頁 | 可編輯暱稱、手機、社群連結 |
-| 頭像 | 選填，Storage 上傳 | 可選做或延後 |
-
-**Done 條件**：登入用戶可編輯 display_name 並保存。
-
-#### 1.5.1c Email 寄送服務串接
+#### 1.5.1b 個人資料編輯 ✅
 
 | 項目 | 說明 | 驗證方式 |
 |------|------|----------|
-| email_service | 從 stub 改為串接 Resend/SendGrid/SES | 實際可寄信 |
-| 報名成功通知 | 報名成功後自動觸發，內容含 QR | 報名後收信 |
+| profiles 表 | display_name, phone, social_links | ProfileView 讀寫 |
+| 前端 | `/profile` | 可編輯 display_name、手機、Instagram、Facebook |
 
-**Done 條件**：報名成功後收信，內容含活動與票券資訊。
+**Done 條件**：登入用戶可編輯 display_name 並保存。**已實作**：ProfileView.vue。
+
+#### 1.5.1c Email 寄送服務串接 ✅
+
+| 項目 | 說明 | 驗證方式 |
+|------|------|----------|
+| email_service | Resend 串接 | `email_service.py`、`resend.Emails.send` |
+| 報名成功通知 | 報名成功後自動觸發 | `registrations.py` 呼叫 `send_registration_success_email` |
+| 主辦方代寄 | 重寄票券 | `resend_attendee_ticket` → `send_ticket_email` |
+
+**Done 條件**：有 RESEND_API_KEY 時可寄信；無 key 時 stub log。**已實作**。
 
 ---
 
 ### 1.5.2 視覺與主辦方擴充（Phase 1.2）
 
-#### 1.5.2a 活動圖片管理
+#### 1.5.2a 活動圖片管理 ✅
 
 | 項目 | 說明 | 驗證方式 |
 |------|------|----------|
-| 主辦方後台 | 建立/編輯活動時可上傳圖片至 Storage | 上傳後寫入 event_media |
-| 活動詳情頁 | 前端實作圖片輪播 UI | 有圖時顯示輪播 |
-| Storage policy | RLS 限制 organizer 可寫 | - |
+| 主辦方後台 | 上傳圖片至 Storage | OrganizerEventView 上傳、`upload_event_media` API |
+| 活動詳情頁 | 圖片輪播 | EventDetailView `event_media` 輪播 |
+| Storage policy | event-media bucket | 0014/0016 migrations |
 
-**Done 條件**：主辦方可上傳活動圖片，活動詳情顯示輪播。
+**Done 條件**：主辦方可上傳活動圖片，活動詳情顯示輪播。**已實作**。
 
-#### 1.5.2b 主辦方資訊與其他活動
-
-| 項目 | 說明 | 驗證方式 |
-|------|------|----------|
-| 活動詳情 | 顯示主辦方名稱、簡介 | 有 org 基本資訊 |
-| 其他活動 | 同主辦方其他 published 活動 | 可點進其他活動 |
-
-**Done 條件**：活動詳情頁有主辦方區塊，並列出該主辦方其他活動。
-
-#### 1.5.2c 主辦方代參加者重寄票券
+#### 1.5.2b 主辦方資訊與其他活動 ✅
 
 | 項目 | 說明 | 驗證方式 |
 |------|------|----------|
-| API | POST /organizer/events/:id/attendees/:ticket_id/resend | 主辦方觸發 |
-| 權限 | 僅 organizer member | RLS/service 檢查 |
+| 活動詳情 | 主辦方名稱、簡介、聯絡 | EventDetailView `detail.organizer` |
+| 其他活動 | `detail.other_events` | 「同主辦方其他活動」列表、RouterLink |
 
-**Done 條件**：主辦方在名單中可對某張票觸發重寄。
+**Done 條件**：活動詳情頁有主辦方區塊，並列出該主辦方其他活動。**已實作**。
 
-#### 1.5.2d 核銷統計 Dashboard
-
-| 項目 | 說明 | 驗證方式 |
-|------|------|----------|
-| 前端 | 核銷頁顯示已入場/未入場、按票種 | 有數字與列表 |
-| 資料 | attendees API 已有 status | 前端彙總顯示 |
-
-**Done 條件**：核銷頁顯示「已入場 N / 未入場 M」及按票種統計。
-
-#### 1.5.2e 進階搜尋與篩選（來自 note.md）
+#### 1.5.2c 主辦方代參加者重寄票券 ✅
 
 | 項目 | 說明 | 驗證方式 |
 |------|------|----------|
-| 關鍵字搜尋 | 活動名/主辦方/地點（LIKE 或全文） | GET /events?q=... |
-| 日期篩選 | 指定日期區間 | GET /events?from=&to= |
-| 地區篩選 | 依 location / region | 可選，依 taxonomy |
-| 票價篩選 | 免費/付費 | MVP-1 僅免費；MVP-2 可加 |
+| API | POST /organizer/events/:id/attendees/:ticket_id/resend | `ticket_types.py`、`events_service.resend_attendee_ticket` |
+| 前端 | OrganizerManageView 名單 | 「重寄票券」按鈕 |
 
-**Done 條件**：活動列表支援關鍵字搜尋；日期篩選可選實作。
+**Done 條件**：主辦方在名單中可對某張票觸發重寄。**已實作**。
 
-#### 1.5.2f 活動分享連結
+#### 1.5.2d 核銷統計 Dashboard ✅
+
+| 項目 | 說明 | 驗證方式 |
+|------|------|----------|
+| 前端 | 已入場/未入場、按票種 | OrganizerManageView、OrganizerCheckinView |
+| 資料 | attendees status 彙總 | `stats.checkedIn`、`byType[tt].checkedIn` |
+
+**Done 條件**：核銷頁顯示「已入場 N / 未入場 M」及按票種統計。**已實作**。
+
+#### 1.5.2e 進階搜尋與篩選 ✅
+
+| 項目 | 說明 | 驗證方式 |
+|------|------|----------|
+| 關鍵字搜尋 | GET /events?q=... | HomeView searchQuery、events_service.ilike |
+| 日期篩選 | GET /events?from=&to= | HomeView dateFrom/dateTo、gte/lte start_at |
+| 地區篩選 | 依 location / region | ⬜ 未實作（可選） |
+
+**Done 條件**：活動列表支援關鍵字搜尋；日期篩選可選實作。**已實作**：關鍵字 + 日期。
+
+#### 1.5.2f 活動分享連結 ✅
 
 | 項目 | 說明 | 驗證方式 |
 |------|------|----------|
 | 永久網址 | `/events/:eventId` 可分享 | 複製連結可開啟活動詳情 |
 | 前端 | 活動詳情頁「分享」按鈕 | 複製 URL 或產生短網址 |
 
-**Done 條件**：活動詳情頁有分享按鈕，可複製活動永久網址。
+**Done 條件**：活動詳情頁有分享按鈕，可複製活動永久網址。**已實作**：EventDetailView「分享活動」按鈕。
 
-#### 1.5.2g 活動編輯限制（主辦方防呆）
+#### 1.5.2g 活動編輯限制（主辦方防呆） ✅
 
 | 項目 | 說明 | 驗證方式 |
 |------|------|----------|
-| 已上架活動 | 對已 published 活動，某些欄位編輯時需警告或限制 | 如時間、票種已售出後不可隨意改 |
-| 警告 | 修改敏感欄位時彈出確認 | 前端實作 |
-| 限制 | 已售出票種不可刪除或改 capacity 小於已售 | API 與 RLS |
+| 已上架活動 | published/ended/cancelled 編輯時黃色警告 | OrganizerEventView「此活動已上架或已結束…」 |
+| API 限制 | capacity < sold_count 阻擋 | events_service `update_ticket_type` 400 |
+| API 限制 | sold_count > 0 不可刪除 | events_service `delete_ticket_type` 400 |
+| 前端 | 刪除按鈕 disabled、title「已售出不可刪除」 | OrganizerEventView `:disabled="tt.sold_count > 0"` |
+| 前端 | capacity < sold_count 提交前檢查 | OrganizerEventView line 502 |
 
-**Done 條件**：主辦方編輯已上架活動時，敏感欄位有警告或限制。
+**Done 條件**：主辦方編輯已上架活動時，敏感欄位有警告或限制。**已實作**。
 
 ---
 
 ### 1.5.3 平台治理基礎（Phase 1.3）
 
-#### 1.5.3a 活動狀態機完整流轉
+#### 1.5.3a 活動狀態機完整流轉 ✅
 
 | 項目 | 說明 | 驗證方式 |
 |------|------|----------|
-| 狀態流 | 草稿 (Draft) → 上架 (Published) → 結束/取消 (Ended/Cancelled) | events.status enum |
-| 草稿 | 建立時可選 draft，GET /events 不回草稿 | 僅主辦方可見 |
-| 上架 | draft → published，公開可見 | 首頁與詳情可見 |
-| 結束/取消 | 活動後設 ended，或手動 cancelled | 已結束/取消的活動不可報名、不可核銷 |
-| 下架 | status=disabled 或 cancelled | GET /events 只回 published |
+| 狀態流 | draft → published → ended / cancelled | OrganizerEventView status 選單 |
+| 草稿 | GET /events 只回 published | events_service.eq("status", "published") |
+| 報名 | 僅 published | register_free_v2 `EVENT_NOT_PUBLISHED` |
+| 核銷 | ended/cancelled/disabled 阻擋 | 0015 verify_ticket_qr、commit_checkin |
 
-**Done 條件**：主辦方可建立草稿、上架、標記結束；已取消活動不可核銷；下架後不再出現在公開列表。
+**Done 條件**：主辦方可建立草稿、上架、標記結束；已取消活動不可核銷。**已實作**。
 
-#### 1.5.3b 後台前端介面
-
-| 項目 | 說明 | 驗證方式 |
-|------|------|----------|
-| /admin 路由 | Admin 專用頁 | allowlist 用戶可進 |
-| 活動列表 | GET /admin/events | 顯示全站活動 |
-
-**Done 條件**：Admin 可進入 /admin 並看到活動列表。
-
-#### 1.5.3c 下架活動 API
+#### 1.5.3b 後台前端介面 ✅
 
 | 項目 | 說明 | 驗證方式 |
 |------|------|----------|
-| API | PATCH /admin/events/:id，實作 status=disabled | 目前回 501 需改為實作 |
-| 前端 | 下架按鈕 | 點擊後活動不再公開 |
+| /admin 路由 | AdminView.vue | router path="/admin" |
+| 活動列表 | adminFetchEvents、GET /admin/events | Admin 全站活動（draft/ended/cancelled/disabled） |
 
-**Done 條件**：Admin 可下架活動，下架後 GET /events 不回該活動。
+**Done 條件**：Admin 可進入 /admin 並看到活動列表。**已實作**。
 
-#### 1.5.3d Rate Limiting
+#### 1.5.3c 下架活動 API ✅
 
 | 項目 | 說明 | 驗證方式 |
 |------|------|----------|
-| extensions | 已有 stub，接上 flask-limiter 或類似 | 實際生效 |
-| 限制 | 登入、報名、核銷等 | 超限回 429 |
+| API | PATCH /admin/events/:id status=disabled | admin.py `admin_update_event_status` |
+| 前端 | adminUnpublishEvent、「下架」按鈕 | AdminView handleUnpublish |
+
+**Done 條件**：Admin 可下架活動，下架後 GET /events 不回該活動。**已實作**。
+
+#### 1.5.3d Rate Limiting ✅
+
+| 項目 | 說明 | 驗證方式 |
+|------|------|----------|
+| extensions | flask-limiter 已接 | auth 10/min、register 20/min、checkin 60/min |
+| 限制 | 登入、報名、核銷等 | 超限回 429、`RATE_LIMIT_EXCEEDED` |
 | 註 | MVP-2 Phase 3 需再擴展：下單、付款、核銷、登入 | note.md 系統層 |
 
-**Done 條件**：短時間大量請求登入/報名時回 429。
+**Done 條件**：短時間大量請求登入/報名時回 429。**已實作**：見 [rate-limit-test-report.md](../verification/reports/rate-limit-test-report.md)。
 
 ---
 
@@ -513,6 +528,8 @@
 ---
 
 ## MVP-2.2 綠界金流 ECPay (Phase 2.2) ⬜
+
+> **開發前必讀**：[mvp2/payment-best-practices.md](./mvp2/payment-best-practices.md) — ECPay 驗簽、Form 參數、Webhook 冪等、安全檢查清單。
 
 ### 2.2.1 結帳流程與 Webhook
 
@@ -699,7 +716,7 @@
 | **SQL Injection** | 使用 Supabase client + RPC | 參數化查詢；無手寫 raw SQL 串接使用者輸入 |
 | **XSS** | Vue 預設 escape | 需審查 `v-html`、`innerHTML`、動態插入 |
 | **CSRF** | API 用 Bearer token | 非 cookie-based，典型 CSRF 風險較低 |
-| **Rate limiting** | 未實作 | 登入、報名、核銷等高風險 endpoint 建議加限流 |
+| **Rate limiting** | ✓ flask-limiter | auth 10/min、register 20/min、checkin 60/min |
 | **Secrets** | .env 在 .gitignore | 需確認無 key 寫入程式碼、log、前端 bundle |
 
 ---
@@ -733,7 +750,7 @@
 
 ---
 
-## SEC-3：注入與攻擊防護 ⬜
+## SEC-3：注入與攻擊防護 🟡
 
 | 項目 | 說明 | 驗證方式 | 現況 |
 |------|------|----------|------|
@@ -742,9 +759,9 @@
 | **CSRF** | API 非 cookie session | Bearer token 在 header；表單 POST 用 JSON | ✓ |
 | **輸入驗證** | 後端 Pydantic schema 驗證 | UUID、字串長度、enum 等 | ✓ |
 | **IDOR** | 不可跨用戶/活動操作 | RLS + `user_id` 來自 JWT，不信任 client 傳入 | ✓ |
-| **Rate limiting** | 登入、報名、核銷等限流 | `flask-limiter` 或類似；防暴力破解、濫用 | 未做 |
+| **Rate limiting** | 登入、報名、核銷等限流 | `flask-limiter`；auth 10/min、register 20/min、checkin 60/min | ✓ |
 
-**Done 條件**：無 raw SQL 串接；前端無 unsafe `v-html` 渲染使用者內容；登入/報名/核銷等 endpoint 加上 rate limit。
+**Done 條件**：無 raw SQL 串接；前端無 unsafe `v-html` 渲染使用者內容；rate limit 已實作。
 
 ---
 
@@ -765,7 +782,7 @@
 ## SEC 建議執行順序
 
 1. **SEC-4**（Secrets 與部署）— 先確保無外洩  
-2. **SEC-3**（注入與攻擊）— 補 rate limiting，審查 XSS  
+2. **SEC-3**（注入與攻擊）— Rate limit 已完成 ✓；審查 XSS
 3. **SEC-2**（身份與資料）— 檢查 URL、redirect  
 4. **SEC-1**（傳輸與端點）— 上線前設定 HTTPS、CORS、HSTS  
 
@@ -897,16 +914,17 @@
 
 執行任務時：
 
-1. **先寫短 plan**：要改哪些檔、需不需要 migration、要補哪些 tests
-2. **diff 小且可跑**：每次改動可獨立驗證
-3. **絕不加入 secrets**：只改 `.env.example` 放 placeholder
-4. **每個 feature**：加 tests（unit + 最小 integration）、寫清楚本地如何測
-5. **每個 DB 變更**：migration SQL + RLS policies、說明預期權限行為
-6. **critical operations**（register/check-in/payment）：確保 atomicity + idempotency；盡量補 concurrency/race tests
+1. **金流相關**：若涉及付款、Webhook、ECPay/Stripe，**必先閱讀** [mvp2/payment-best-practices.md](./mvp2/payment-best-practices.md)
+2. **先寫短 plan**：要改哪些檔、需不需要 migration、要補哪些 tests
+3. **diff 小且可跑**：每次改動可獨立驗證
+4. **絕不加入 secrets**：只改 `.env.example` 放 placeholder
+5. **每個 feature**：加 tests（unit + 最小 integration）、寫清楚本地如何測
+6. **每個 DB 變更**：migration SQL + RLS policies、說明預期權限行為
+7. **critical operations**（register/check-in/payment）：確保 atomicity + idempotency；盡量補 concurrency/race tests
 
 ---
 
-# 附錄 D：技術速查總表（來自 ChatGPT-CypherHubCypherHub.md）
+# 附錄 D：技術速查總表
 
 **前端路由：**
 
@@ -960,7 +978,7 @@
 # 參考文件
 
 - [AGENTS.md](../../AGENTS.md) - 專案規範、API、Supabase、防超賣
+- [mvp2/payment-best-practices.md](./mvp2/payment-best-practices.md) - **金流開發必讀**（ECPay 驗簽、Webhook 冪等、安全清單）
 - [Tools.md](./Tools.md) - 工具選單（金流、郵件、監控、部署等）
-- [ChatGPT-CypherHubCypherHub.md](../ChatGPT-CypherHubCypherHub.md) - 進度總覽
 - [note.md](./note.md) - M1/M2/M3 細項
-- [verification-report.md](../verification/verification-report.md) - 功能驗證對照
+- [verification-report.md](../verification/mvp1/verification-report.md) - 功能驗證對照

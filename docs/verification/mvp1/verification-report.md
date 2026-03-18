@@ -14,11 +14,11 @@
 | **4. 選票／報名** | 選擇票種 → 填表單（主辦自訂）→ 送出 | 選票種 → DynamicForm（主辦 JSON schema）→ Register | ✓ |
 | **5. 防超賣** | 原子扣量、限購檢查 | register_free_v2：FOR UPDATE + sold_count、per_user_limit、capacity | ✓ |
 | **6. 出票** | 成功後顯示票券／QR、寄送 Email | 回傳 ticket_id + qr_secret，My Tickets 顯示 QR | ✓ |
-| **7. 我的票券** | 票券列表、QR Code、可重寄 | MyTicketsView：QR、Copy Payload、Resend（Stub） | ✓ 註 |
+| **7. 我的票券** | 票券列表、QR Code、可重寄 | MyTicketsView：QR、Copy Payload、Resend（可選） | ✓ 註 |
 | **8. 入場核銷** | 掃 QR → 一次性核銷、可重複掃（已核銷） | verify → commit，idempotent（already_checked_in），相機掃碼或手動 | ✓ |
 | **9. 主辦管理** | 建立活動、票種、名單、核銷 | Apply → Events → Form Builder → Attendees → Check-in | ✓ |
 
-註：Resend Email 目前為 stub（log），未串真實郵件服務，為 MVP-1 已知限制。
+註：Resend 為可選；有設定 API key 會寄信，未設定則僅 log。
 
 ---
 
@@ -63,7 +63,7 @@
 | quantity=1 UI | 前端目前固定 1 張，API 支援多張 | 可選在 UI 開放數量選擇 |
 | 無訂單頁 | 成功後直接到 My Tickets | 免費報名通常不需要訂單摘要 |
 | 無票券轉讓 | 不支援 | MVP-3 可再評估 |
-| Resend 為 stub | 未寄真實 Email | 需串 SMTP／SendGrid 等 |
+| Resend 可選 | 有 key 才寄 | 未設定時僅 log |
 
 ---
 
@@ -104,4 +104,16 @@ MVP-1 流程與常見購票平台一致，包含：
 - 核銷（驗證＋提交、冪等）  
 - 主辦建立活動、票種、表單、名單與核銷  
 
-已知限制（Resend stub、無金流、無購物車）均在 AGENTS.md 與 README 範圍內，不影響 MVP-1 核心流程驗證。
+已知限制（Resend 可選、無金流、無購物車）均在 AGENTS.md 與 README 範圍內，不影響 MVP-1 核心流程驗證。
+
+---
+
+## 七、近期驗證報告（MVP-1.5 收尾與穩定化）
+
+| 報告 | 驗證內容 |
+|------|----------|
+| [api-integration-test-report.md](../reports/api-integration-test-report.md) | GET /events、POST /register 無 mock 整合測試 |
+| [email-service-test-report.md](../reports/email-service-test-report.md) | email_service 單元測試（9 passed） |
+| [rate-limit-test-report.md](../reports/rate-limit-test-report.md) | Rate limiting 429、auth 10/min、register 20/min、checkin 60/min |
+| [error-boundary-report.md](../reports/error-boundary-report.md) | 前端 Error boundary、不白屏、Sentry 預留 |
+| [navigate-button-report.md](../reports/navigate-button-report.md) | 活動詳情「導航」按鈕 |
