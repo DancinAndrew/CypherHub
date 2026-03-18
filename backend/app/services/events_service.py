@@ -513,8 +513,8 @@ class EventsService:
         values = {
             **payload,
             "event_id": str(event_id),
-            "price_cents": 0,
-            "currency": "TWD",
+            "price_cents": payload.get("price_cents", 0),
+            "currency": payload.get("currency", "TWD"),
         }
 
         try:
