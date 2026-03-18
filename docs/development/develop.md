@@ -531,6 +531,11 @@
 
 > **開發前必讀**：[.cursor/skills/ecpay](.cursor/skills/ecpay) — ECPay 官方 Skill，含 AIO、CheckMacValue、Webhook 格式。
 
+**本專案採用的開發工具**：
+
+- **[.cursor/skills/ecpay](.cursor/skills/ecpay)**：綠界官方 Cursor Agent Skill，用於 ECPay 金流整合（AIO、CheckMacValue、Webhook 驗簽等）。
+- **ngrok**：ECPay ReturnURL / OrderResultURL 僅支援 port 80/443，不支援 localhost。本地開發時需使用 ngrok 等 tunnel 將綠界回調轉發至本機 backend（`ngrok http 8000`），並將產生的 HTTPS URL 填入 `ECPAY_RETURN_URL`。
+
 ### 2.2.1 結帳流程與 Webhook
 
 | 項目 | 說明 | 驗證方式 |

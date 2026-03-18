@@ -64,6 +64,8 @@
 
 # 與 MVP2 相關的技術債
 
+**ECPay 金流開發工具**：專案使用 `.cursor/skills/ecpay`（綠界官方 Cursor Agent Skill）協助整合；本地 Webhook 測試需用 **ngrok**（`ngrok http 8000`）將綠界回調轉發至本機，因 ReturnURL 不支援 localhost。
+
 | MVP2 功能 | 現有基礎 | 進入前可預先做的事 |
 |-----------|----------|---------------------|
 | Hold + 逾時 | 無 | 先設計 orders 表、訂單狀態機 schema 草稿 |

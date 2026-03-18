@@ -377,6 +377,7 @@ curl -sS http://localhost:8000/api/v1/me/tickets
 ## Environment Variables & Migrations
 
 - **環境變數**：範本為 `backend/.env.example`、`frontend/.env.example`；本地/雲端切換時由 `use-local-supabase.sh` 或 `use-cloud-supabase.sh` 複製對應 `.env.local.example` / `.env.cloud.example`。勿提交真實 secrets。
+- **ECPay 金流開發**：專案使用 [.cursor/skills/ecpay](.cursor/skills/ecpay) 綠界 Agent Skill；本地 Webhook 測試需用 **ngrok**（`ngrok http 8000`）轉發，因綠界 ReturnURL 不支援 localhost。詳見 [develop.md §MVP-2.2](docs/development/develop.md#mvp-22-綠界金流-ecpay-phase-22-)。
 - **Migrations（MVP-1）**：見下方清單與套用方式；開發階段與 DB 設計詳見 [docs/development/develop.md](docs/development/develop.md)。
 
 ### Supabase Migrations 清單
