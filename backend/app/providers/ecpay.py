@@ -97,3 +97,57 @@ def verify_webhook_checkmac(params: dict[str, Any], hash_key: str, hash_iv: str)
     # Webhook 驗證時含空值，與綠界回傳格式一致
     computed = _compute_checkmac(params, hash_key, hash_iv, exclude_empty=False)
     return computed == received
+
+
+# DoAction 端點（AIO 信用卡請款/退款）
+ECPAY_DO_ACTION_URL_PROD = "https://payment.ecpay.com.tw/CreditDetail/DoAction"
+ECPAY_DO_ACTION_URL_STAGE = "https://payment-stage.ecpay.com.tw/CreditDetail/DoAction"
+
+
+def do_action_refund(
+    *,
+    merchant_id: str,
+    merchant_trade_no: str,
+    trade_no: str,
+    total_amount_ntd: int,
+    hash_key: str,
+    hash_iv: str,
+    is_stage: bool = True,
+) -> tuple[bool, str]:
+    """
+    呼叫 ECPay AIO CreditDetail/DoAction 退款（Action=R）。
+    total_amount_ntd 為欲退款金額（NTD 元）。
+    回傳 (success, message)。Stage 環境不支援 DoAction，會回失敗。
+    """
+    import urllib.request
+    from urllib.parse import urlencode
+
+    params: dict[str, Any] = {
+        "MerchantID": merchant_id,
+        "MerchantTradeNo": merchant_trade_no,
+        "TradeNo": trade_no,
+        "Action": "R",
+        "TotalAmount": total_amount_ntd,
+    }
+    params["CheckMacValue"] = _compute_checkmac(params, hash_key, hash_iv, exclude_empty=True)
+
+    url = ECPAY_DO_ACTION_URL_STAGE if is_stage else ECPAY_DO_ACTION_URL_PROD
+    body = urlencode(params)
+    req = urllib.request.Request(
+        url,
+        data=body.encode("utf-8"),
+        headers={"Content-Type": "application/x-www-form-urlencoded"},
+        method="POST",
+    )
+
+    try:
+        with urllib.request.urlopen(req, timeout=15) as resp:
+            raw = resp.read().decode("utf-8", errors="replace").strip()
+    except Exception as exc:
+        return False, str(exc)
+
+    # Response: "RtnCode|RtnMsg" e.g. "1|OK"
+    parts = raw.split("|", 1)
+    rtn_code = (parts[0] or "").strip()
+    rtn_msg = (parts[1] or "").strip() if len(parts) > 1 else ""
+    return rtn_code == "1", rtn_msg or raw
