@@ -694,17 +694,17 @@
 
 ---
 
-## MVP-3.5 使用者端擴充（來自 note.md M3）⬜
+## MVP-3.5 使用者端擴充（來自 note.md M3）✅
 
-> M3 規劃中面向使用者的功能，可選實作。
+> M3 規劃中面向使用者的功能，可選實作。已實作完成。
 
 | 項目 | 說明 | 驗證方式 |
 |------|------|----------|
-| 熱門活動列表 | 活動列表「熱門」標籤或排序（定義熱門規則） | 首頁可顯示熱門 |
-| 活動提醒 Email | 前一天/前一小時提醒 | 背景 job 發送 |
-| 活動異動/取消通知 | 活動時間變更或取消時 Email 通知參加者 | 異動時觸發 |
+| 熱門活動列表 | GET /events?sort=hot 依售票數排序；前端「依時間」/「熱門」tab | 首頁可顯示熱門、total_sold_count badge |
+| 活動提醒 Email | POST /internal/jobs/event-reminders（X-Cron-Secret）；前一天 23–25h、前一小時 55–65min | 外部 cron 定期呼叫 |
+| 活動異動/取消通知 | update_event、admin_update_event_status 鈎入；Email 參加者 | 異動時觸發、取消時觸發 |
 
-**Done 條件**：上述功能可選實作；若實作需有對應 API 與 job。
+**Done 條件**：上述功能已實作；見 mvp3-master-plan.md § 六。
 
 ---
 

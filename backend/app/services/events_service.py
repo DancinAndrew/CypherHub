@@ -29,6 +29,28 @@ class EventsService:
         escaped = [value.replace('"', '\\"') for value in values]
         return "{" + ",".join(escaped) + "}"
 
+    @staticmethod
+    def _fetch_total_sold_per_event(client, event_ids: list[str]) -> dict[str, int]:
+        """MVP-3.5: Return {event_id: total_sold_count} from ticket_types.sold_count sum."""
+        if not event_ids:
+            return {}
+        try:
+            resp = (
+                client.table("ticket_types")
+                .select("event_id,sold_count")
+                .in_("event_id", event_ids)
+                .execute()
+            )
+            rows = supabase_client.extract_data(resp) or []
+            totals: dict[str, int] = {eid: 0 for eid in event_ids}
+            for r in rows:
+                eid = str(r.get("event_id", ""))
+                if eid:
+                    totals[eid] = totals.get(eid, 0) + int(r.get("sold_count") or 0)
+            return totals
+        except Exception:
+            return {eid: 0 for eid in event_ids}
+
     def list_events(
         self,
         q: str | None = None,
@@ -37,6 +59,7 @@ class EventsService:
         org_id: str | None = None,
         styles: list[str] | None = None,
         types: list[str] | None = None,
+        sort: str | None = None,
     ) -> list[dict]:
         client = supabase_client.public_client()
 
@@ -70,6 +93,16 @@ class EventsService:
             thumbs = self._fetch_first_thumbnail_per_event(client, event_ids)
             for e in events:
                 e["thumbnail_path"] = thumbs.get(str(e["id"]))
+
+            # MVP-3.5: 熱門排序（售票數、報名數）
+            if sort == "hot":
+                totals = self._fetch_total_sold_per_event(client, event_ids)
+                for e in events:
+                    e["total_sold_count"] = totals.get(str(e["id"]), 0)
+                events.sort(key=lambda x: (-(x.get("total_sold_count") or 0), x.get("start_at") or ""))
+            else:
+                for e in events:
+                    e["total_sold_count"] = None
             return events
         except Exception as exc:
             raise map_supabase_error(exc, fallback_code="EVENTS_LIST_FAILED") from exc
@@ -106,6 +139,7 @@ class EventsService:
         org_id: str | None = None,
         styles: list[str] | None = None,
         types: list[str] | None = None,
+        sort: str | None = None,
     ) -> list[dict]:
         return self.list_events(
             q=q,
@@ -114,6 +148,7 @@ class EventsService:
             org_id=org_id,
             styles=styles,
             types=types,
+            sort=sort,
         )
 
     def list_admin_events(
@@ -646,6 +681,17 @@ class EventsService:
                 from app.services.audit_service import audit_service
 
                 audit_service.log_unpublish(event_id, admin_user_id, status)
+            # MVP-3.5: 活動取消/下架時通知參加者
+            try:
+                from app.services.event_notification_service import event_notification_service
+
+                event_notification_service.notify_event_cancelled(
+                    event_id, rows[0].get("title", "活動")
+                )
+            except Exception as exc:
+                current_app.logger.warning(
+                    "[events] notify_event_cancelled failed event=%s: %s", event_id, exc
+                )
             return rows[0]
         except AppError:
             raise
@@ -655,6 +701,22 @@ class EventsService:
     def update_event(self, jwt: str, event_id: UUID, payload: dict, user_id: str) -> dict:
         self.require_event_admin(jwt, event_id, user_id)
         client = supabase_client.authed_client(jwt)
+
+        # MVP-3.5: 取得舊資料以便異動後通知參加者
+        old_event: dict | None = None
+        if any(k in payload for k in ("start_at", "end_at", "status")):
+            try:
+                resp = (
+                    client.table("events")
+                    .select("start_at,end_at,status,title")
+                    .eq("id", str(event_id))
+                    .limit(1)
+                    .execute()
+                )
+                old_rows = supabase_client.extract_data(resp) or []
+                old_event = old_rows[0] if old_rows else None
+            except Exception:
+                old_event = None
 
         update_values = {key: value for key, value in payload.items() if value is not None}
         if update_values.get("status") == "published" and "published_at" not in update_values:
@@ -679,7 +741,43 @@ class EventsService:
                     details={"event_id": str(event_id)},
                     http_status=404,
                 )
-            return rows[0]
+            updated = rows[0]
+
+            # MVP-3.5: 異動/取消通知
+            if old_event:
+                try:
+                    from app.services.event_notification_service import (
+                        event_notification_service,
+                    )
+
+                    title = updated.get("title", old_event.get("title", "活動"))
+                    new_status = updated.get("status") or old_event.get("status")
+
+                    if new_status in ("cancelled", "disabled"):
+                        event_notification_service.notify_event_cancelled(event_id, title)
+                    else:
+                        old_start = old_event.get("start_at")
+                        new_start = updated.get("start_at") or old_start
+                        if old_start and new_start and str(old_start) != str(new_start):
+                            old_s = (
+                                old_start.strftime("%Y-%m-%d %H:%M")
+                                if hasattr(old_start, "strftime")
+                                else str(old_start)
+                            )
+                            new_s = (
+                                new_start.strftime("%Y-%m-%d %H:%M")
+                                if hasattr(new_start, "strftime")
+                                else str(new_start)
+                            )
+                            event_notification_service.notify_event_time_changed(
+                                event_id, title, old_s, new_s
+                            )
+                except Exception as exc:
+                    current_app.logger.warning(
+                        "[events] notify_event_change failed event=%s: %s", event_id, exc
+                    )
+
+            return updated
         except AppError:
             raise
         except Exception as exc:

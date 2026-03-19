@@ -87,6 +87,7 @@ export type EventItem = {
   dance_styles: string[];
   event_types: string[];
   thumbnail_path?: string | null;
+  total_sold_count?: number | null;
 };
 
 export type TicketType = {
@@ -184,6 +185,8 @@ export type TicketItem = {
   qr_secret: string;
 };
 
+export type EventListSort = "start_at" | "hot";
+
 export async function fetchEvents(params?: {
   q?: string;
   from?: string;
@@ -191,6 +194,7 @@ export async function fetchEvents(params?: {
   org_id?: string;
   styles?: string;
   types?: string;
+  sort?: EventListSort;
 }): Promise<EventItem[]> {
   const response = await client.get<{ items: EventItem[] }>("/api/v1/events", { params });
   return response.data.items;

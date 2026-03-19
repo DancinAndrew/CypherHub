@@ -56,6 +56,9 @@ def list_events() -> tuple[dict, int]:
         "types",
     )
 
+    sort_raw = request.args.get("sort")
+    sort_val = sort_raw if sort_raw in ("hot", "start_at") else None
+
     items = events_service.list_public_events(
         q=request.args.get("q"),
         from_at=request.args.get("from"),
@@ -63,6 +66,7 @@ def list_events() -> tuple[dict, int]:
         org_id=request.args.get("org_id"),
         styles=styles,
         types=types,
+        sort=sort_val,
     )
     payload = EventListResponse(items=items)
     return jsonify(payload.model_dump(mode="json")), 200

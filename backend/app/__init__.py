@@ -7,6 +7,7 @@ from .blueprints.admin import bp as admin_bp
 from .blueprints.auth import bp as auth_bp
 from .blueprints.checkin import bp as checkin_bp
 from .blueprints.events import bp as events_bp
+from .blueprints.jobs import bp as jobs_bp
 from .blueprints.me import bp as me_bp
 from .blueprints.orders import bp as orders_bp
 from .blueprints.payments import bp as payments_bp
@@ -52,6 +53,7 @@ def create_app(test_config: dict | None = None) -> Flask:
 
 def _register_blueprints(app: Flask) -> None:
     app.register_blueprint(auth_bp)
+    app.register_blueprint(jobs_bp)
     app.register_blueprint(registrations_bp)  # before events so /events/<id>/register is here
     app.register_blueprint(events_bp)
     app.register_blueprint(ticket_types_bp)

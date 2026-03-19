@@ -312,15 +312,21 @@ UPDATE organizations SET approval_status = 'approved' WHERE approval_status IS N
 
 ---
 
-## 六、MVP-3.5 使用者端擴充（可選）
+## 六、MVP-3.5 使用者端擴充（可選）✅
 
-| 項目 | 說明 |
-|------|------|
-| 熱門活動 | 首頁「熱門」標籤或排序（規則：售票數、報名數） |
-| 活動提醒 Email | 前一天/前一小時 job |
-| 活動異動/取消通知 | 時間變更或取消時 Email 參加者 |
+| 項目 | 說明 | 實作 |
+|------|------|------|
+| 熱門活動 | 首頁「熱門」標籤或排序（規則：售票數、報名數） | GET /events?sort=hot；依 ticket_types.sold_count 總和排序；前端「熱門」tab、badge |
+| 活動提醒 Email | 前一天/前一小時 job | POST /internal/jobs/event-reminders（X-Cron-Secret）；前一天 23–25h、前一小時 55–65min 窗口 |
+| 活動異動/取消通知 | 時間變更或取消時 Email 參加者 | update_event、admin_update_event_status 鈎入 notify_event_cancelled / notify_event_time_changed |
 
-若時間不足可標註「待實作」於文件，不阻擋 MVP-3 Done。
+### 6.1 驗收檢查表
+
+- [x] GET /events?sort=hot 依售票數排序，回傳 total_sold_count
+- [x] 首頁「依時間」/「熱門」切換正常
+- [x] POST /internal/jobs/event-reminders 需 X-Cron-Secret，回傳 {1_day, 1_hour}
+- [x] Admin 下架或主辦方改 status 為 cancelled/disabled 時寄取消信
+- [x] 主辦方修改 start_at/end_at 時寄異動信
 
 ---
 
@@ -332,6 +338,7 @@ UPDATE organizations SET approval_status = 'approved' WHERE approval_status IS N
 | MVP-3.2 | 0024 migration, events_service, admin blueprint |
 | MVP-3.3 | 0025 migration, settlement_service, payout_service, blueprints |
 | MVP-3.4 | 0026 migration, audit_service, comp API, admin orders API |
+| MVP-3.5 | events_service (sort=hot、異動/取消鈎入), email_service (reminder/change/cancelled), event_notification_service, jobs blueprint, HomeView (熱門 tab) |
 
 ---
 

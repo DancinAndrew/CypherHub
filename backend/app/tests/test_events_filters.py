@@ -17,3 +17,19 @@ def test_list_events_passes_styles_and_types_filters(client, monkeypatch) -> Non
     assert response.status_code == 200
     assert captured["styles"] == ["hiphop", "popping"]
     assert captured["types"] == ["cypher"]
+
+
+def test_list_events_sort_hot(client, monkeypatch) -> None:
+    """MVP-3.5: sort=hot 傳遞至 list_public_events。"""
+    captured: dict = {}
+
+    def _fake(**kwargs):
+        captured.update(kwargs)
+        return []
+
+    monkeypatch.setattr(events_service, "list_public_events", _fake)
+
+    response = client.get("/api/v1/events?sort=hot")
+
+    assert response.status_code == 200
+    assert captured.get("sort") == "hot"

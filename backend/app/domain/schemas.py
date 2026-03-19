@@ -110,6 +110,7 @@ class EventResponse(BaseModel):
     dance_styles: list[DanceStyle] = Field(default_factory=list)
     event_types: list[EventType] = Field(default_factory=list)
     thumbnail_path: str | None = None
+    total_sold_count: int | None = None  # MVP-3.5: 熱門排序時回傳售票數
 
 
 class EventMediaResponse(BaseModel):

@@ -26,6 +26,7 @@ const selectedTypes = ref<EventTypeKey[]>([]);
 const searchQuery = ref("");
 const dateFrom = ref("");
 const dateTo = ref("");
+const sortMode = ref<"start_at" | "hot">("start_at");
 
 const styleKeys = new Set(DANCE_STYLES.map((item) => item.key));
 const typeKeys = new Set(EVENT_TYPES.map((item) => item.key));
@@ -86,6 +87,7 @@ async function loadEvents(): Promise<void> {
       to: dateTo.value || undefined,
       styles: selectedStyles.value.length ? selectedStyles.value.join(",") : undefined,
       types: selectedTypes.value.length ? selectedTypes.value.join(",") : undefined,
+      sort: sortMode.value,
     });
   } catch (error: unknown) {
     errorMessage.value = toApiErrorMessage(error, "Failed to load events");
@@ -103,9 +105,15 @@ async function applyFilters(): Promise<void> {
       to: dateTo.value || undefined,
       styles: selectedStyles.value.length ? selectedStyles.value.join(",") : undefined,
       types: selectedTypes.value.length ? selectedTypes.value.join(",") : undefined,
+      sort: sortMode.value,
     },
   });
   await loadEvents();
+}
+
+function setSortMode(mode: "start_at" | "hot"): void {
+  sortMode.value = mode;
+  applyFilters().catch(() => {});
 }
 
 function formatDateShort(dateStr: string): string {
@@ -133,6 +141,7 @@ onMounted(() => {
   searchQuery.value = typeof route.query.q === "string" ? route.query.q : "";
   dateFrom.value = typeof route.query.from === "string" ? route.query.from : "";
   dateTo.value = typeof route.query.to === "string" ? route.query.to : "";
+  sortMode.value = route.query.sort === "hot" ? "hot" : "start_at";
   loadEvents().catch(() => {});
 });
 </script>
@@ -269,9 +278,37 @@ onMounted(() => {
     <!-- Events List -->
     <section class="relative px-4 pb-24 pt-4">
       <div class="mx-auto max-w-6xl">
-        <h2 class="mb-8 font-street text-3xl tracking-wider text-white sm:text-4xl animate-fade-in">
-          <span class="text-cypher-muted">//</span> 所有活動
-        </h2>
+        <div class="mb-8 flex flex-wrap items-center gap-4">
+          <h2 class="font-street text-3xl tracking-wider text-white sm:text-4xl animate-fade-in">
+            <span class="text-cypher-muted">//</span> 所有活動
+          </h2>
+          <div class="flex gap-2">
+            <button
+              type="button"
+              class="rounded-lg px-4 py-2 text-sm font-semibold transition-all"
+              :class="
+                sortMode === 'start_at'
+                  ? 'bg-cypher-accent text-white'
+                  : 'bg-cypher-surface-alt text-gray-400 hover:text-white'
+              "
+              @click="setSortMode('start_at')"
+            >
+              依時間
+            </button>
+            <button
+              type="button"
+              class="rounded-lg px-4 py-2 text-sm font-semibold transition-all"
+              :class="
+                sortMode === 'hot'
+                  ? 'bg-cypher-accent-pink text-white'
+                  : 'bg-cypher-surface-alt text-gray-400 hover:text-white'
+              "
+              @click="setSortMode('hot')"
+            >
+              熱門
+            </button>
+          </div>
+        </div>
 
         <div v-if="loading" class="flex flex-col items-center justify-center py-24">
           <div class="h-12 w-12 animate-spin rounded-full border-2 border-cypher-accent border-t-transparent" />
@@ -322,9 +359,17 @@ onMounted(() => {
                 </svg>
               </div>
               <span
-                class="absolute left-4 top-4 rounded-lg border border-white/30 bg-black/40 px-3 py-1.5 text-xs font-bold text-white backdrop-blur-sm"
+                class="absolute left-4 top-4 flex flex-col gap-1"
               >
-                {{ formatDateShort(event.start_at) }}
+                <span class="rounded-lg border border-white/30 bg-black/40 px-3 py-1.5 text-xs font-bold text-white backdrop-blur-sm">
+                  {{ formatDateShort(event.start_at) }}
+                </span>
+                <span
+                  v-if="sortMode === 'hot' && (event.total_sold_count ?? 0) > 0"
+                  class="rounded-lg bg-cypher-accent-pink/90 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white"
+                >
+                  熱門 · {{ event.total_sold_count }} 人報名
+                </span>
               </span>
               <span
                 class="absolute bottom-4 right-4 rounded-md bg-cypher-accent/90 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white opacity-0 transition-all duration-300 group-hover:opacity-100"
