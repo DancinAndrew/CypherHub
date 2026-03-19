@@ -373,6 +373,134 @@ class EventsService:
                 http_status=403,
             )
 
+    def list_org_members(self, jwt: str, org_id: str, user_id: str) -> list[dict]:
+        """MVP-3.1: 列出主辦方成員。僅 owner/admin 可呼叫。"""
+        self.require_org_admin(jwt, org_id, user_id)
+        client = supabase_client.authed_client(jwt)
+        try:
+            resp = (
+                client.table("organizer_members")
+                .select("user_id,org_id,role,created_at")
+                .eq("org_id", org_id)
+                .order("created_at", desc=False)
+                .execute()
+            )
+            return supabase_client.extract_data(resp) or []
+        except Exception as exc:
+            raise map_supabase_error(exc, fallback_code="LIST_ORG_MEMBERS_FAILED") from exc
+
+    def add_org_member(
+        self,
+        jwt: str,
+        org_id: str,
+        target_user_id: str,
+        role: str,
+        actor_user_id: str,
+    ) -> dict:
+        """MVP-3.1: 新增成員。僅 owner/admin 可呼叫，role 限 admin|staff。"""
+        self.require_org_admin(jwt, org_id, actor_user_id)
+        if role not in ("admin", "staff"):
+            raise AppError(
+                code="VALIDATION_ERROR",
+                message="New member role must be admin or staff",
+                details={"role": role},
+                http_status=400,
+            )
+        client = supabase_client.authed_client(jwt)
+        try:
+            resp = client.table("organizer_members").insert({
+                "org_id": org_id,
+                "user_id": target_user_id,
+                "role": role,
+            }).execute()
+            rows = supabase_client.extract_data(resp) or []
+            if not rows:
+                raise AppError(
+                    code="FORBIDDEN",
+                    message="Unable to add member",
+                    http_status=403,
+                )
+            return rows[0]
+        except AppError:
+            raise
+        except Exception as exc:
+            raise map_supabase_error(exc, fallback_code="ADD_ORG_MEMBER_FAILED") from exc
+
+    def update_org_member_role(
+        self,
+        jwt: str,
+        org_id: str,
+        target_user_id: str,
+        new_role: str,
+        actor_user_id: str,
+    ) -> dict:
+        """MVP-3.1: 修改成員 role。owner 可改任意；admin 不可將任何人改為 owner。"""
+        self.require_org_admin(jwt, org_id, actor_user_id)
+        actor_role = self._get_org_role(jwt, org_id, actor_user_id)
+        if actor_role == "admin" and new_role == "owner":
+            raise AppError(
+                code="FORBIDDEN",
+                message="Admin cannot assign owner role",
+                details={"target_user_id": target_user_id},
+                http_status=403,
+            )
+        client = supabase_client.authed_client(jwt)
+        try:
+            resp = (
+                client.table("organizer_members")
+                .update({"role": new_role})
+                .eq("org_id", org_id)
+                .eq("user_id", target_user_id)
+                .execute()
+            )
+            rows = supabase_client.extract_data(resp) or []
+            if not rows:
+                raise AppError(
+                    code="MEMBER_NOT_FOUND",
+                    message="Member not found",
+                    details={"org_id": org_id, "user_id": target_user_id},
+                    http_status=404,
+                )
+            return rows[0]
+        except AppError:
+            raise
+        except Exception as exc:
+            raise map_supabase_error(exc, fallback_code="UPDATE_ORG_MEMBER_FAILED") from exc
+
+    def remove_org_member(
+        self,
+        jwt: str,
+        org_id: str,
+        target_user_id: str,
+        actor_user_id: str,
+    ) -> None:
+        """MVP-3.1: 移除成員。owner/admin 可刪；不可刪自己為唯一 owner。"""
+        self.require_org_admin(jwt, org_id, actor_user_id)
+        if target_user_id == actor_user_id:
+            # 檢查是否為唯一 owner
+            client = supabase_client.authed_client(jwt)
+            owners = (
+                client.table("organizer_members")
+                .select("user_id")
+                .eq("org_id", org_id)
+                .eq("role", "owner")
+                .execute()
+            )
+            owner_rows = supabase_client.extract_data(owners) or []
+            if len(owner_rows) <= 1:
+                raise AppError(
+                    code="FORBIDDEN",
+                    message="Cannot remove the only owner. Transfer ownership first.",
+                    http_status=403,
+                )
+        client = supabase_client.authed_client(jwt)
+        try:
+            client.table("organizer_members").delete().eq(
+                "org_id", org_id
+            ).eq("user_id", target_user_id).execute()
+        except Exception as exc:
+            raise map_supabase_error(exc, fallback_code="REMOVE_ORG_MEMBER_FAILED") from exc
+
     def require_event_admin(self, jwt: str, event_id: UUID, user_id: str) -> None:
         """僅 event 所屬 org 的 owner/admin 可管理；staff 拋 STAFF_CANNOT_MANAGE。MVP-3.1。"""
         client = supabase_client.authed_client(jwt)
@@ -672,8 +800,10 @@ class EventsService:
         except Exception as exc:
             raise map_supabase_error(exc, fallback_code="INTERNAL_NOTE_UPSERT_FAILED") from exc
 
-    def create_ticket_type(self, jwt: str, event_id: UUID, payload: dict) -> dict:
-        self.require_event_admin(jwt, event_id, payload.get("_user_id") or "")
+    def create_ticket_type(
+        self, jwt: str, event_id: UUID, payload: dict, user_id: str
+    ) -> dict:
+        self.require_event_admin(jwt, event_id, user_id)
         client = supabase_client.authed_client(jwt)
 
         values = {
@@ -699,9 +829,15 @@ class EventsService:
             raise map_supabase_error(exc, fallback_code="CREATE_TICKET_TYPE_FAILED") from exc
 
     def update_ticket_type(
-        self, jwt: str, event_id: UUID, ticket_type_id: UUID, payload: dict
+        self,
+        jwt: str,
+        event_id: UUID,
+        ticket_type_id: UUID,
+        payload: dict,
+        user_id: str,
     ) -> dict:
         """更新票種。capacity 不可小於 sold_count。"""
+        self.require_event_admin(jwt, event_id, user_id)
         client = supabase_client.authed_client(jwt)
         try:
             existing = (
@@ -757,8 +893,11 @@ class EventsService:
         except Exception as exc:
             raise map_supabase_error(exc, fallback_code="UPDATE_TICKET_TYPE_FAILED") from exc
 
-    def delete_ticket_type(self, jwt: str, event_id: UUID, ticket_type_id: UUID) -> None:
+    def delete_ticket_type(
+        self, jwt: str, event_id: UUID, ticket_type_id: UUID, user_id: str
+    ) -> None:
         """刪除票種。已售出（sold_count > 0）不可刪除。"""
+        self.require_event_admin(jwt, event_id, user_id)
         client = supabase_client.authed_client(jwt)
         try:
             existing = (

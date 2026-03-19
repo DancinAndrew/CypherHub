@@ -94,6 +94,13 @@ onMounted(async () => {
       <h2 class="font-display font-semibold text-gray-400">其他功能</h2>
       <div class="mt-4 flex flex-wrap gap-3">
         <router-link
+          v-if="canManageEvents"
+          to="/organizer/members"
+          class="btn-secondary"
+        >
+          成員管理
+        </router-link>
+        <router-link
           to="/organizer/manage"
           class="btn-secondary"
         >

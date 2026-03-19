@@ -4,6 +4,7 @@ from flask import Blueprint, g, jsonify, request
 
 from app.domain.errors import AppError
 from app.domain.schemas import (
+    AddOrgMemberRequest,
     CreateEventRequest,
     CreateTicketTypeRequest,
     EventFormResponse,
@@ -14,8 +15,10 @@ from app.domain.schemas import (
     OrganizerApplyRequest,
     OrganizerAttendeesResponse,
     OrganizerEventDetailResponse,
+    OrganizerMembersListResponse,
     TicketTypeResponse,
     UpdateEventRequest,
+    UpdateOrgMemberRoleRequest,
     UpdateTicketTypeRequest,
     UpsertEventFormRequest,
 )
@@ -83,6 +86,7 @@ def get_organizer_event(event_id: str) -> tuple[dict, int]:
 @require_auth
 def upsert_internal_note(event_id: str) -> tuple[dict, int]:
     event_uuid = parse_uuid(event_id, "event_id")
+    events_service.require_event_admin(g.jwt, event_uuid, g.user_id)
     request_model = parse_json(EventInternalNoteRequest)
 
     row = events_service.upsert_event_internal_note(
@@ -104,6 +108,7 @@ def upsert_internal_note(event_id: str) -> tuple[dict, int]:
 @require_auth
 def list_event_forms(event_id: str) -> tuple[dict, int]:
     event_uuid = parse_uuid(event_id, "event_id")
+    events_service.require_event_admin(g.jwt, event_uuid, g.user_id)
     rows = forms_service.list_organizer_forms(g.jwt, event_uuid)
     payload = EventFormsListResponse(items=rows)
     return jsonify(payload.model_dump(mode="json", by_alias=True)), 200
@@ -135,6 +140,7 @@ def create_ticket_type(event_id: str) -> tuple[dict, int]:
         jwt=g.jwt,
         event_id=event_uuid,
         payload=request_model.model_dump(mode="json", exclude_none=True),
+        user_id=g.user_id,
     )
     payload = TicketTypeResponse(**ticket_type)
     return jsonify({"ticket_type": payload.model_dump(mode="json")}), 201
@@ -152,6 +158,7 @@ def patch_ticket_type(event_id: str, ticket_type_id: str) -> tuple[dict, int]:
         event_id=event_uuid,
         ticket_type_id=ticket_type_uuid,
         payload=request_model.model_dump(mode="json", exclude_none=True),
+        user_id=g.user_id,
     )
     payload = TicketTypeResponse(**ticket_type)
     return jsonify({"ticket_type": payload.model_dump(mode="json")}), 200
@@ -166,6 +173,7 @@ def delete_ticket_type(event_id: str, ticket_type_id: str) -> tuple[dict, int]:
         jwt=g.jwt,
         event_id=event_uuid,
         ticket_type_id=ticket_type_uuid,
+        user_id=g.user_id,
     )
     return jsonify({"ok": True}), 204
 
@@ -206,6 +214,7 @@ def resend_attendee_ticket(event_id: str, ticket_id: str) -> tuple[dict, int]:
 @require_auth
 def upload_event_media(event_id: str) -> tuple[dict, int]:
     event_uuid = parse_uuid(event_id, "event_id")
+    events_service.require_event_admin(g.jwt, event_uuid, g.user_id)
     file = request.files.get("file")
     if not file or file.filename == "":
         raise AppError(
@@ -229,3 +238,60 @@ def upload_event_media(event_id: str) -> tuple[dict, int]:
         g.user_id,
     )
     return jsonify({"media": row}), 201
+
+
+# --- MVP-3.1: 主辦方成員管理 ---
+
+
+@bp.get("/organizations/<org_id>/members")
+@require_auth
+def list_org_members(org_id: str) -> tuple[dict, int]:
+    org_uuid = parse_uuid(org_id, "org_id")
+    rows = events_service.list_org_members(g.jwt, str(org_uuid), g.user_id)
+    payload = OrganizerMembersListResponse(items=rows)
+    return jsonify(payload.model_dump(mode="json")), 200
+
+
+@bp.post("/organizations/<org_id>/members")
+@require_auth
+def add_org_member(org_id: str) -> tuple[dict, int]:
+    org_uuid = parse_uuid(org_id, "org_id")
+    request_model = parse_json(AddOrgMemberRequest)
+    row = events_service.add_org_member(
+        jwt=g.jwt,
+        org_id=str(org_uuid),
+        target_user_id=str(request_model.user_id),
+        role=request_model.role,
+        actor_user_id=g.user_id,
+    )
+    return jsonify({"member": row}), 201
+
+
+@bp.patch("/organizations/<org_id>/members/<user_id>")
+@require_auth
+def patch_org_member(org_id: str, user_id: str) -> tuple[dict, int]:
+    org_uuid = parse_uuid(org_id, "org_id")
+    target_uuid = parse_uuid(user_id, "user_id")
+    request_model = parse_json(UpdateOrgMemberRoleRequest)
+    row = events_service.update_org_member_role(
+        jwt=g.jwt,
+        org_id=str(org_uuid),
+        target_user_id=str(target_uuid),
+        new_role=request_model.role,
+        actor_user_id=g.user_id,
+    )
+    return jsonify({"member": row}), 200
+
+
+@bp.delete("/organizations/<org_id>/members/<user_id>")
+@require_auth
+def delete_org_member(org_id: str, user_id: str) -> tuple[dict, int]:
+    org_uuid = parse_uuid(org_id, "org_id")
+    target_uuid = parse_uuid(user_id, "user_id")
+    events_service.remove_org_member(
+        jwt=g.jwt,
+        org_id=str(org_uuid),
+        target_user_id=str(target_uuid),
+        actor_user_id=g.user_id,
+    )
+    return jsonify({"ok": True}), 204

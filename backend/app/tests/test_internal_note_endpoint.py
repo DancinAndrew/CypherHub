@@ -17,6 +17,8 @@ def test_internal_note_upsert_requires_admin(client, monkeypatch) -> None:
     assert no_token_response.status_code == 401
 
     monkeypatch.setattr(supabase_client, "get_user", lambda _token: {"id": user_id})
+    # MVP-3.1: internal-note 需 require_event_admin，mock 以避免 403
+    monkeypatch.setattr(events_service, "require_event_admin", lambda *_, **__: None)
 
     def _forbidden(*_args, **_kwargs):
         raise AppError(
@@ -44,6 +46,8 @@ def test_internal_note_upsert_requires_admin(client, monkeypatch) -> None:
         }
 
     monkeypatch.setattr(events_service, "upsert_event_internal_note", _ok)
+    # MVP-3.1: internal-note 需 require_event_admin，mock 讓通過
+    monkeypatch.setattr(events_service, "require_event_admin", lambda *a, **kw: None)
 
     ok_response = client.patch(
         f"/api/v1/organizer/events/{event_id}/internal-note",

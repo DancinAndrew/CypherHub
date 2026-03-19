@@ -13,6 +13,7 @@ import OrganizerEventView from "../views/organizer/OrganizerEventView.vue";
 import OrganizerFormBuilderView from "../views/organizer/OrganizerFormBuilderView.vue";
 import OrganizerHomeView from "../views/organizer/OrganizerHomeView.vue";
 import OrganizerManageView from "../views/organizer/OrganizerManageView.vue";
+import OrganizerMembersView from "../views/organizer/OrganizerMembersView.vue";
 import ProfileView from "../views/ProfileView.vue";
 import { useAuthStore } from "../stores/auth";
 import { pinia } from "../stores/index";
@@ -126,6 +127,12 @@ const router = createRouter({
       path: "/organizer/manage",
       name: "organizer-manage",
       component: OrganizerManageView,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: "/organizer/members",
+      name: "organizer-members",
+      component: OrganizerMembersView,
       meta: { requiresAuth: true },
     },
     ...(import.meta.env.DEV

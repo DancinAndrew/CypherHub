@@ -18,6 +18,9 @@ export function toApiErrorMessage(error: unknown, fallback: string): string {
   if (apiError?.code === "AUTH_FAILED") {
     return "登入失敗：帳號或密碼不正確。";
   }
+  if (apiError?.code === "STAFF_CANNOT_MANAGE") {
+    return "工作人員身分僅能核銷與查看名單，無法建立或編輯活動。";
+  }
   if (apiError?.message) {
     const raw = String(
       ((apiError.details as { raw?: unknown } | undefined)?.raw ?? apiError.details ?? ""),
@@ -63,6 +66,9 @@ export function toApiErrorMessage(error: unknown, fallback: string): string {
       if (field) {
         return `${apiError.message}: ${String(field)}`;
       }
+    }
+    if (apiError.code === "STAFF_CANNOT_MANAGE") {
+      return "您目前為工作人員身分，僅可核銷與查看名單。建立/編輯活動請聯絡主辦方擁有者或管理員。";
     }
     return apiError.code ? `${apiError.message} (${apiError.code})` : apiError.message;
   }

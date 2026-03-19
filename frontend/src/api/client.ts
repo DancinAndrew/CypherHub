@@ -421,6 +421,49 @@ export async function organizerResendAttendeeTicket(eventId: string, ticketId: s
   await client.post(`/api/v1/organizer/events/${eventId}/attendees/${ticketId}/resend`);
 }
 
+// --- MVP-3.1: 主辦方成員管理 ---
+
+export type OrganizerMemberItem = {
+  user_id: string;
+  org_id: string;
+  role: string;
+  created_at?: string | null;
+};
+
+export async function organizerFetchMembers(orgId: string): Promise<OrganizerMemberItem[]> {
+  const response = await client.get<{ items: OrganizerMemberItem[] }>(
+    `/api/v1/organizer/organizations/${orgId}/members`,
+  );
+  return response.data.items;
+}
+
+export async function organizerAddMember(
+  orgId: string,
+  payload: { user_id: string; role: "admin" | "staff" },
+): Promise<OrganizerMemberItem> {
+  const response = await client.post<{ member: OrganizerMemberItem }>(
+    `/api/v1/organizer/organizations/${orgId}/members`,
+    payload,
+  );
+  return response.data.member;
+}
+
+export async function organizerUpdateMemberRole(
+  orgId: string,
+  userId: string,
+  role: "owner" | "admin" | "staff",
+): Promise<OrganizerMemberItem> {
+  const response = await client.patch<{ member: OrganizerMemberItem }>(
+    `/api/v1/organizer/organizations/${orgId}/members/${userId}`,
+    { role },
+  );
+  return response.data.member;
+}
+
+export async function organizerRemoveMember(orgId: string, userId: string): Promise<void> {
+  await client.delete(`/api/v1/organizer/organizations/${orgId}/members/${userId}`);
+}
+
 export type CheckinPayload = {
   ticket_id?: string;
   qr_secret?: string;

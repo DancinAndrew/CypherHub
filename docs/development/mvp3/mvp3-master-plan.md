@@ -94,7 +94,7 @@ MVP-3.5 使用者端擴充（可選）
 - [x] staff 無法呼叫建立活動 API → 403 STAFF_CANNOT_MANAGE
 - [x] staff 可核銷、可看名單（RLS is_event_member 允許）
 - [ ] admin 可管理活動、不可改結算（待 3.3 有結算欄位後驗證）
-- [ ] owner 可新增/刪除成員、可改 role（成員管理 API 待 3.1 進階實作）
+- [x] owner/admin 可新增/刪除成員、owner 可改 role（成員管理 API 已實作）
 - [x] 前端依 role 顯示正確導航（OrganizerHomeView 依 canManage 隱藏建立/編輯/表單）
 
 ---

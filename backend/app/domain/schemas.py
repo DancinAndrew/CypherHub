@@ -337,6 +337,29 @@ class OrganizerAttendeesResponse(BaseModel):
     items: list[AttendeeResponse]
 
 
+# --- MVP-3.1: 主辦方成員管理 ---
+
+
+class OrganizerMemberResponse(BaseModel):
+    user_id: UUID
+    org_id: UUID
+    role: str  # owner | admin | staff
+    created_at: datetime | None = None
+
+
+class OrganizerMembersListResponse(BaseModel):
+    items: list[OrganizerMemberResponse]
+
+
+class AddOrgMemberRequest(BaseModel):
+    user_id: UUID
+    role: str = Field(..., pattern="^(admin|staff)$")
+
+
+class UpdateOrgMemberRoleRequest(BaseModel):
+    role: str = Field(..., pattern="^(owner|admin|staff)$")
+
+
 class CheckinRequest(BaseModel):
     ticket_id: UUID | None = None
     qr_secret: str | None = None
