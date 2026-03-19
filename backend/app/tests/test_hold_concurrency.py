@@ -4,26 +4,53 @@ from __future__ import annotations
 
 import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from pathlib import Path
 
 import pytest
+
+# 確保 skipif 評估時已載入 backend/.env（與 conftest 同邏輯）
+_backend_root = Path(__file__).resolve().parent.parent.parent
+_env_path = _backend_root / ".env"
+if _env_path.exists():
+    from dotenv import load_dotenv
+    load_dotenv(_env_path)
 
 from app.services.supabase_client import supabase_client
 
 
-# 整合測試：可用 TEST_USER_1_* / TEST_USER_2_* 或 seed 帳密
+# 整合測試：TEST_USER_1_* / TEST_USER_2_*，或僅 TEST_USER_EMAIL + TEST_USER_PASSWORD（兩組同帳號）
 def _user1() -> tuple[str, str]:
-    e = os.getenv("TEST_USER_1_EMAIL") or os.getenv("ORGANIZER_CLOUD_TEST_EMAIL", "organizer-cloud-test@cypherhub.local")
-    p = os.getenv("TEST_USER_1_PASSWORD") or os.getenv("ORGANIZER_CLOUD_TEST_PASSWORD", "TestOrganizer123!")
+    e = (
+        os.getenv("TEST_USER_1_EMAIL")
+        or os.getenv("TEST_USER_EMAIL")
+        or os.getenv("ORGANIZER_CLOUD_TEST_EMAIL", "organizer-cloud-test@cypherhub.local")
+    )
+    p = (
+        os.getenv("TEST_USER_1_PASSWORD")
+        or os.getenv("TEST_USER_PASSWORD")
+        or os.getenv("ORGANIZER_CLOUD_TEST_PASSWORD", "TestOrganizer123!")
+    )
     return (e, p)
 
 
 def _user2() -> tuple[str, str]:
-    e = os.getenv("TEST_USER_2_EMAIL") or os.getenv("ATTENDEE_CLOUD_TEST_EMAIL", "attendee-cloud-test@cypherhub.local")
-    p = os.getenv("TEST_USER_2_PASSWORD") or os.getenv("ATTENDEE_CLOUD_TEST_PASSWORD", "TestAttendee123!")
+    e = (
+        os.getenv("TEST_USER_2_EMAIL")
+        or os.getenv("TEST_USER_EMAIL")
+        or os.getenv("ATTENDEE_CLOUD_TEST_EMAIL", "attendee-cloud-test@cypherhub.local")
+    )
+    p = (
+        os.getenv("TEST_USER_2_PASSWORD")
+        or os.getenv("TEST_USER_PASSWORD")
+        or os.getenv("ATTENDEE_CLOUD_TEST_PASSWORD", "TestAttendee123!")
+    )
     return (e, p)
 
 
-def _env_ready() -> bool:
+def _env_ready(app=None) -> bool:
+    """檢查 Supabase 環境：若傳入 app 則用 config（fixture 已載入 .env），否則用 os.environ。"""
+    if app is not None:
+        return bool(app.config.get("SUPABASE_URL") and app.config.get("SUPABASE_SERVICE_ROLE_KEY"))
     return bool(os.getenv("SUPABASE_URL") and os.getenv("SUPABASE_SERVICE_ROLE_KEY"))
 
 
@@ -40,16 +67,32 @@ def _login(client, email: str, password: str) -> str | None:
     return (data or {}).get("access_token")
 
 
-@pytest.mark.skipif(
-    not _env_ready(),
-    reason="SUPABASE_* + SERVICE_ROLE_KEY required for concurrency integration test",
-)
+def _user_id_from_jwt(jwt_token: str) -> str | None:
+    """從 JWT 解出 sub（user id），不依賴 admin.list_users()。"""
+    import base64
+    import json
+    try:
+        parts = jwt_token.split(".")
+        if len(parts) != 3:
+            return None
+        payload_b64 = parts[1]
+        padding = 4 - len(payload_b64) % 4
+        if padding != 4:
+            payload_b64 += "=" * padding
+        payload = json.loads(base64.urlsafe_b64decode(payload_b64))
+        return payload.get("sub")
+    except Exception:
+        return None
+
+
 def test_concurrent_hold_last_ticket_one_succeeds_one_sold_out(client, app) -> None:
     """
     capacity=1 時，2 人同時 create_hold_order → 1 成功、1 SOLD_OUT。
     develop.md MVP-2.4 防超賣。需真實 Supabase、可達網路、2 組測試帳密。
     若登入或 Supabase API 失敗（如沙盒、專案暫停）→ skip。
     """
+    if not _env_ready(app):
+        pytest.skip("SUPABASE_* + SERVICE_ROLE_KEY required for concurrency integration test")
     email1, pass1 = _user1()
     email2, pass2 = _user2()
 
@@ -59,19 +102,18 @@ def test_concurrent_hold_last_ticket_one_succeeds_one_sold_out(client, app) -> N
         if not jwt1 or not jwt2:
             pytest.skip("Login failed (network/Supabase unreachable or credentials invalid)")
 
+        uid1 = _user_id_from_jwt(jwt1)
+        if not uid1:
+            pytest.skip("Could not get user id from login token")
+
         # 2) 建立 org / event / ticket_type (capacity=1)
         from supabase import create_client
 
         url = os.environ["SUPABASE_URL"]
         key = os.environ["SUPABASE_SERVICE_ROLE_KEY"]
         admin = create_client(url, key)
-        user_resp = admin.auth.admin.list_users()
     except Exception:
         pytest.skip("Supabase unreachable (network/proxy/project paused)")
-    users = getattr(user_resp, "users", []) or []
-    uid1 = next((u.id for u in users if getattr(u, "email", None) == email1), None)
-    if not uid1:
-        pytest.skip("TEST_USER_1 not found in Supabase Auth")
 
     org_row = admin.table("organizations").insert({"name": "Concurrency Test Org", "owner_user_id": uid1}).execute()
     org_id = org_row.data[0]["id"]
