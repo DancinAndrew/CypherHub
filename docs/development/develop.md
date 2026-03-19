@@ -630,16 +630,17 @@
 
 # MVP-3 詳細規格
 
-## MVP-3.1 主辦方成員細權限 ⬜
+## MVP-3.1 主辦方成員細權限 ✅
 
 | 項目 | 說明 | 驗證方式 |
 |------|------|----------|
 | owner / admin / staff | 角色細分 | organizer_members.role |
-| admin | 可管理活動，不可改收款 | - |
-| staff | 可核銷指定活動 | 可限制活動範圍 |
-| 權限檢查 | API 與 RLS | 依角色限制操作 |
+| admin | 可管理活動，不可改收款 | 結算待 3.3 |
+| staff | 可核銷指定活動 | require_event_admin 阻擋 create/edit |
+| 權限檢查 | API 與 RLS | events_service.require_org_admin / require_event_admin |
+| 前端 | 依 role 隱藏入口 | OrganizerHomeView canManage |
 
-**Done 條件**：staff 只能核銷、不能建立活動；admin 可管理不能改結算。
+**Done 條件**：staff 只能核銷、不能建立活動；admin 可管理不能改結算。✅
 
 ---
 

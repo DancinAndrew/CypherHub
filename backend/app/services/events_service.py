@@ -271,6 +271,65 @@ class EventsService:
         except Exception as exc:
             raise map_supabase_error(exc, fallback_code="MY_ORGANIZER_SUMMARY_FAILED") from exc
 
+    def _get_org_role(self, jwt: str, org_id: str, user_id: str) -> str | None:
+        """取得 user 在 org 的 role；非成員回 None。MVP-3.1。"""
+        client = supabase_client.authed_client(jwt)
+        try:
+            resp = (
+                client.table("organizer_members")
+                .select("role")
+                .eq("org_id", org_id)
+                .eq("user_id", user_id)
+                .limit(1)
+                .execute()
+            )
+            rows = supabase_client.extract_data(resp) or []
+            return rows[0].get("role") if rows else None
+        except Exception:
+            return None
+
+    def require_org_admin(self, jwt: str, org_id: str, user_id: str) -> None:
+        """僅 owner/admin 可管理；staff 拋 STAFF_CANNOT_MANAGE。MVP-3.1。"""
+        role = self._get_org_role(jwt, org_id, user_id)
+        if role is None:
+            raise AppError(
+                code="FORBIDDEN",
+                message="You are not a member of this organization",
+                http_status=403,
+            )
+        if role == "staff":
+            raise AppError(
+                code="STAFF_CANNOT_MANAGE",
+                message="Staff role cannot create or edit events. Only owner or admin can.",
+                http_status=403,
+            )
+
+    def require_event_admin(self, jwt: str, event_id: UUID, user_id: str) -> None:
+        """僅 event 所屬 org 的 owner/admin 可管理；staff 拋 STAFF_CANNOT_MANAGE。MVP-3.1。"""
+        client = supabase_client.authed_client(jwt)
+        try:
+            resp = (
+                client.table("events")
+                .select("org_id")
+                .eq("id", str(event_id))
+                .limit(1)
+                .execute()
+            )
+            rows = supabase_client.extract_data(resp) or []
+            if not rows:
+                raise AppError(
+                    code="EVENT_NOT_FOUND",
+                    message="Event not found",
+                    details={"event_id": str(event_id)},
+                    http_status=404,
+                )
+            org_id = str(rows[0].get("org_id", ""))
+            self.require_org_admin(jwt, org_id, user_id)
+        except AppError:
+            raise
+        except Exception as exc:
+            raise map_supabase_error(exc, fallback_code="ORGANIZER_PERMISSION_CHECK_FAILED") from exc
+
     def apply_organizer(self, jwt: str, user_id: str, payload: dict) -> dict:
         client = supabase_client.authed_client(jwt)
         values = {
@@ -297,6 +356,8 @@ class EventsService:
             raise map_supabase_error(exc, fallback_code="ORGANIZER_APPLY_FAILED") from exc
 
     def create_event(self, jwt: str, user_id: str, payload: dict) -> dict:
+        org_id = str(payload.get("org_id", ""))
+        self.require_org_admin(jwt, org_id, user_id)
         client = supabase_client.authed_client(jwt)
 
         values = {
@@ -353,6 +414,7 @@ class EventsService:
             raise map_supabase_error(exc, fallback_code="ADMIN_UPDATE_EVENT_FAILED") from exc
 
     def update_event(self, jwt: str, event_id: UUID, payload: dict) -> dict:
+        self.require_event_admin(jwt, event_id, user_id)
         client = supabase_client.authed_client(jwt)
 
         update_values = {key: value for key, value in payload.items() if value is not None}
@@ -508,6 +570,7 @@ class EventsService:
             raise map_supabase_error(exc, fallback_code="INTERNAL_NOTE_UPSERT_FAILED") from exc
 
     def create_ticket_type(self, jwt: str, event_id: UUID, payload: dict) -> dict:
+        self.require_event_admin(jwt, event_id, payload.get("_user_id") or "")
         client = supabase_client.authed_client(jwt)
 
         values = {

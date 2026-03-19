@@ -112,6 +112,7 @@ def list_event_forms(event_id: str) -> tuple[dict, int]:
 @require_auth
 def upsert_event_form(event_id: str) -> tuple[dict, int]:
     event_uuid = parse_uuid(event_id, "event_id")
+    events_service.require_event_admin(g.jwt, event_uuid, g.user_id)
     request_model = parse_json(UpsertEventFormRequest)
 
     row = forms_service.upsert_form(

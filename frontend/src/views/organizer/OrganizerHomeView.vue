@@ -1,7 +1,27 @@
 <script setup lang="ts">
+import { computed, onMounted, ref } from "vue";
+import { useRouter } from "vue-router";
+import { fetchMyOrganizerSummary, type MyOrganizerOrg } from "../../api/client";
 import { useOrganizerStore } from "../../stores/organizer";
 
 const organizerStore = useOrganizerStore();
+const router = useRouter();
+const summary = ref<{ organizations: MyOrganizerOrg[] } | null>(null);
+
+/** MVP-3.1: owner/admin 可管理活動；staff 僅核銷與名單 */
+const canManageEvents = computed(() => {
+  const orgs = summary.value?.organizations ?? [];
+  return orgs.some((o) => o.role === "owner" || o.role === "admin");
+});
+
+onMounted(async () => {
+  try {
+    const data = await fetchMyOrganizerSummary();
+    summary.value = { organizations: data.organizations };
+  } catch {
+    summary.value = { organizations: [] };
+  }
+});
 </script>
 
 <template>
@@ -25,44 +45,49 @@ const organizerStore = useOrganizerStore();
         <span class="text-cypher-accent">→</span>
       </router-link>
 
-      <router-link
-        to="/organizer/events/create"
-        class="card flex items-center gap-5 p-6 transition-all hover:border-cypher-accent/50"
-        :style="{ animation: `slideUp 0.5s ease-out 0.1s both` }"
-      >
-        <span class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-cypher-accent/20 text-xl font-bold text-cypher-accent">2</span>
-        <div class="flex-1 min-w-0">
-          <h2 class="font-display font-semibold text-white">建立活動</h2>
-          <p class="mt-1 text-sm text-cypher-muted">建立新活動、票種、主辦方備註</p>
-        </div>
-        <span class="text-cypher-accent">→</span>
-      </router-link>
+      <template v-if="canManageEvents">
+        <router-link
+          to="/organizer/events/create"
+          class="card flex items-center gap-5 p-6 transition-all hover:border-cypher-accent/50"
+          :style="{ animation: `slideUp 0.5s ease-out 0.1s both` }"
+        >
+          <span class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-cypher-accent/20 text-xl font-bold text-cypher-accent">2</span>
+          <div class="flex-1 min-w-0">
+            <h2 class="font-display font-semibold text-white">建立活動</h2>
+            <p class="mt-1 text-sm text-cypher-muted">建立新活動、票種、主辦方備註</p>
+          </div>
+          <span class="text-cypher-accent">→</span>
+        </router-link>
 
-      <router-link
-        to="/organizer/events/edit"
-        class="card flex items-center gap-5 p-6 transition-all hover:border-cypher-accent/50"
-        :style="{ animation: `slideUp 0.5s ease-out 0.15s both` }"
-      >
-        <span class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-cypher-accent/20 text-xl font-bold text-cypher-accent">3</span>
-        <div class="flex-1 min-w-0">
-          <h2 class="font-display font-semibold text-white">編輯活動</h2>
-          <p class="mt-1 text-sm text-cypher-muted">選擇既有活動載入後編輯</p>
-        </div>
-        <span class="text-cypher-accent">→</span>
-      </router-link>
+        <router-link
+          to="/organizer/events/edit"
+          class="card flex items-center gap-5 p-6 transition-all hover:border-cypher-accent/50"
+          :style="{ animation: `slideUp 0.5s ease-out 0.15s both` }"
+        >
+          <span class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-cypher-accent/20 text-xl font-bold text-cypher-accent">3</span>
+          <div class="flex-1 min-w-0">
+            <h2 class="font-display font-semibold text-white">編輯活動</h2>
+            <p class="mt-1 text-sm text-cypher-muted">選擇既有活動載入後編輯</p>
+          </div>
+          <span class="text-cypher-accent">→</span>
+        </router-link>
 
-      <router-link
-        to="/organizer/forms"
-        class="card flex items-center gap-5 p-6 transition-all hover:border-cypher-accent/50"
-        :style="{ animation: `slideUp 0.5s ease-out 0.2s both` }"
-      >
-        <span class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-cypher-accent/20 text-xl font-bold text-cypher-accent">4</span>
-        <div class="flex-1 min-w-0">
-          <h2 class="font-display font-semibold text-white">報名表單設定</h2>
-          <p class="mt-1 text-sm text-cypher-muted">自訂報名時需填寫的欄位</p>
-        </div>
-        <span class="text-cypher-accent">→</span>
-      </router-link>
+        <router-link
+          to="/organizer/forms"
+          class="card flex items-center gap-5 p-6 transition-all hover:border-cypher-accent/50"
+          :style="{ animation: `slideUp 0.5s ease-out 0.2s both` }"
+        >
+          <span class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-cypher-accent/20 text-xl font-bold text-cypher-accent">4</span>
+          <div class="flex-1 min-w-0">
+            <h2 class="font-display font-semibold text-white">報名表單設定</h2>
+            <p class="mt-1 text-sm text-cypher-muted">自訂報名時需填寫的欄位</p>
+          </div>
+          <span class="text-cypher-accent">→</span>
+        </router-link>
+      </template>
+      <p v-else-if="summary" class="rounded-lg border border-cypher-muted/30 bg-cypher-muted/10 px-4 py-3 text-sm text-cypher-muted">
+        您目前為 staff 身分，僅可核銷與查看名單。建立/編輯活動請聯絡主辦方 owner 或 admin。
+      </p>
     </div>
 
     <div class="card mt-12 p-6 animate-slide-up" style="animation-delay: 0.25s; animation-fill-mode: both;">
