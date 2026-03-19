@@ -160,7 +160,7 @@ def main() -> None:
     event_id = event_row.data[0]["id"]
     print(f"  ✓ event_id={event_id}")
 
-    tt_row = (
+    tt_free = (
         client.table("ticket_types")
         .insert(
             {
@@ -174,8 +174,25 @@ def main() -> None:
         )
         .execute()
     )
-    ticket_type_id = tt_row.data[0]["id"]
-    print(f"  ✓ ticket_type_id={ticket_type_id}")
+    ticket_type_id = tt_free.data[0]["id"]
+    print(f"  ✓ ticket_type_id (免費)={ticket_type_id}")
+
+    tt_paid = (
+        client.table("ticket_types")
+        .insert(
+            {
+                "event_id": event_id,
+                "name": "付費票",
+                "capacity": 5,
+                "per_user_limit": 2,
+                "price_cents": 100,
+                "is_active": True,
+            }
+        )
+        .execute()
+    )
+    paid_ticket_type_id = tt_paid.data[0]["id"]
+    print(f"  ✓ ticket_type_id (付費，ECPay 測試用)={paid_ticket_type_id}")
 
     print("\n==> 建立測試票券（給 attendee）")
     qr_secret = secrets.token_hex(16)
