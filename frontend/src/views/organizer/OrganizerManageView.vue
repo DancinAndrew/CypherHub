@@ -50,6 +50,51 @@ function formatAnswers(answers?: Record<string, unknown> | null): string {
   return JSON.stringify(answers, null, 2);
 }
 
+/** CSV 安全：含逗號、換行、雙引號時包雙引號並跳脫。MVP-2.5 名單匯出。 */
+function csvEscape(val: unknown): string {
+  const s = val == null ? "" : String(val);
+  if (s.includes(",") || s.includes('"') || s.includes("\n") || s.includes("\r")) {
+    return `"${s.replace(/"/g, '""')}"`;
+  }
+  return s;
+}
+
+function exportAttendeesCsv(): void {
+  if (attendees.value.length === 0) return;
+  const answerKeys = new Set<string>();
+  for (const r of attendees.value) {
+    if (r.answers && typeof r.answers === "object") {
+      Object.keys(r.answers).forEach((k) => answerKeys.add(k));
+    }
+  }
+  const baseCols = ["ticket_id", "user_id", "ticket_type_id", "status", "checked_in_at"];
+  const ansCols = [...answerKeys].sort();
+  const headers = [...baseCols, ...ansCols];
+  const rows: string[][] = [headers];
+  for (const r of attendees.value) {
+    const ans = r.answers && typeof r.answers === "object" ? r.answers : {};
+    const line = [
+      csvEscape(r.ticket_id),
+      csvEscape(r.user_id),
+      csvEscape(r.ticket_type_id),
+      csvEscape(r.status),
+      csvEscape(r.checked_in_at ?? ""),
+      ...ansCols.map((k) => csvEscape(ans[k])),
+    ];
+    rows.push(line);
+  }
+  const csvContent = rows.map((row) => row.join(",")).join("\n");
+  const bom = "\uFEFF";
+  const blob = new Blob([bom + csvContent], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  const eventTitle = myEvents.value.find((e) => e.id === eventId.value)?.title ?? "名單";
+  a.download = `${eventTitle.replace(/[^a-zA-Z0-9\u4e00-\u9fff-]/g, "_")}_名單_${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 async function loadByEventId(): Promise<void> {
   const eid = eventId.value.trim();
   if (!eid) {
@@ -189,8 +234,20 @@ async function handleResendAttendeeTicket(ticketId: string): Promise<void> {
 
     <!-- 代寄票券（名單與重寄） -->
     <section v-if="eventId.trim() && stats !== null" class="card mt-6 p-6">
-      <h2 class="font-street text-lg tracking-wider text-white">名單與代寄票券</h2>
-      <p class="mt-1 text-sm text-cypher-muted">可對單張票券觸發「重寄票券信」至參加者信箱。</p>
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 class="font-street text-lg tracking-wider text-white">名單與代寄票券</h2>
+          <p class="mt-1 text-sm text-cypher-muted">可對單張票券觸發「重寄票券信」至參加者信箱；可匯出 CSV。</p>
+        </div>
+        <button
+          type="button"
+          class="rounded-lg border border-cypher-border px-3 py-1.5 text-sm text-gray-300 transition-colors hover:bg-cypher-surface-alt disabled:opacity-50"
+          :disabled="attendees.length === 0"
+          @click="exportAttendeesCsv"
+        >
+          匯出 CSV
+        </button>
+      </div>
       <p v-if="resendAttendeeMessage" class="mt-2 text-sm" :class="resendAttendeeMessage.startsWith('已') ? 'text-emerald-600' : 'text-rose-600'">
         {{ resendAttendeeMessage }}
       </p>
