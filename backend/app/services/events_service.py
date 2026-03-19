@@ -138,6 +138,65 @@ class EventsService:
         except Exception as exc:
             raise map_supabase_error(exc, fallback_code="ADMIN_EVENTS_LIST_FAILED") from exc
 
+    def list_admin_organizations(
+        self, status: str | None = None
+    ) -> list[dict]:
+        """Admin: 全站主辦方，可依 approval_status 篩選。MVP-3.2。"""
+        client = supabase_client.service_role_client()
+        org_select = "id,name,description,contact_email,owner_user_id,approval_status,approved_at,approved_by,rejection_reason,created_at"
+        query = client.table("organizations").select(org_select)
+        if status:
+            query = query.eq("approval_status", status)
+        try:
+            response = query.order("created_at", desc=True).execute()
+            return supabase_client.extract_data(response) or []
+        except Exception as exc:
+            raise map_supabase_error(exc, fallback_code="ADMIN_ORGANIZATIONS_LIST_FAILED") from exc
+
+    def admin_approve_organization(
+        self,
+        org_id: UUID,
+        status: str,
+        admin_user_id: str,
+        rejection_reason: str | None = None,
+    ) -> dict:
+        """Admin: 審核主辦方通過/退件。MVP-3.2。"""
+        if status not in ("approved", "rejected"):
+            raise AppError(
+                code="VALIDATION_ERROR",
+                message="status must be approved or rejected",
+                details={"status": status},
+                http_status=400,
+            )
+        client = supabase_client.service_role_client()
+        now = datetime.now(UTC).isoformat()
+        update_values: dict = {
+            "approval_status": status,
+            "approved_at": now if status == "approved" else None,
+            "approved_by": admin_user_id if status == "approved" else None,
+            "rejection_reason": rejection_reason if status == "rejected" else None,
+        }
+        try:
+            response = (
+                client.table("organizations")
+                .update(update_values)
+                .eq("id", str(org_id))
+                .execute()
+            )
+            rows = supabase_client.extract_data(response) or []
+            if not rows:
+                raise AppError(
+                    code="ORGANIZATION_NOT_FOUND",
+                    message="Organization not found",
+                    details={"org_id": str(org_id)},
+                    http_status=404,
+                )
+            return rows[0]
+        except AppError:
+            raise
+        except Exception as exc:
+            raise map_supabase_error(exc, fallback_code="ADMIN_ORGANIZATION_APPROVAL_FAILED") from exc
+
     def get_event_title(self, event_id: UUID) -> str:
         """取得活動標題（供 email 等使用，不檢查 published）。"""
         client = supabase_client.public_client()
@@ -242,10 +301,20 @@ class EventsService:
                 return {"organizations": [], "events": []}
             org_ids = [str(m["org_id"]) for m in members]
             role_by_org = {str(m["org_id"]): m.get("role", "staff") for m in members}
-            orgs_resp = client.table("organizations").select("id,name").in_("id", org_ids).execute()
+            orgs_resp = (
+                client.table("organizations")
+                .select("id,name,approval_status")
+                .in_("id", org_ids)
+                .execute()
+            )
             orgs_rows = supabase_client.extract_data(orgs_resp) or []
             organizations = [
-                {"id": o["id"], "name": o["name"], "role": role_by_org.get(str(o["id"]), "staff")}
+                {
+                    "id": o["id"],
+                    "name": o["name"],
+                    "role": role_by_org.get(str(o["id"]), "staff"),
+                    "approval_status": o.get("approval_status", "approved"),
+                }
                 for o in orgs_rows
             ]
             events_resp = (
@@ -330,14 +399,46 @@ class EventsService:
         except Exception as exc:
             raise map_supabase_error(exc, fallback_code="ORGANIZER_PERMISSION_CHECK_FAILED") from exc
 
-    def apply_organizer(self, jwt: str, user_id: str, payload: dict) -> dict:
+    def _require_org_approved(self, jwt: str, org_id: str) -> None:
+        """MVP-3.2: 僅 approval_status=approved 的 org 可建立活動。"""
         client = supabase_client.authed_client(jwt)
+        resp = (
+            client.table("organizations")
+            .select("approval_status")
+            .eq("id", org_id)
+            .limit(1)
+            .execute()
+        )
+        rows = supabase_client.extract_data(resp) or []
+        if not rows:
+            raise AppError(
+                code="ORGANIZATION_NOT_FOUND",
+                message="Organization not found",
+                details={"org_id": org_id},
+                http_status=404,
+            )
+        status = (rows[0].get("approval_status") or "").strip()
+        if status != "approved":
+            raise AppError(
+                code="ORGANIZATION_PENDING_APPROVAL",
+                message="Organization is pending approval. You cannot create events until Admin approves.",
+                details={"approval_status": status},
+                http_status=403,
+            )
+
+    def apply_organizer(self, jwt: str, user_id: str, payload: dict) -> dict:
+        """申請主辦方。ORG_APPROVAL_REQUIRED=True 時新 org 為 pending，需 Admin 審核。"""
+        client = supabase_client.authed_client(jwt)
+        approval_required = current_app.config.get("ORG_APPROVAL_REQUIRED", False)
+        approval_status = "pending" if approval_required else "approved"
+
         values = {
             "name": payload["name"],
             "description": payload.get("description"),
             "contact_email": payload.get("contact_email"),
             "logo_url": payload.get("logo_url"),
             "owner_user_id": user_id,
+            "approval_status": approval_status,
         }
 
         try:
@@ -356,8 +457,10 @@ class EventsService:
             raise map_supabase_error(exc, fallback_code="ORGANIZER_APPLY_FAILED") from exc
 
     def create_event(self, jwt: str, user_id: str, payload: dict) -> dict:
+        """建立活動。僅 org approval_status=approved 時可建立。MVP-3.2。"""
         org_id = str(payload.get("org_id", ""))
         self.require_org_admin(jwt, org_id, user_id)
+        self._require_org_approved(jwt, org_id)
         client = supabase_client.authed_client(jwt)
 
         values = {
@@ -413,7 +516,7 @@ class EventsService:
         except Exception as exc:
             raise map_supabase_error(exc, fallback_code="ADMIN_UPDATE_EVENT_FAILED") from exc
 
-    def update_event(self, jwt: str, event_id: UUID, payload: dict) -> dict:
+    def update_event(self, jwt: str, event_id: UUID, payload: dict, user_id: str) -> dict:
         self.require_event_admin(jwt, event_id, user_id)
         client = supabase_client.authed_client(jwt)
 

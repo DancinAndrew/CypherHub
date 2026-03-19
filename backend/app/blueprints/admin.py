@@ -3,7 +3,7 @@ from __future__ import annotations
 from flask import Blueprint, current_app, g, jsonify, request
 
 from app.domain.errors import AppError
-from app.domain.schemas import AdminPatchEventRequest
+from app.domain.schemas import AdminOrganizationApprovalRequest, AdminPatchEventRequest
 from app.services.auth_service import require_auth
 from app.services.compensation_service import run_compensate_paid_orders
 from app.services.events_service import events_service
@@ -81,3 +81,29 @@ def refund_order_route(order_id: str) -> tuple[dict, int]:
     order_uuid = parse_uuid(order_id, "order_id")
     result = create_refund(order_uuid)
     return jsonify(result), 200
+
+
+@bp.get("/organizations")
+@require_auth
+def list_admin_organizations_route() -> tuple[dict, int]:
+    """Admin: 主辦方列表，可篩選 approval_status。MVP-3.2。"""
+    _ensure_admin()
+    status = request.args.get("status")  # pending | approved | rejected
+    orgs = events_service.list_admin_organizations(status=status)
+    return jsonify({"items": orgs}), 200
+
+
+@bp.patch("/organizations/<org_id>/approval")
+@require_auth
+def patch_organization_approval_route(org_id: str) -> tuple[dict, int]:
+    """Admin: 審核主辦方入駐。MVP-3.2。"""
+    _ensure_admin()
+    org_uuid = parse_uuid(org_id, "org_id")
+    body = parse_json(AdminOrganizationApprovalRequest)
+    org = events_service.admin_approve_organization(
+        org_uuid,
+        status=body.status,
+        admin_user_id=str(g.user_id),
+        rejection_reason=body.rejection_reason,
+    )
+    return jsonify({"organization": org}), 200

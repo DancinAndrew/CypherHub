@@ -644,16 +644,16 @@
 
 ---
 
-## MVP-3.2 主辦方入駐審核 ⬜
+## MVP-3.2 主辦方入駐審核 ✅
 
 | 項目 | 說明 | 驗證方式 |
 |------|------|----------|
-| 申請狀態 | pending / approved / rejected | - |
-| Admin 審核 | 通過/退件 | Admin 可操作 |
-| 通過後 | 可建立活動 | - |
-| 收款資訊 | 銀行帳戶等 | 審核時或通過後填寫 |
+| 申請狀態 | pending / approved / rejected | organizations.approval_status |
+| Admin 審核 | 通過/退件 | PATCH /admin/organizations/:id/approval |
+| 通過後 | 可建立活動 | create_event 檢查 _require_org_approved |
+| 收款資訊 | payout_bank_info jsonb | 審核時或通過後填寫 |
 
-**Done 條件**：申請後需 Admin 核准才能建立活動。
+**Done 條件**：ORG_APPROVAL_REQUIRED=True 時新申請為 pending；僅 approved 可建立活動；Admin 可審核。✅
 
 ---
 

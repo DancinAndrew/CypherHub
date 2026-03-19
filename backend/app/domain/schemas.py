@@ -288,6 +288,13 @@ class AdminPatchEventRequest(BaseModel):
     status: str = Field(..., pattern="^(disabled|cancelled)$")
 
 
+class AdminOrganizationApprovalRequest(BaseModel):
+    """Admin 主辦方入駐審核。MVP-3.2。"""
+
+    status: str = Field(..., pattern="^(approved|rejected)$")
+    rejection_reason: str | None = None
+
+
 class EventInternalNoteResponse(BaseModel):
     event_id: UUID
     note: str
@@ -350,6 +357,7 @@ class MyOrganizerOrgResponse(BaseModel):
     id: UUID
     name: str
     role: str
+    approval_status: str = "approved"  # MVP-3.2: pending | approved | rejected
 
 
 class MyOrganizerEventResponse(BaseModel):

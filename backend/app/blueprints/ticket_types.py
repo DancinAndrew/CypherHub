@@ -63,6 +63,7 @@ def patch_event(event_id: str) -> tuple[dict, int]:
         jwt=g.jwt,
         event_id=event_uuid,
         payload=request_model.model_dump(mode="json", exclude_none=True),
+        user_id=g.user_id,
     )
     payload = EventResponse(**event)
     return jsonify({"event": payload.model_dump(mode="json")}), 200

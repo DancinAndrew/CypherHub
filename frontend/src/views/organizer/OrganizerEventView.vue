@@ -37,6 +37,10 @@ const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[
 
 const myOrgs = ref<MyOrganizerOrg[]>([]);
 const myEvents = ref<MyOrganizerEvent[]>([]);
+/** MVP-3.2: 建立活動時僅顯示已核准的主辦方 */
+const orgsForCreate = computed(() =>
+  myOrgs.value.filter((o) => (o.approval_status ?? "approved") === "approved")
+);
 const summaryLoading = ref(true);
 
 const mode = ref<"create" | "edit">("create");
@@ -141,7 +145,8 @@ onMounted(async () => {
     const data = await fetchMyOrganizerSummary();
     myOrgs.value = data.organizations ?? [];
     myEvents.value = data.events ?? [];
-    const firstOrg = myOrgs.value[0];
+    const approved = myOrgs.value.filter((o) => (o.approval_status ?? "approved") === "approved");
+    const firstOrg = approved[0] ?? myOrgs.value[0];
     if (firstOrg && !eventForm.value.org_id) eventForm.value.org_id = firstOrg.id;
   } catch {
     myOrgs.value = [];

@@ -158,10 +158,10 @@ UPDATE organizations SET approval_status = 'approved' WHERE approval_status IS N
 
 ### 3.5 驗收
 
-- [ ] 新申請 org → pending（若啟用審核）
-- [ ] Admin 可審核通過/退件
-- [ ] 僅 approved 可建立活動
-- [ ] 收款資訊可寫入 payout_bank_info（表單可選）
+- [x] 新申請 org → pending（ORG_APPROVAL_REQUIRED=True 時）
+- [x] Admin 可審核通過/退件（GET /admin/organizations、PATCH /admin/organizations/:id/approval）
+- [x] 僅 approved 可建立活動（_require_org_approved）
+- [x] payout_bank_info 欄位已加（表單可選實作）
 
 ---
 

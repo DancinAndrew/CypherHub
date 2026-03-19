@@ -23,6 +23,9 @@ class Config:
 
     FRONTEND_BASE_URL = os.getenv("FRONTEND_BASE_URL", "http://localhost:5173").rstrip("/")
 
+    # MVP-3.2: 主辦方入駐審核。True=新申請為 pending 需 Admin 審核
+    ORG_APPROVAL_REQUIRED = os.getenv("ORG_APPROVAL_REQUIRED", "0") in {"1", "true", "True"}
+
     # ECPay（綠界金流）
     ECPAY_MERCHANT_ID = os.getenv("ECPAY_MERCHANT_ID", "")
     ECPAY_HASH_KEY = os.getenv("ECPAY_HASH_KEY", "")

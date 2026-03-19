@@ -233,6 +233,7 @@ export type MyOrganizerOrg = {
   id: string;
   name: string;
   role: string;
+  approval_status?: string; // MVP-3.2: pending | approved | rejected
 };
 
 export type MyOrganizerEvent = {
