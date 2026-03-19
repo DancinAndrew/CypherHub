@@ -8,6 +8,7 @@ from uuid import UUID, uuid4
 from flask import current_app
 
 from app.domain.errors import AppError, map_supabase_error
+from app.domain.order_state_machine import ORDER_STATE_MACHINE
 from app.providers.ecpay import create_checkout_params, verify_webhook_checkmac
 
 from .supabase_client import supabase_client
@@ -48,12 +49,8 @@ class PaymentService:
         if not orders:
             raise AppError(code="ORDER_NOT_FOUND", message="Order not found", http_status=404)
         order = orders[0]
-        if order.get("status") != "holding":
-            raise AppError(
-                code="ORDER_NOT_HOLDING",
-                message="Order must be in holding status to checkout",
-                http_status=409,
-            )
+        current_status = order.get("status") or ""
+        ORDER_STATE_MACHINE.validate_transition(current_status, "pending_payment")
 
         # 2) 以 service_role 建立 payment、更新 order
         svc = supabase_client.service_role_client()
@@ -195,8 +192,11 @@ class PaymentService:
         order_id = pay_rows[0]["order_id"]
         order_resp = svc.table("orders").select("status").eq("id", order_id).limit(1).execute()
         orders = supabase_client.extract_data(order_resp) or []
-        if orders and orders[0]["status"] in ("paid", "issued"):
-            return "1|OK"
+        current_status = orders[0]["status"] if orders else ""
+        if current_status in ("paid", "issued"):
+            return "1|OK"  # 冪等：已處理過
+        if not ORDER_STATE_MACHINE.can_transition(current_status, "paid"):
+            return "1|OK"  # 無效轉換（如 cancelled）→ 不回報錯，避免綠界重送
 
         # 3) 更新 payment、order、出票
         svc.table("payments").update({"status": "completed", "raw_payload": form_data}).eq(
