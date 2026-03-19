@@ -80,6 +80,45 @@ class SupabaseClientWrapper:
             )
             return None
 
+    @staticmethod
+    def get_user_id_by_email(email: str) -> str | None:
+        """Resolve user id by email via Auth Admin API (requires SUPABASE_SERVICE_ROLE_KEY).
+        Returns first matching user id or None.
+        """
+        email = (email or "").strip().lower()
+        if not email:
+            return None
+        url = current_app.config.get("SUPABASE_URL", "").rstrip("/")
+        key = current_app.config.get("SUPABASE_SERVICE_ROLE_KEY", "").strip()
+        if not url or not key:
+            current_app.logger.warning(
+                "[auth] get_user_id_by_email: SUPABASE_URL or SERVICE_ROLE_KEY not set"
+            )
+            return None
+        # GoTrue filter: eq.email for exact match
+        filter_val = urllib.parse.quote(f"eq.{email}")
+        req = urllib.request.Request(
+            f"{url}/auth/v1/admin/users?filter=email%3D{filter_val}",
+            headers={"Authorization": f"Bearer {key}", "apikey": key},
+            method="GET",
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                data = json.loads(resp.read().decode())
+            if not isinstance(data, dict):
+                return None
+            users = data.get("users") or []
+            if users and isinstance(users, list):
+                u = users[0]
+                if isinstance(u, dict):
+                    return (u.get("id") or "").strip() or None
+            return None
+        except Exception as exc:
+            current_app.logger.warning(
+                "[auth] get_user_id_by_email failed for %s: %s", email, exc
+            )
+            return None
+
     @property
     def initialized(self) -> bool:
         return self._initialized

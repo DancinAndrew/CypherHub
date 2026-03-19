@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import secrets
 import uuid
 from datetime import datetime, timedelta, timezone
 from uuid import UUID
@@ -8,6 +9,7 @@ from flask import current_app
 
 from app.domain.errors import AppError, map_supabase_error
 
+from .audit_service import audit_service
 from .email_service import email_service
 from .supabase_client import supabase_client
 
@@ -616,7 +618,9 @@ class EventsService:
         except Exception as exc:
             raise map_supabase_error(exc, fallback_code="CREATE_EVENT_FAILED") from exc
 
-    def admin_update_event_status(self, event_id: UUID, status: str) -> dict:
+    def admin_update_event_status(
+        self, event_id: UUID, status: str, admin_user_id: str | None = None
+    ) -> dict:
         """Admin 下架：僅允許將 status 改為 disabled 或 cancelled。"""
         if status not in ("disabled", "cancelled"):
             raise AppError(
@@ -638,6 +642,10 @@ class EventsService:
                     details={"event_id": str(event_id)},
                     http_status=404,
                 )
+            if admin_user_id:
+                from app.services.audit_service import audit_service
+
+                audit_service.log_unpublish(event_id, admin_user_id, status)
             return rows[0]
         except AppError:
             raise
@@ -1091,6 +1099,108 @@ class EventsService:
             )
         except Exception as exc:
             raise map_supabase_error(exc, fallback_code="INSERT_EVENT_MEDIA_FAILED") from exc
+
+    def create_comp_ticket(
+        self,
+        jwt: str,
+        event_id: UUID,
+        ticket_type_id: UUID,
+        email: str | None,
+        user_id: str | None,
+        note: str | None,
+        actor_user_id: str,
+    ) -> dict:
+        """手動補票（公關票）。MVP-3.4。需 event admin，不建立 order。"""
+        self.require_event_admin(jwt, event_id, actor_user_id)
+        recipient_id = user_id
+        if email:
+            recipient_id = supabase_client.get_user_id_by_email(email)
+            if not recipient_id:
+                raise AppError(
+                    code="USER_NOT_FOUND",
+                    message="No user found with this email",
+                    details={"email": email},
+                    http_status=404,
+                )
+        if not recipient_id:
+            raise AppError(
+                code="VALIDATION_ERROR",
+                message="Provide email or user_id",
+                http_status=400,
+            )
+        sr = supabase_client.service_role_client()
+        tt_resp = (
+            sr.table("ticket_types")
+            .select("id,event_id,capacity,sold_count")
+            .eq("id", str(ticket_type_id))
+            .eq("event_id", str(event_id))
+            .limit(1)
+            .execute()
+        )
+        tt_rows = supabase_client.extract_data(tt_resp) or []
+        if not tt_rows:
+            raise AppError(
+                code="TICKET_TYPE_NOT_FOUND",
+                message="Ticket type not found or does not belong to this event",
+                details={"ticket_type_id": str(ticket_type_id)},
+                http_status=404,
+            )
+        tt = tt_rows[0]
+        sold = int(tt.get("sold_count") or 0)
+        cap = int(tt.get("capacity") or 0)
+        if sold >= cap:
+            raise AppError(
+                code="CAPACITY_EXCEEDED",
+                message="Ticket type is sold out",
+                details={"sold_count": sold, "capacity": cap},
+                http_status=409,
+            )
+        qr_secret = secrets.token_hex(16)
+        ticket_row = {
+            "event_id": str(event_id),
+            "ticket_type_id": str(ticket_type_id),
+            "user_id": str(recipient_id),
+            "order_id": None,
+            "qr_secret": qr_secret,
+            "status": "issued",
+        }
+        ins = sr.table("tickets").insert(ticket_row).execute()
+        ticket_data = supabase_client.extract_data(ins) or []
+        if isinstance(ticket_data, dict):
+            ticket_data = [ticket_data]
+        if not ticket_data:
+            raise AppError(
+                code="COMP_TICKET_FAILED",
+                message="Failed to create ticket",
+                http_status=500,
+            )
+        ticket = ticket_data[0]
+        ticket_uuid = ticket.get("id")
+        sr.table("ticket_types").update({"sold_count": sold + 1}).eq(
+            "id", str(ticket_type_id)
+        ).execute()
+        audit_service.log_comp_ticket(
+            ticket_id=UUID(str(ticket_uuid)),
+            event_id=event_id,
+            ticket_type_id=ticket_type_id,
+            recipient_user_id=str(recipient_id),
+            actor_type=audit_service.ACTOR_ORGANIZER,
+            actor_id=actor_user_id,
+            note=note,
+        )
+        event_title = self.get_event_title(event_id) or "活動"
+        frontend_url = current_app.config.get("FRONTEND_BASE_URL", "").rstrip("/")
+        to_email = supabase_client.get_user_email_by_id(str(recipient_id))
+        if to_email:
+            try:
+                email_service.send_ticket_email(
+                    to_email, event_title, ticket, frontend_url
+                )
+            except Exception as exc:
+                current_app.logger.warning(
+                    "[comp_ticket] send_ticket_email failed: %s", exc
+                )
+        return ticket
 
 
 events_service = EventsService()

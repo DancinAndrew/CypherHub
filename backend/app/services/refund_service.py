@@ -10,6 +10,7 @@ from flask import current_app
 from app.domain.errors import AppError
 from app.domain.order_state_machine import ORDER_STATE_MACHINE
 from app.providers.ecpay import do_action_refund
+from app.services.audit_service import audit_service
 from app.services.email_service import email_service
 from app.services.supabase_client import supabase_client
 
@@ -22,7 +23,7 @@ def _is_credit_card_payment(payment_type: str) -> bool:
     return any(pt.startswith(p) for p in CREDIT_PAYMENT_PREFIXES)
 
 
-def create_refund(order_id: UUID) -> dict:
+def create_refund(order_id: UUID, admin_user_id: str | None = None) -> dict:
     """
     發起訂單全額退款。需 Admin 權限（由 blueprint 檢查）。
     流程：驗證訂單 → 取得 TradeNo → 建立 refund → 呼叫 DoAction → 更新狀態/寄信。
@@ -160,6 +161,9 @@ def create_refund(order_id: UUID) -> dict:
             )
         except Exception as exc:
             current_app.logger.warning("[refund] send_refund_complete_email failed: %s", exc)
+
+        if admin_user_id:
+            audit_service.log_refund(order_id, admin_user_id, amount_cents)
 
         return {
             "refund_id": refund_id,

@@ -5,6 +5,7 @@ from flask import Blueprint, g, jsonify, request
 from app.domain.errors import AppError
 from app.domain.schemas import (
     AddOrgMemberRequest,
+    CompTicketRequest,
     CreateEventRequest,
     CreateTicketTypeRequest,
     EventFormResponse,
@@ -208,6 +209,24 @@ def resend_attendee_ticket(event_id: str, ticket_id: str) -> tuple[dict, int]:
     ticket_uuid = parse_uuid(ticket_id, "ticket_id")
     events_service.resend_attendee_ticket(g.jwt, event_uuid, ticket_uuid)
     return jsonify({"ok": True}), 200
+
+
+@bp.post("/events/<event_id>/comp-ticket")
+@require_auth
+def create_comp_ticket_route(event_id: str) -> tuple[dict, int]:
+    """手動補票（公關票）。MVP-3.4。需 event admin。"""
+    event_uuid = parse_uuid(event_id, "event_id")
+    body = parse_json(CompTicketRequest)
+    ticket = events_service.create_comp_ticket(
+        jwt=g.jwt,
+        event_id=event_uuid,
+        ticket_type_id=body.ticket_type_id,
+        email=(body.email or "").strip() or None,
+        user_id=str(body.user_id) if body.user_id else None,
+        note=body.note,
+        actor_user_id=g.user_id,
+    )
+    return jsonify({"ticket": ticket}), 201
 
 
 @bp.post("/events/<event_id>/media")

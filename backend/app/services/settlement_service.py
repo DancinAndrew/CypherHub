@@ -9,6 +9,7 @@ from flask import current_app
 
 from app.domain.errors import AppError, map_supabase_error
 
+from .audit_service import audit_service
 from .events_service import events_service
 from .supabase_client import supabase_client
 
@@ -19,7 +20,10 @@ class SettlementService:
     """結算批次產生、主辦方查詢、提款申請。"""
 
     def generate_settlements(
-        self, period_start: datetime, period_end: datetime
+        self,
+        period_start: datetime,
+        period_end: datetime,
+        admin_user_id: str | None = None,
     ) -> list[dict]:
         """
         產生結算批次。需 Admin 權限（由 blueprint 檢查）。
@@ -128,6 +132,13 @@ class SettlementService:
 
             results.append(settlement)
 
+        if admin_user_id:
+            audit_service.log_settlement_generate(
+                admin_user_id,
+                period_start.isoformat(),
+                period_end.isoformat(),
+                len(results),
+            )
         return results
 
     def list_settlements_for_org(self, jwt: str, user_id: str) -> list[dict]:
@@ -273,6 +284,8 @@ class SettlementService:
             "processed_at": now,
         }).eq("id", str(payout_id)).execute()
 
+        audit_service.log_payout_approve(payout_id, admin_user_id, org_id, amount_cents)
+
         pr["status"] = "paid"
         pr["processed_at"] = now
         return pr
@@ -305,6 +318,8 @@ class SettlementService:
             "processed_at": now,
             "failure_reason": failure_reason,
         }).eq("id", str(payout_id)).execute()
+
+        audit_service.log_payout_reject(payout_id, admin_user_id, failure_reason)
 
         pr["status"] = "failed"
         pr["processed_at"] = now

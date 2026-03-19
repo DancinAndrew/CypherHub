@@ -13,6 +13,7 @@ from app.services.auth_service import require_auth
 from app.services.compensation_service import run_compensate_paid_orders
 from app.services.events_service import events_service
 from app.services.hold_expiry_service import run_release_expired_holds
+from app.services.orders_service import orders_service
 from app.services.refund_service import create_refund
 from app.services.settlement_service import settlement_service
 
@@ -57,7 +58,9 @@ def patch_admin_event(event_id: str) -> tuple[dict, int]:
     _ensure_admin()
     event_uuid = parse_uuid(event_id, "event_id")
     body = parse_json(AdminPatchEventRequest)
-    event = events_service.admin_update_event_status(event_uuid, body.status)
+    event = events_service.admin_update_event_status(
+        event_uuid, body.status, admin_user_id=str(g.user_id)
+    )
     return jsonify({"event": event}), 200
 
 
@@ -79,13 +82,39 @@ def release_expired_holds_route() -> tuple[dict, int]:
     return jsonify({"orders_released": count}), 200
 
 
+@bp.get("/orders")
+@require_auth
+def list_admin_orders_route() -> tuple[dict, int]:
+    """Admin 全站訂單查詢。MVP-3.4。"""
+    _ensure_admin()
+    q = request.args.get("q")
+    status = request.args.get("status")
+    from_at = request.args.get("from")
+    to_at = request.args.get("to")
+    org_id = request.args.get("org_id")
+    event_id = request.args.get("event_id")
+    limit = min(int(request.args.get("limit", 50)), 100)
+    offset = int(request.args.get("offset", 0))
+    rows = orders_service.list_admin_orders(
+        q=q,
+        status=status,
+        from_at=from_at,
+        to_at=to_at,
+        org_id=org_id,
+        event_id=event_id,
+        limit=limit,
+        offset=offset,
+    )
+    return jsonify({"items": rows}), 200
+
+
 @bp.post("/orders/<order_id>/refund")
 @require_auth
 def refund_order_route(order_id: str) -> tuple[dict, int]:
     """發起訂單全額退款。develop.md MVP-2.6。"""
     _ensure_admin()
     order_uuid = parse_uuid(order_id, "order_id")
-    result = create_refund(order_uuid)
+    result = create_refund(order_uuid, admin_user_id=str(g.user_id))
     return jsonify(result), 200
 
 
@@ -124,6 +153,7 @@ def generate_settlements_route() -> tuple[dict, int]:
     results = settlement_service.generate_settlements(
         body.period_start,
         body.period_end,
+        admin_user_id=str(g.user_id),
     )
     return jsonify({"settlements": results, "count": len(results)}), 200
 

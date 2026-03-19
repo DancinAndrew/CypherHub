@@ -306,9 +306,9 @@ UPDATE organizations SET approval_status = 'approved' WHERE approval_status IS N
 
 ### 5.7 驗收
 
-- [ ] 關鍵操作有 audit 紀錄
-- [ ] Admin 可查全站訂單
-- [ ] Comp 按鈕可發放公關票、audit 有紀錄
+- [x] 關鍵操作有 audit 紀錄（退款、結算產生、提款核准/退件、活動下架、comp 票）
+- [x] Admin 可查全站訂單（GET /admin/orders：q, status, from, to, org_id, event_id, limit, offset）
+- [x] Comp 按鈕可發放公關票、audit 有紀錄（POST /organizer/events/:id/comp-ticket）
 
 ---
 

@@ -5,7 +5,7 @@ from enum import Enum
 from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class ErrorContent(BaseModel):
@@ -506,3 +506,25 @@ class CreateHoldOrderItem(BaseModel):
 class CreateHoldOrderRequest(BaseModel):
     items: list[CreateHoldOrderItem] = Field(min_length=1)
     hold_minutes: int = Field(default=15, ge=1, le=60)
+
+
+# --- MVP-3.4: Comp Ticket (公關票) ---
+
+
+class CompTicketRequest(BaseModel):
+    """手動補票。提供 email 或 user_id 其一。"""
+
+    ticket_type_id: UUID
+    email: str | None = None
+    user_id: UUID | None = None
+    note: str | None = None
+
+    model_config = ConfigDict(extra="forbid")
+
+    @model_validator(mode="after")
+    def require_email_or_user_id(self) -> "CompTicketRequest":
+        if (self.email or "").strip() and self.user_id:
+            raise ValueError("Provide email OR user_id, not both")
+        if not (self.email or "").strip() and not self.user_id:
+            raise ValueError("Provide email or user_id")
+        return self
