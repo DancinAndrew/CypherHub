@@ -396,6 +396,47 @@ class MyOrganizerSummaryResponse(BaseModel):
     events: list[MyOrganizerEventResponse]
 
 
+# --- MVP-3.3: 結算與提款 ---
+
+
+class SettlementResponse(BaseModel):
+    id: UUID
+    org_id: UUID
+    period_start: datetime
+    period_end: datetime
+    gross_cents: int
+    platform_fee_cents: int
+    net_cents: int
+    status: str
+    created_at: datetime | None = None
+
+
+class PayoutRequestResponse(BaseModel):
+    id: UUID
+    org_id: UUID
+    settlement_id: UUID | None = None
+    amount_cents: int
+    status: str
+    requested_at: datetime | None = None
+    processed_at: datetime | None = None
+    failure_reason: str | None = None
+
+
+class CreatePayoutRequestRequest(BaseModel):
+    org_id: UUID
+    amount_cents: int = Field(..., gt=0)
+
+
+class AdminPayoutActionRequest(BaseModel):
+    action: str = Field(..., pattern="^(approve|reject)$")
+    failure_reason: str | None = None
+
+
+class GenerateSettlementsRequest(BaseModel):
+    period_start: datetime
+    period_end: datetime
+
+
 # --- MVP-2: Orders / Payments (develop.md 2.1.1) ---
 
 

@@ -244,9 +244,9 @@ UPDATE organizations SET approval_status = 'approved' WHERE approval_status IS N
 
 ### 4.6 驗收
 
-- [ ] 可產生結算批次
-- [ ] 主辦方可申請提款
-- [ ] Admin 可審核
+- [x] 可產生結算批次（POST /admin/settlements/generate）
+- [x] 主辦方可申請提款（POST /organizer/payout-requests）
+- [x] Admin 可審核（GET/PATCH /admin/payout-requests）
 
 ---
 

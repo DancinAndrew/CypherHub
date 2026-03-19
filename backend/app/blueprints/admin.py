@@ -3,12 +3,18 @@ from __future__ import annotations
 from flask import Blueprint, current_app, g, jsonify, request
 
 from app.domain.errors import AppError
-from app.domain.schemas import AdminOrganizationApprovalRequest, AdminPatchEventRequest
+from app.domain.schemas import (
+    AdminOrganizationApprovalRequest,
+    AdminPayoutActionRequest,
+    AdminPatchEventRequest,
+    GenerateSettlementsRequest,
+)
 from app.services.auth_service import require_auth
 from app.services.compensation_service import run_compensate_paid_orders
 from app.services.events_service import events_service
 from app.services.hold_expiry_service import run_release_expired_holds
 from app.services.refund_service import create_refund
+from app.services.settlement_service import settlement_service
 
 from ._utils import parse_json, parse_uuid
 
@@ -107,3 +113,42 @@ def patch_organization_approval_route(org_id: str) -> tuple[dict, int]:
         rejection_reason=body.rejection_reason,
     )
     return jsonify({"organization": org}), 200
+
+
+@bp.post("/settlements/generate")
+@require_auth
+def generate_settlements_route() -> tuple[dict, int]:
+    """Admin: 產生結算批次。MVP-3.3。"""
+    _ensure_admin()
+    body = parse_json(GenerateSettlementsRequest)
+    results = settlement_service.generate_settlements(
+        body.period_start,
+        body.period_end,
+    )
+    return jsonify({"settlements": results, "count": len(results)}), 200
+
+
+@bp.get("/payout-requests")
+@require_auth
+def list_payout_requests_route() -> tuple[dict, int]:
+    """Admin: 提款申請列表。MVP-3.3。"""
+    _ensure_admin()
+    status = request.args.get("status")
+    rows = settlement_service.list_payout_requests_admin(status=status)
+    return jsonify({"items": rows}), 200
+
+
+@bp.patch("/payout-requests/<payout_id>")
+@require_auth
+def patch_payout_request_route(payout_id: str) -> tuple[dict, int]:
+    """Admin: 核准或退件提款。MVP-3.3。"""
+    _ensure_admin()
+    pid = parse_uuid(payout_id, "payout_id")
+    body = parse_json(AdminPayoutActionRequest)
+    if body.action == "approve":
+        row = settlement_service.approve_payout_request(pid, str(g.user_id))
+    else:
+        row = settlement_service.reject_payout_request(
+            pid, str(g.user_id), body.failure_reason
+        )
+    return jsonify({"payout_request": row}), 200

@@ -33,29 +33,31 @@ def test_staff_cannot_create_event(client, monkeypatch) -> None:
 
 def test_staff_cannot_create_ticket_type(client, monkeypatch) -> None:
     """staff 建立票種應得 403 STAFF_CANNOT_MANAGE。"""
+    from app.domain.errors import AppError
+    from app.services.events_service import events_service
+
     user_id = "staff-user-456"
     monkeypatch.setattr(supabase_client, "get_user", lambda _: {"id": user_id})
 
-    with patch(
-        "app.services.events_service.EventsService.require_event_admin"
-    ) as mock_req:
-        from app.domain.errors import AppError
-
-        mock_req.side_effect = AppError(
+    def _raise_staff(*_args, **_kwargs):
+        raise AppError(
             code="STAFF_CANNOT_MANAGE",
             message="Staff role cannot create or edit events.",
             http_status=403,
         )
-        resp = client.post(
-            "/api/v1/organizer/events/00000000-0000-0000-0000-000000000002/ticket-types",
-            headers={"Authorization": f"Bearer {user_id}"},
-            json={
-                "name": "VIP",
-                "capacity": 10,
-                "per_user_limit": 2,
-                "price_cents": 500,
-            },
-        )
+
+    monkeypatch.setattr(events_service, "require_event_admin", _raise_staff)
+
+    resp = client.post(
+        "/api/v1/organizer/events/00000000-0000-0000-0000-000000000002/ticket-types",
+        headers={"Authorization": f"Bearer {user_id}"},
+        json={
+            "name": "VIP",
+            "capacity": 10,
+            "per_user_limit": 2,
+            "price_cents": 500,
+        },
+    )
 
     assert resp.status_code == 403
     assert resp.get_json().get("error", {}).get("code") == "STAFF_CANNOT_MANAGE"
