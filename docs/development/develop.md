@@ -576,41 +576,41 @@
 
 ---
 
-## MVP-2.4 庫存安全與背景任務 (Phase 3) ⬜
+## MVP-2.4 庫存安全與背景任務 (Phase 3) ✅
 
 | 項目 | 說明 | 驗證方式 |
 |------|------|----------|
-| 逾時釋放 | holding 逾時 → cancelled + 釋放名額 | 定時 job 掃描 |
-| 補償出票 | paid 但未 issued 自動補償 | 背景任務或手動觸發 |
-| Webhook 重試 | provider 重送時冪等，不重複出票 | 同筆回呼只處理一次 |
-| 防超賣測試 | concurrency/race 測試 | pytest 併發搶票情境，DB transaction 正確鎖定 |
+| 逾時釋放 | holding 逾時 → cancelled + 釋放名額 | pg_cron 每分鐘，Admin API 手動觸發 |
+| 補償出票 | paid 但未 issued 自動補償 | pg_cron 每 5 分鐘，Admin API |
+| Webhook 重試 | provider 重送時冪等，不重複出票 | webhook_events UNIQUE 去重，`test_webhook_idempotency` |
+| 防超賣測試 | concurrency/race 測試 | `test_hold_concurrency`（需 Supabase + 2 組測試帳密） |
 
-**Done 條件**：RQ/Redis 或類似 queue；上述 job 可執行；有併發測試。
+**Done 條件**：pg_cron（等同 queue）；上述 job 可執行；有併發測試。✅
 
 ---
 
-## MVP-2.5 報名表單擴充 (Phase 4.1) ⬜
+## MVP-2.5 報名表單擴充 (Phase 4.1) ✅
 
 | 項目 | 說明 | 驗證方式 |
 |------|------|----------|
-| 新欄位型別 | 下拉、單選、多選、日期 | DynamicForm 支援 |
-| 票種綁定 | 不同票種可設不同表單欄位 | event_forms 已有 ticket_type_id |
-| 名單匯出 | 主辦方匯出參加者（含 answers）為 CSV | GET 或 POST 產生 CSV |
+| 新欄位型別 | 下拉、單選、多選、日期 | DynamicForm 已支援 dropdown、single_select、multi_select、date |
+| 票種綁定 | 不同票種可設不同表單欄位 | event_forms.ticket_type_id、Form Builder 可選票種 |
+| 名單匯出 | 主辦方匯出參加者（含 answers）為 CSV | OrganizerManageView「匯出 CSV」按鈕 |
 
-**Done 條件**：主辦方可匯出 CSV；表單支援更多欄位型別。
+**Done 條件**：主辦方可匯出 CSV；表單支援更多欄位型別。✅
 
 ---
 
-## MVP-2.6 基礎退款 (Phase 4.2) ⬜
+## MVP-2.6 基礎退款 (Phase 4.2) ✅
 
 | 項目 | 說明 | 驗證方式 |
 |------|------|----------|
-| 全額退款 | 或主辦方核准其中一種 | 先選一種實作 |
-| 退款狀態 | requested / refunded / failed | 表與 API |
-| 退款完成 | 呼叫金流退款 API | 成功後更新狀態 |
-| 退款通知 | 退款完成後 Email | - |
+| 全額退款 | Admin 核准後執行 | `POST /api/v1/admin/orders/:id/refund` |
+| 退款狀態 | requested / refunded / failed | refunds 表、API 回傳 |
+| 退款完成 | ECPay DoAction Action=R | 成功後更新 order/payment/refund |
+| 退款通知 | 退款完成後 Email | send_refund_complete_email |
 
-**Done 條件**：可發起退款，主辦方或平台核准後執行，狀態與通知正確。
+**Done 條件**：可發起退款，主辦方或平台核准後執行，狀態與通知正確。✅
 
 ---
 
