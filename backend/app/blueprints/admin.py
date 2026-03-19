@@ -5,7 +5,10 @@ from flask import Blueprint, current_app, g, jsonify, request
 from app.domain.errors import AppError
 from app.domain.schemas import AdminPatchEventRequest
 from app.services.auth_service import require_auth
+from app.services.compensation_service import run_compensate_paid_orders
 from app.services.events_service import events_service
+from app.services.hold_expiry_service import run_release_expired_holds
+from app.services.refund_service import create_refund
 
 from ._utils import parse_json, parse_uuid
 
@@ -50,3 +53,31 @@ def patch_admin_event(event_id: str) -> tuple[dict, int]:
     body = parse_json(AdminPatchEventRequest)
     event = events_service.admin_update_event_status(event_uuid, body.status)
     return jsonify({"event": event}), 200
+
+
+@bp.post("/compensate-paid-orders")
+@require_auth
+def compensate_paid_orders_route() -> tuple[dict, int]:
+    """手動觸發 paid → issued 補償。develop.md 2.3。"""
+    _ensure_admin()
+    count = run_compensate_paid_orders()
+    return jsonify({"orders_compensated": count}), 200
+
+
+@bp.post("/release-expired-holds")
+@require_auth
+def release_expired_holds_route() -> tuple[dict, int]:
+    """手動觸發 hold 逾時釋放。develop.md 2.1.2。"""
+    _ensure_admin()
+    count = run_release_expired_holds()
+    return jsonify({"orders_released": count}), 200
+
+
+@bp.post("/orders/<order_id>/refund")
+@require_auth
+def refund_order_route(order_id: str) -> tuple[dict, int]:
+    """發起訂單全額退款。develop.md MVP-2.6。"""
+    _ensure_admin()
+    order_uuid = parse_uuid(order_id, "order_id")
+    result = create_refund(order_uuid)
+    return jsonify(result), 200

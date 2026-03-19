@@ -115,5 +115,48 @@ class EmailService:
                 count,
             )
 
+    def send_refund_complete_email(
+        self,
+        to_email: str | None,
+        order_id: str,
+        amount_display: str,
+        frontend_base_url: str = "http://localhost:5173",
+    ) -> None:
+        """退款完成後寄信給使用者。"""
+        if not to_email or not to_email.strip():
+            current_app.logger.info(
+                "[email] send_refund_complete_email skipped: no to_email (order_id=%s)",
+                order_id,
+            )
+            return
+        orders_url = f"{frontend_base_url.rstrip('/')}/orders"
+        subject = "退款完成通知"
+        html = f"""
+        <p>您的訂單 {order_id[:8]}... 已成功退款。</p>
+        <p>退款金額：{amount_display}</p>
+        <p><a href="{orders_url}">查看訂單</a></p>
+        <p>— CypherHub</p>
+        """
+        if self._is_resend_available():
+            try:
+                resend.Emails.send(
+                    {
+                        "from": self._from_email,
+                        "to": [to_email.strip()],
+                        "subject": subject,
+                        "html": html,
+                    }
+                )
+                current_app.logger.info(
+                    "[email] refund complete sent to %s order_id=%s", to_email, order_id
+                )
+            except Exception as exc:
+                current_app.logger.warning("[email] Resend send_refund_complete_email failed: %s", exc)
+                raise
+        else:
+            current_app.logger.info(
+                "[email_stub] refund complete would send to %s order_id=%s", to_email, order_id
+            )
+
 
 email_service = EmailService()
