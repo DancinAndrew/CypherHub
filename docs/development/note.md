@@ -62,15 +62,17 @@
 
 ---
 
-# 與 MVP2 相關的技術債
+# 與 MVP2 相關的技術債（MVP-2 已實作完成）
 
 **ECPay 金流開發工具**：專案使用 `.cursor/skills/ecpay`（綠界官方 Cursor Agent Skill）協助整合；本地 Webhook 測試需用 **ngrok**（`ngrok http 8000`）將綠界回調轉發至本機，因 ReturnURL 不支援 localhost。
 
-| MVP2 功能 | 現有基礎 | 進入前可預先做的事 |
-|-----------|----------|---------------------|
-| Hold + 逾時 | 無 | 先設計 orders 表、訂單狀態機 schema 草稿 |
-| Webhook 冪等 | 無 | 可先建 `webhook_events` 表與 idempotency key 欄位 |
-| 金流 | 無 | 研讀 ECPay 文件、設計 payment_attempts / payments 表 |
+**狀態（2025-03）**：MVP-2 程式與 DB 已全部實作完成（訂單、Hold、ECPay、出票、補償、退款、表單擴充、逾時釋放）。詳見 [MVP1-2-3-implementation-status-report.md](../verification/MVP1-2-3-implementation-status-report.md)。
+
+| MVP2 功能 | 現況 |
+|-----------|------|
+| Hold + 逾時 | ✅ orders/order_items、create_hold_order RPC、release_expired_holds、Admin API |
+| Webhook 冪等 | ✅ webhook_events 表、external_event_id 去重、冪等處理 |
+| 金流 | ✅ ECPay provider、payment_service、Webhook 驗簽、出票與補償 |
 
 ---
 
