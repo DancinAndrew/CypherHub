@@ -1,5 +1,7 @@
 # M1：免費報名 + QR 核銷（先跑通閉環：活動→報名→出票→入場）
 
+> **舊版筆記**。現以 [development/note.md](../development/note.md) 為主；本檔保留作歷史參考。
+
 ## 0) 角色與權限（RBAC）
 
 * 訪客（Guest）

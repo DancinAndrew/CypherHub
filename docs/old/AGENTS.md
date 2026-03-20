@@ -1,5 +1,7 @@
 # AGENTS.md
 
+> **歷史文件**。MVP 階段狀態與規格以 [develop.md](../development/develop.md) 為準；本檔保留作架構與規範參考。
+
 ## 0) 專案摘要（Project Summary）
 街舞圈售票/報名平台（Accupass-like）  
 核心流程：活動 → 報名/購票 → 出票 → QR 核銷 →（後續）結算/分潤  
