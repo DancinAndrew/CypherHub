@@ -1,5 +1,7 @@
 # 錯誤邊界實作計畫
 
+> **已實作完成**。驗證見 [error-boundary-report.md](../../verification/reports/error-boundary-report.md)。
+
 ## 目標
 
 依 `note.md` 優先級建議：實現前端 global error boundary，避免白屏；可搭配未來 Sentry。

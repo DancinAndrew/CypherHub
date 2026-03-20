@@ -1,6 +1,6 @@
 # email_service 單元測試計畫
 
-> 依據 note.md：測試 `_is_resend_available()` 分支、send 失敗時 log 行為
+> 依據 note.md：測試 `_is_resend_available()` 分支、send 失敗時 log 行為。**已實作完成**。驗證見 [email-service-test-report.md](../../verification/reports/email-service-test-report.md)。
 
 ---
 

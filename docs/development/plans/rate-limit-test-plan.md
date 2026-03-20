@@ -1,6 +1,6 @@
 # Rate Limit 單元測試計畫
 
-> 依據 note.md 中優先級：單元測試超過 limit 時回 429、不同 endpoint 各自 limit 正確
+> 依據 note.md 中優先級：單元測試超過 limit 時回 429、不同 endpoint 各自 limit 正確。**已實作完成**。驗證見 [rate-limit-test-report.md](../../verification/reports/rate-limit-test-report.md)。
 
 ---
 

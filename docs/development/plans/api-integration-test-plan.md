@@ -1,6 +1,6 @@
 # API 整合測試計畫
 
-> 依據 note.md 低優先級建議：選 1–2 個關鍵 public endpoint 做**未 mock**整合測試
+> 依據 note.md 低優先級建議：選 1–2 個關鍵 public endpoint 做**未 mock**整合測試。**已實作完成**。驗證見 [api-integration-test-report.md](../../verification/reports/api-integration-test-report.md)。
 
 ---
 

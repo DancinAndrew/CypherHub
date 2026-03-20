@@ -1,6 +1,6 @@
 # 導航按鈕（零成本）計畫
 
-> 依據 note.md：活動頁若已有 map_url 或 lat/lng，加「導航」按鈕開 Google Maps；為 note 待辦鋪路
+> 依據 note.md：活動頁若已有 map_url 或 lat/lng，加「導航」按鈕開 Google Maps；為 note 待辦鋪路。**已實作完成**。驗證見 [navigate-button-report.md](../../verification/reports/navigate-button-report.md)。
 
 ---
 
