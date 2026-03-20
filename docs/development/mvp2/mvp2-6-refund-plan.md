@@ -1,6 +1,6 @@
 # MVP-2.6 基礎退款 — 詳細規劃
 
-> 對應 develop.md 604–613。Phase 4.2：全額退款、退款狀態、金流 API、Email 通知。
+> 對應 develop.md 604–613。Phase 4.2：全額退款、退款狀態、金流 API、Email 通知。**已實作完成（2025-03）。**
 
 ---
 
@@ -10,9 +10,9 @@
 |------|------|----------|
 | 訂單狀態機 | ✅ 已支援 paid/issued → refunded | `order_state_machine.py` |
 | payments.raw_payload | ✅ Webhook 儲存 TradeNo、PaymentType | `payment_service.handle_ecpay_webhook` |
-| ECPay DoAction | ⬜ 未實作 | - |
-| refunds 表 | ⬜ 無 | - |
-| 退款 Email | ⬜ 無 | - |
+| ECPay DoAction | ✅ 已實作（正式環境可用） | `refund_service`、provider 整合 |
+| refunds 表 | ✅ 已實作 | migration `0023_mvp2_refunds_table.sql` |
+| 退款 Email | ✅ 已實作 | `send_refund_complete_email`、refund_service 完成後觸發 |
 
 **ECPay 限制**：DoAction 退款僅支援信用卡（`Credit_CreditCard`、`Credit_Flexible_Installment`、`ApplePay` 等）。ATM/超商代碼/條碼需綠界後台手動處理。測試環境因無法提供實際授權，DoAction **不可用**，須正式環境。
 

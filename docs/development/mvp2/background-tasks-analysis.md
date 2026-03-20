@@ -1,6 +1,7 @@
 # 背景任務選型分析：Hold 逾時與補償出票
 
-> MVP-2 需實作：hold 逾時釋放、paid→issued 補償、Webhook 冪等。本文分析 RQ、Celery、pg_cron 三種方案，供選型與實作參考。
+> MVP-2 需實作：hold 逾時釋放、paid→issued 補償、Webhook 冪等。本文分析 RQ、Celery、pg_cron 三種方案，供選型與實作參考。  
+> **結論已採用**：pg_cron + SQL RPC（`release_expired_holds`、`compensate_paid_orders`），migration 0018；Admin API 可手動觸發。
 
 ---
 

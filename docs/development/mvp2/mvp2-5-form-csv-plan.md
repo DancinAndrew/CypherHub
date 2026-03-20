@@ -1,6 +1,6 @@
 # MVP-2.5 報名表單擴充 — 詳細規劃
 
-> 對應 develop.md 592–600。Phase 4.1：新欄位型別、票種綁定、名單匯出 CSV。
+> 對應 develop.md 592–600。Phase 4.1：新欄位型別、票種綁定、名單匯出 CSV。**已實作完成（2025-03）。**
 
 ---
 
@@ -11,7 +11,7 @@
 | 新欄位型別 | ✅ 已支援 | `FormFieldType`：text, number, email, phone, url, date, single_select, dropdown, multi_select, checkbox |
 | DynamicForm | ✅ 已支援 | `DynamicForm.vue` 對應上述型別 |
 | 票種綁定 | ✅ 已支援 | `event_forms.ticket_type_id`、Form Builder 可選票種 |
-| 名單匯出 CSV | ⬜ 待實作 | 主辦方可匯出參加者（含 answers）為 CSV |
+| 名單匯出 CSV | ✅ 已實作 | `OrganizerManageView.vue`「匯出 CSV」按鈕、`exportAttendeesCsv()`，含 answers、安全跳脫 |
 
 ---
 

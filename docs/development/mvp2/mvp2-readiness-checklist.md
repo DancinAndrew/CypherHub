@@ -47,14 +47,14 @@
 - `release_expired_holds()`：每分鐘掃描逾時 holding → cancelled，扣回 hold_count
 - `compensate_paid_orders()`：每 5 分鐘補償 paid 但未出票的訂單
 
-### 3.3 金流
+### 3.3 金流 ✅
 
 | 項目 | 說明 | 狀態 |
 |------|------|------|
-| **ecpay skill** | 開發前必讀 [.cursor/skills/ecpay](../../../.cursor/skills/ecpay) | ⬜ |
-| ECPay 文件 | 研讀 Webhook 驗簽、Form 參數 | ⬜ |
-| payment_service | 抽出 provider 介面 | 目前為 stub |
-| Webhook 冪等 | webhook_event_id 去重 | ⬜ |
+| **ecpay skill** | 開發前必讀 [.cursor/skills/ecpay](../../../.cursor/skills/ecpay) | ✅ |
+| ECPay 文件 | 研讀 Webhook 驗簽、Form 參數 | ✅ |
+| payment_service | create_checkout、handle_ecpay_webhook、狀態機 | ✅ |
+| Webhook 冪等 | webhook_events 去重、CheckMacValue 驗證 | ✅ |
 
 ---
 
@@ -71,11 +71,6 @@
 
 ## 五、結論
 
-**MVP-1.5 已完成**，程式與文件狀態良好。**可進入 MVP-2** 條件：
-
-1. 本地 pytest、frontend build 確認通過
-2. 完成 orders / order_items / payments migration 設計並套用
-3. ~~選定背景任務方案（RQ / pg_cron）~~ ✅ pg_cron + SQL RPC 已實作
-4. 研讀 [.cursor/skills/ecpay](../../../.cursor/skills/ecpay) 與 ECPay 文件，規劃 Webhook 架構
+**MVP-2 已實作完成**（2025-03）。訂單、Hold、ECPay 金流、出票、補償、退款、表單擴充、逾時釋放均已就緒；單元測試通過。綠界端到端、Hold 逾時手動驗證見 [mvp2-verification-report.md](../../verification/mvp2/mvp2-verification-report.md)。
 
 建議先做 MVP-2.1（訂單與 hold）的 schema 與基本 flow，再接入 ECPay。
