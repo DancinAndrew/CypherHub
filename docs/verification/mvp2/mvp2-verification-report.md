@@ -101,8 +101,8 @@ CheckMacValue 邏輯已通過驗證。
 
 ## 7. 結論與後續
 
-- **已完成**：訂單狀態機、補償 API、CheckMacValue、migration 修正（0022）、單元測試全數通過。
-- **待完成**：DB push、ngrok 設定、綠界端到端、Hold 逾時、補償手動測試。
+- **MVP-2 程式與 DB 已全部就緒**：訂單狀態機、補償 API、CheckMacValue、migration 修正（0022）、單元測試全數通過；退款、表單 CSV、逾時釋放等均已實作。
+- **待完成（手動）**：DB push、ngrok 設定、綠界端到端、Hold 逾時、補償手動測試。
 
 建議依 `mvp2-verification-plan.md` 的「綠界金流重點檢查清單」逐項執行手動驗證，完成後勾選該計畫中的通過欄位。
 

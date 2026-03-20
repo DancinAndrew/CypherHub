@@ -258,6 +258,8 @@ curl -s "http://localhost:8000/api/v1/organizer/settlements" -H "Authorization: 
 
 ## 六、驗收完成條件總表
 
+**狀態（2025-03）**：MVP-3 程式與 DB 已實作完成，相關單元測試（test_mvp31/33/34、audit、jobs、event_notification 等）已通過。下列為手動驗證勾選項，執行後可標為驗收完成。
+
 - [ ] **MVP-3.1**：staff 不可建活動/票種/表單；可核銷、可看名單；owner/admin 成員管理正常；前端依 role 導航
 - [ ] **MVP-3.2**：pending org 不可建活動；Admin 可審核；payout_bank_info 欄位存在
 - [ ] **MVP-3.3**：settlements/ledger/payouts 表存在；可產生結算；主辦方可申請提款；Admin 可審核
