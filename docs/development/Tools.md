@@ -21,7 +21,7 @@
 |------|-------|--------|
 | Supabase | ✓ Auth + DB + Storage | ✓ |
 | Resend | ✓ 已串接（可選 RESEND_API_KEY，未設定則僅 log） | ✓ |
-| Stripe | - | 付費票 |
+| Stripe | - | 付費票（本專案 MVP-2 已採用 ECPay；Stripe 可選） |
 | Sentry | 可選（上線前建議） | ✓ |
 | Vercel | 可部署 frontend | ✓ |
 | Cloudflare | 可做 DNS/CDN | ✓ |

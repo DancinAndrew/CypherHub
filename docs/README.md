@@ -16,15 +16,20 @@ Backend 需 **Python 3.12+**，Frontend 為 Vue 3 + Vite + TypeScript。
 ```
 docs/
 ├── README.md           # 本說明
+├── DOCS_UPDATE_PLAN.md # docs 全 .md 更新計畫（對齊最新進度）
 ├── setup/              # 環境與 Supabase 設定
 ├── development/        # 開發路線、規格、工具
 │   ├── develop.md      # 主規格（必讀）
 │   ├── note.md
 │   ├── Tools.md
 │   ├── plans/          # 實作計畫（測試、功能）
-│   └── mvp2/           # MVP-2 開發（就緒檢查、金流 best practices、背景任務）
+│   ├── mvp2/           # MVP-2 開發（訂單、金流、背景任務）— 已實作完成
+│   └── mvp3/           # MVP-3 開發（主辦方細權限、審核、結算、Audit）— 已實作完成
 ├── verification/       # 驗證與 QA
+│   ├── MVP1-2-3-implementation-status-report.md  # MVP-1/2/3 實作狀態總覽
 │   ├── mvp1/           # MVP-1 主體驗收
+│   ├── mvp2/           # MVP-2 驗證計畫與報告
+│   ├── mvp3/           # MVP-3 驗證清單與報告
 │   └── reports/        # 功能驗證報告
 └── old/                # 舊版／備考
 ```
@@ -62,17 +67,31 @@ docs/
 | **error-boundary-plan.md** | 前端 Error boundary 實作計畫。 |
 | **navigate-button-plan.md** | 活動頁導航按鈕計畫。 |
 
-### mvp2/ — MVP-2 開發（訂單、金流、背景任務）
+### mvp2/ — MVP-2 開發（訂單、金流、背景任務）✅ 已實作完成
 
 | 檔案 | 說明 |
 |------|------|
-| **mvp2-readiness-checklist.md** | 進入 MVP-2 前的檢查清單。 |
+| **mvp2-readiness-checklist.md** | 進入 MVP-2 前的檢查清單（MVP-2 已完成，可作參考）。 |
 | **[.cursor/skills/ecpay](../.cursor/skills/ecpay)** | **金流開發必讀**。ECPay 官方 Skill，AIO、CheckMacValue、Webhook。 |
-| **background-tasks-analysis.md** | 背景任務選型分析（RQ、Celery、pg_cron）。 |
+| **background-tasks-analysis.md** | 背景任務選型分析（已採用 pg_cron + SQL RPC）。 |
+| **mvp2-4/5/6** | 庫存安全、表單擴充 CSV、退款等子項規劃（均已實作）。 |
+
+### mvp3/ — MVP-3 開發（主辦方細權限、入駐審核、結算、Audit）✅ 已實作完成
+
+| 檔案 | 說明 |
+|------|------|
+| **mvp3-master-plan.md** | MVP-3 完整開發計畫與驗收。 |
+| **mvp3-2-org-approval-plan.md** | 主辦方入駐審核規格（已實作）。 |
 
 ---
 
 ## verification/ — 驗證與 QA
+
+### 總覽
+
+| 檔案 | 說明 |
+|------|------|
+| **MVP1-2-3-implementation-status-report.md** | **MVP-1／2／3 實作狀態總覽**。程式、DB、測試與手動驗收對照。 |
 
 ### mvp1/ — MVP-1 主體驗收
 
@@ -81,6 +100,20 @@ docs/
 | **mvp1-verification-checklist.md** | MVP-1 手動驗證勾選清單。對應 develop.md 規格，從環境準備到註冊登入、活動列表、報名、票券、主辦、核銷、Admin 等，逐項勾選完成驗收。 |
 | **mvp1-manual-verification.md** | MVP-1 完整手動驗證「步驟說明」版。同一套流程，以表格列出每步操作與預期結果，適合照著做一遍。 |
 | **verification-report.md** | 功能驗證報告。與 Accupass / KKTIX / Eventbrite 等購票平台流程對照表、register_free_v2 業務邏輯驗證、API 與前端對照。 |
+
+### mvp2/ — MVP-2 驗證
+
+| 檔案 | 說明 |
+|------|------|
+| **mvp2-verification-plan.md** | MVP-2.1/2.2/2.3 驗證計畫（綠界 E2E、Hold 逾時等手動項）。 |
+| **mvp2-verification-report.md** | MVP-2 驗證報告（單元測試、CheckMacValue、程式就緒狀態）。 |
+
+### mvp3/ — MVP-3 驗證
+
+| 檔案 | 說明 |
+|------|------|
+| **mvp3-verification-checklist.md** | MVP-3 完整測試與手動驗證清單。 |
+| **mvp3.5-verification-report.md** | MVP-3.5 使用者端擴充（熱門、提醒、異動通知）驗證報告。 |
 
 ### reports/ — 功能驗證報告
 
@@ -109,5 +142,7 @@ docs/
 
 - **第一次架環境、切本地/雲端** → [setup/local-cloud-switch.md](setup/local-cloud-switch.md)、[setup/local-supabase-reference.md](setup/local-supabase-reference.md)
 - **看階段規劃、規格、推薦套件** → [development/develop.md](development/develop.md)、[development/Tools.md](development/Tools.md)
+- **MVP-1/2/3 實作狀態總覽** → [verification/MVP1-2-3-implementation-status-report.md](verification/MVP1-2-3-implementation-status-report.md)
 - **跑 MVP-1 驗收** → [verification/mvp1/mvp1-verification-checklist.md](verification/mvp1/mvp1-verification-checklist.md) 或 [verification/mvp1/mvp1-manual-verification.md](verification/mvp1/mvp1-manual-verification.md)
-- **MVP-2 開發** → [development/mvp2/](development/mvp2/)（就緒檢查、ecpay skill、背景任務分析）
+- **MVP-2 參考（已實作完成）** → [development/mvp2/](development/mvp2/)（就緒檢查、ecpay skill、背景任務）；驗證 → [verification/mvp2/mvp2-verification-report.md](verification/mvp2/mvp2-verification-report.md)
+- **MVP-3 參考（已實作完成）** → [development/mvp3/mvp3-master-plan.md](development/mvp3/mvp3-master-plan.md)；驗證 → [verification/mvp3/mvp3-verification-checklist.md](verification/mvp3/mvp3-verification-checklist.md)
