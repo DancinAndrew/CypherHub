@@ -1,6 +1,6 @@
 # MVP-3.2 主辦方入駐審核 — 詳細規劃
 
-> 對應 develop.md 647-656、mvp3-master-plan.md §三。
+> 對應 develop.md 647-656、mvp3-master-plan.md §三。**已實作完成（2025-03）**：migration 0024、PATCH /admin/organizations/:id/approval、_require_org_approved。
 
 ---
 
