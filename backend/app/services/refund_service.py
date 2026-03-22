@@ -88,7 +88,10 @@ def create_refund(order_id: UUID, admin_user_id: str | None = None) -> dict:
     if not _is_credit_card_payment(payment_type):
         raise AppError(
             code="REFUND_NOT_SUPPORTED",
-            message="This payment type does not support API refund. Please process via ECPay merchant dashboard.",
+            message=(
+                "This payment type does not support API refund. "
+                "Please process via ECPay merchant dashboard."
+            ),
             http_status=400,
             details={"payment_type": payment_type},
         )

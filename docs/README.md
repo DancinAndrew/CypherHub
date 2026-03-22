@@ -26,6 +26,7 @@ docs/
 │   ├── mvp2/           # MVP-2 開發（訂單、金流、背景任務）— 已實作完成
 │   └── mvp3/           # MVP-3 開發（主辦方細權限、審核、結算、Audit）— 已實作完成
 ├── verification/       # 驗證與 QA
+│   ├── MVP1-2-3-automated-verification-master-plan.md  # MVP-1/2/3 主驗證計畫（可重複執行／AI 依序驗證）
 │   ├── MVP1-2-3-implementation-status-report.md  # MVP-1/2/3 實作狀態總覽
 │   ├── mvp1/           # MVP-1 主體驗收
 │   ├── mvp2/           # MVP-2 驗證計畫與報告
@@ -91,6 +92,7 @@ docs/
 
 | 檔案 | 說明 |
 |------|------|
+| **MVP1-2-3-automated-verification-master-plan.md** | **MVP-1／2／3 主驗證計畫**。可重複執行：Phase 0～6、自動化指令、手動勾選、AI 執行協定、簽核包；細項仍連結 mvp1/2/3 checklist。 |
 | **MVP1-2-3-implementation-status-report.md** | **MVP-1／2／3 實作狀態總覽**。程式、DB、測試與手動驗收對照。 |
 
 ### mvp1/ — MVP-1 主體驗收
@@ -142,6 +144,7 @@ docs/
 
 - **第一次架環境、切本地/雲端** → [setup/local-cloud-switch.md](setup/local-cloud-switch.md)、[setup/local-supabase-reference.md](setup/local-supabase-reference.md)
 - **看階段規劃、規格、推薦套件** → [development/develop.md](development/develop.md)、[development/Tools.md](development/Tools.md)
+- **MVP-1/2/3 主驗證計畫（重複跑／AI 依序驗證）** → [verification/MVP1-2-3-automated-verification-master-plan.md](verification/MVP1-2-3-automated-verification-master-plan.md)
 - **MVP-1/2/3 實作狀態總覽** → [verification/MVP1-2-3-implementation-status-report.md](verification/MVP1-2-3-implementation-status-report.md)
 - **跑 MVP-1 驗收** → [verification/mvp1/mvp1-verification-checklist.md](verification/mvp1/mvp1-verification-checklist.md) 或 [verification/mvp1/mvp1-manual-verification.md](verification/mvp1/mvp1-manual-verification.md)
 - **MVP-2 參考（已實作完成）** → [development/mvp2/](development/mvp2/)（就緒檢查、ecpay skill、背景任務）；驗證 → [verification/mvp2/mvp2-verification-report.md](verification/mvp2/mvp2-verification-report.md)

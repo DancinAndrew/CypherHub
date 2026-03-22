@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -13,9 +14,10 @@ _backend_root = Path(__file__).resolve().parent.parent.parent
 _env_path = _backend_root / ".env"
 if _env_path.exists():
     from dotenv import load_dotenv
+
     load_dotenv(_env_path)
 
-from app.services.supabase_client import supabase_client
+from app.services.supabase_client import supabase_client  # noqa: E402
 
 
 # 整合測試：TEST_USER_1_* / TEST_USER_2_*，或僅 TEST_USER_EMAIL + TEST_USER_PASSWORD（兩組同帳號）
@@ -115,12 +117,14 @@ def test_concurrent_hold_last_ticket_one_succeeds_one_sold_out(client, app) -> N
     except Exception:
         pytest.skip("Supabase unreachable (network/proxy/project paused)")
 
-    org_row = admin.table("organizations").insert({"name": "Concurrency Test Org", "owner_user_id": uid1}).execute()
+    org_row = (
+        admin.table("organizations")
+        .insert({"name": "Concurrency Test Org", "owner_user_id": uid1})
+        .execute()
+    )
     org_id = org_row.data[0]["id"]
 
-    from datetime import datetime, timezone, timedelta
-
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     event_row = (
         admin.table("events")
         .insert(
@@ -164,7 +168,12 @@ def test_concurrent_hold_last_ticket_one_succeeds_one_sold_out(client, app) -> N
             try:
                 result = supabase_client.call_rpc(
                     "create_hold_order",
-                    {"p_items": [{"ticket_type_id": ticket_type_id, "quantity": 1}], "p_hold_minutes": 15},
+                    {
+                        "p_items": [
+                            {"ticket_type_id": ticket_type_id, "quantity": 1}
+                        ],
+                        "p_hold_minutes": 15,
+                    },
                     jwt=jwt,
                 )
                 return ("ok", result)
@@ -186,6 +195,10 @@ def test_concurrent_hold_last_ticket_one_succeeds_one_sold_out(client, app) -> N
 
     err = results["errors"][0]
     err_str = str(err).upper()
-    assert "SOLD_OUT" in err_str or "SOLD OUT" in err_str or "22023" in err_str or "CAPACITY" in err_str, (
-        f"Expected SOLD_OUT, got: {err}"
+    sold_outish = (
+        "SOLD_OUT" in err_str
+        or "SOLD OUT" in err_str
+        or "22023" in err_str
+        or "CAPACITY" in err_str
     )
+    assert sold_outish, f"Expected SOLD_OUT, got: {err}"

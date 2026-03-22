@@ -70,7 +70,9 @@ def test_post_register_integration(client, app) -> None:
             )
         if hasattr(sign_in, "user") and sign_in.user:
             user = sign_in.user
-            user_id = getattr(user, "id", None) or (user.get("id") if isinstance(user, dict) else None)
+            user_id = getattr(user, "id", None) or (
+                user.get("id") if isinstance(user, dict) else None
+            )
 
         if not jwt_token or not user_id:
             pytest.skip("Could not obtain JWT from test user")

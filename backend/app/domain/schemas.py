@@ -523,7 +523,7 @@ class CompTicketRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     @model_validator(mode="after")
-    def require_email_or_user_id(self) -> "CompTicketRequest":
+    def require_email_or_user_id(self) -> CompTicketRequest:
         if (self.email or "").strip() and self.user_id:
             raise ValueError("Provide email OR user_id, not both")
         if not (self.email or "").strip() and not self.user_id:

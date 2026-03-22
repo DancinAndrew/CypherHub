@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import patch
 
 import pytest
@@ -339,10 +339,11 @@ def _settlement_integration_user_configured() -> bool:
 def test_generate_settlements_integration(app) -> None:
     """
     真實 Supabase：seed paid order + order_items，產生結算，驗證 settlements + ledger。
-    需 TEST_USER_* 以取得存在於 auth.users 的 user_id（organizations trigger 會寫入 organizer_members）。
+    需 TEST_USER_* 以取得存在於 auth.users 的 user_id
+    （organizations trigger 會寫入 organizer_members）。
     """
     import os
-    from datetime import datetime, timedelta, timezone
+    from datetime import timedelta
     from uuid import uuid4
 
     from app.services.settlement_service import settlement_service
@@ -366,7 +367,7 @@ def test_generate_settlements_integration(app) -> None:
         event_id = str(uuid4())
         ticket_type_id = str(uuid4())
         order_id = str(uuid4())
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         period_start = now - timedelta(days=1)
         period_end = now + timedelta(days=1)
 
@@ -428,7 +429,12 @@ def test_generate_settlements_integration(app) -> None:
             assert s["net_cents"] == 475
             assert s["status"] == "finalized"
 
-            ledger = sr.table("ledger_entries").select("type,amount_cents").eq("org_id", org_id).execute()
+            ledger = (
+                sr.table("ledger_entries")
+                .select("type,amount_cents")
+                .eq("org_id", org_id)
+                .execute()
+            )
             rows = getattr(ledger, "data", None) or []
             types = {r["type"] for r in rows}
             assert "sale" in types

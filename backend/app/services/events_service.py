@@ -99,7 +99,12 @@ class EventsService:
                 totals = self._fetch_total_sold_per_event(client, event_ids)
                 for e in events:
                     e["total_sold_count"] = totals.get(str(e["id"]), 0)
-                events.sort(key=lambda x: (-(x.get("total_sold_count") or 0), x.get("start_at") or ""))
+                events.sort(
+                    key=lambda x: (
+                        -(x.get("total_sold_count") or 0),
+                        x.get("start_at") or "",
+                    )
+                )
             else:
                 for e in events:
                     e["total_sold_count"] = None
@@ -180,7 +185,10 @@ class EventsService:
     ) -> list[dict]:
         """Admin: 全站主辦方，可依 approval_status 篩選。MVP-3.2。"""
         client = supabase_client.service_role_client()
-        org_select = "id,name,description,contact_email,owner_user_id,approval_status,approved_at,approved_by,rejection_reason,created_at"
+        org_select = (
+            "id,name,description,contact_email,owner_user_id,approval_status,"
+            "approved_at,approved_by,rejection_reason,created_at"
+        )
         query = client.table("organizations").select(org_select)
         if status:
             query = query.eq("approval_status", status)
@@ -232,7 +240,9 @@ class EventsService:
         except AppError:
             raise
         except Exception as exc:
-            raise map_supabase_error(exc, fallback_code="ADMIN_ORGANIZATION_APPROVAL_FAILED") from exc
+            raise map_supabase_error(
+                exc, fallback_code="ADMIN_ORGANIZATION_APPROVAL_FAILED"
+            ) from exc
 
     def get_event_title(self, event_id: UUID) -> str:
         """取得活動標題（供 email 等使用，不檢查 published）。"""
@@ -562,7 +572,9 @@ class EventsService:
         except AppError:
             raise
         except Exception as exc:
-            raise map_supabase_error(exc, fallback_code="ORGANIZER_PERMISSION_CHECK_FAILED") from exc
+            raise map_supabase_error(
+                exc, fallback_code="ORGANIZER_PERMISSION_CHECK_FAILED"
+            ) from exc
 
     def _require_org_approved(self, jwt: str, org_id: str) -> None:
         """MVP-3.2: 僅 approval_status=approved 的 org 可建立活動。"""
@@ -586,7 +598,10 @@ class EventsService:
         if status != "approved":
             raise AppError(
                 code="ORGANIZATION_PENDING_APPROVAL",
-                message="Organization is pending approval. You cannot create events until Admin approves.",
+                message=(
+                    "Organization is pending approval. "
+                    "You cannot create events until Admin approves."
+                ),
                 details={"approval_status": status},
                 http_status=403,
             )

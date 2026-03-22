@@ -4,8 +4,6 @@ from __future__ import annotations
 from unittest.mock import patch
 from uuid import uuid4
 
-import pytest
-
 from app.services.event_notification_service import event_notification_service
 
 

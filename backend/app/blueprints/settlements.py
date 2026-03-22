@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 
-from flask import Blueprint, g, jsonify, request
+from flask import Blueprint, g, jsonify
 
 from app.domain.schemas import (
     CreatePayoutRequestRequest,
     PayoutRequestResponse,
-    SettlementResponse,
 )
 from app.services.auth_service import require_auth
 from app.services.settlement_service import settlement_service

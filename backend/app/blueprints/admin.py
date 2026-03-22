@@ -5,8 +5,8 @@ from flask import Blueprint, current_app, g, jsonify, request
 from app.domain.errors import AppError
 from app.domain.schemas import (
     AdminOrganizationApprovalRequest,
-    AdminPayoutActionRequest,
     AdminPatchEventRequest,
+    AdminPayoutActionRequest,
     GenerateSettlementsRequest,
 )
 from app.services.auth_service import require_auth

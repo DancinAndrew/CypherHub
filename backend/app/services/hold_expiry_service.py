@@ -16,5 +16,5 @@ def run_release_expired_holds() -> int:
     if result is None:
         return 0
     if isinstance(result, list) and result:
-        return int(result[0]) if isinstance(result[0], (int, float)) else 0
-    return int(result) if isinstance(result, (int, float)) else 0
+        return int(result[0]) if isinstance(result[0], int | float) else 0
+    return int(result) if isinstance(result, int | float) else 0

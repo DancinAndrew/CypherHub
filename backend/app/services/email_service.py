@@ -258,7 +258,9 @@ class EmailService:
                 current_app.logger.warning("[email] Resend send_event_change_email failed: %s", exc)
                 raise
         else:
-            current_app.logger.info("[email_stub] event change would send to %s %s", to_email, event_title)
+            current_app.logger.info(
+                "[email_stub] event change would send to %s %s", to_email, event_title
+            )
 
     def send_event_cancelled_email(
         self,
@@ -293,10 +295,14 @@ class EmailService:
                     "[email] event cancelled sent to %s %s", to_email, event_title
                 )
             except Exception as exc:
-                current_app.logger.warning("[email] Resend send_event_cancelled_email failed: %s", exc)
+                current_app.logger.warning(
+                    "[email] Resend send_event_cancelled_email failed: %s", exc
+                )
                 raise
         else:
-            current_app.logger.info("[email_stub] event cancelled would send to %s %s", to_email, event_title)
+            current_app.logger.info(
+                "[email_stub] event cancelled would send to %s %s", to_email, event_title
+            )
 
 
 email_service = EmailService()

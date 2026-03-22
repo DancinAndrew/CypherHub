@@ -92,7 +92,6 @@ class SettlementService:
             raise map_supabase_error(exc, fallback_code="SETTLEMENT_GENERATE_FAILED") from exc
 
         results: list[dict] = []
-        now = datetime.now(UTC).isoformat()
 
         for org_id, gross_cents in org_gross.items():
             platform_fee_cents = int(gross_cents * rate)
