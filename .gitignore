@@ -28,9 +28,6 @@ supabase/.branches/
 # 個人筆記
 note.md
 
-# 素材大檔（不適合 git 追蹤）
-Logo/
-
 # uv lock（專案未使用 uv 管理依賴）
 backend/uv.lock
 

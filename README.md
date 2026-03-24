@@ -1,481 +1,132 @@
-# CypherHub - 街舞活動整合平台
+<div align="center">
+  <img src="Logo/Logo.png" alt="CypherHub Logo" width='300'/>
+</div>
 
-專為街舞圈打造的**活動資訊整合與售票平台**（街舞版 Accupass）：主辦方發活動、設票種與報名表單，使用者報名取得票券與 QR，主辦方核銷入場。MVP 階段規劃與未實作功能詳見 [docs/development/develop.md](docs/development/develop.md)。
+# CypherHub
 
----
+**專為街舞社群打造的活動購票平台。**
 
-## 目錄
-
-- [怎麼使用](#怎麼使用)
-- [技術棧與套件](#技術棧與套件)
-- [Quick Start（Docker）](#quick-start-docker-first)
-- [功能驗證](#功能驗證-ui--api)
-- [本機開發（非 Docker）](#non-docker-local-development)
-- [Lint / Test](#lint--test)
-- [環境變數與 Migrations](#environment-variables--migrations)
-- [參考](#參考)
+從 Cypher 到 Battle、Workshop 到 Showcase — CypherHub 讓主辦方輕鬆開活動、讓舞者一站搞定報名購票。
 
 ---
 
-## 怎麼使用
+## 這是什麼？
 
-- **一般使用者**：瀏覽首頁活動 → 點活動詳情 → 登入後報名（免費）→ 在「我的票券」取得 QR → 活動當天出示給主辦核銷。
-- **主辦方**：申請主辦方 → 建立活動與票種、設定報名表單 → 活動當天在核銷頁掃碼或手動輸入完成入場。
-- **開發/部署**：見下方 Quick Start 與 [docs/setup/local-cloud-switch.md](docs/setup/local-cloud-switch.md)（本地 Supabase vs 雲端 Supabase 切換）。
+CypherHub 是一個街舞活動整合平台，解決街舞圈長期缺乏專屬工具的痛點。不同於 Accupass、KKTIX 等通用售票平台，CypherHub 從街舞社群的需求出發：
+
+- 支援 Cypher、Battle、Workshop、Showcase、Jam 等街舞專屬活動分類
+- 內建舞風篩選（Hiphop、Popping、Locking、Breaking、Waacking⋯）
+- 從報名到現場核銷的完整閉環，不需要再用 Google 表單 + LINE 群組拼湊
 
 ---
 
-## 技術棧與套件
+## 使用流程
 
-| 層級 | 技術與套件 |
-|------|------------|
-| **Backend** | Flask 3.x、flask-cors、Pydantic、Supabase Python client、Resend（郵件）、pytest、ruff |
-| **Frontend** | Vue 3、Vite、TypeScript、Vue Router、Pinia、TailwindCSS、Axios、@supabase/supabase-js、qrcode.vue、@zxing/browser（QR 掃碼） |
-| **Infra / DB** | Docker Compose、Supabase（Postgres + Auth + Storage + RLS + RPC） |
+### 舞者（參加者）
 
-依功能對應的推薦工具（郵件、金流、監控、部署等）與未實作功能的替代方案見 [docs/development/Tools.md](docs/development/Tools.md) 與 [docs/development/develop.md](docs/development/develop.md#推薦套件與工具對照-toolsmd)。
-
-## Quickstart (Docker-first)
-
-專案支援 **本地** 與 **雲端** Supabase，可依情境切換。詳見 [docs/setup/local-cloud-switch.md](docs/setup/local-cloud-switch.md)。
-
-**Docker 執行環境**：可使用 Docker Desktop 或 [OrbStack](https://orbstack.dev/)（Mac 上較輕量、相容）。使用 OrbStack 時請先**開啟 OrbStack app** 後再執行 `docker compose`；`host.docker.internal` 已支援，本地 Supabase 連線無需改設定。
-
-### 方案 A：本地 Supabase（開發測試用）
-
-1. 切換到本地模式並取得 keys：
-   ```bash
-   ./scripts/use-local-supabase.sh
-   ./scripts/setup-local-supabase.sh   # 若 keys 為空
-   ```
-
-2. 套用 DB migrations：
-   ```bash
-   supabase db reset
-   ```
-
-3. 啟動專案：
-   ```bash
-   docker compose -f infra/docker-compose.yml up --build
-   ```
-
-4. 驗證：
-   - Frontend: http://localhost:5173
-   - Backend health: http://localhost:8000/api/v1/health
-   - Supabase Studio: http://127.0.0.1:54323（建立測試用戶、檢視資料）
-
-### 方案 B：雲端 Supabase（正式/部署用）
-
-1. 切換到雲端模式並填入專案 keys：
-   ```bash
-   ./scripts/use-cloud-supabase.sh
-   # 編輯 backend/.env 與 frontend/.env，填入 Dashboard → API 的值
-   ```
-
-2. 若雲端專案被 pause，請先到 [Supabase Dashboard](https://supabase.com/dashboard) 喚醒。
-
-3. 套用 migrations 並建立測試資料（一鍵腳本）：
-   ```bash
-   supabase login
-   ./scripts/push-to-cloud.sh
-   python scripts/seed-cloud-test-data.py   # 建立主辦方/觀眾、活動、票券
-   ```
-
-4. 啟動專案：
-   ```bash
-   docker compose -f infra/docker-compose.yml up --build
-   ```
-
-## 功能驗證（UI + API）
-
-### 0) 驗收前置（env）
-
-使用 `./scripts/use-local-supabase.sh` 或 `./scripts/use-cloud-supabase.sh` 會自動複製對應範本到 `.env`。若手動設定：
-
-```bash
-# 本地：複製 .env.local.example
-# 雲端：複製 .env.cloud.example
-# 或直接編輯 backend/.env、frontend/.env
+```
+瀏覽活動 → 依舞風/類型篩選 → 查看活動詳情
+    → 登入 → 選擇票種 → 填寫報名表 → 付款（或免費報名）
+        → 取得 QR 電子票券 → 活動當天出示 QR 入場
 ```
 
-`backend/.env` 至少填：
-- `SUPABASE_URL=...`
-- `SUPABASE_ANON_KEY=...`
-- `CORS_ORIGINS=http://localhost:5173`
-- `ADMIN_ALLOWLIST=...`（可選）
+- 在首頁依舞風（Hiphop、Popping⋯）或活動類型（Battle、Workshop⋯）找活動
+- 點進活動頁查看時間、地點、票價、主辦資訊與社群連結
+- 登入後選票種，填寫主辦方設定的報名表（姓名、電話、舞風等）
+- 免費活動直接報名；付費活動透過綠界金流完成付款（信用卡、ATM、超商代碼）
+- 報名成功後在「我的票券」頁面取得 QR Code
+- 活動當天打開 QR 讓主辦方掃碼即可入場
 
-`frontend/.env` 至少填：
-- `VITE_API_BASE_URL=http://localhost:8000`
-- `VITE_SUPABASE_URL=...`
-- `VITE_SUPABASE_ANON_KEY=...`
+### 主辦方
 
-安全要求：
-- 前端禁止使用 `sb_secret` / `service_role`
-- 不要提交 `.env`
+```
+申請主辦 → 建立活動 → 設定票種與報名表 → 管理報名名單
+    → 活動當天掃碼核銷 → 查看結算 → 申請提領
+```
 
-### 1) 啟動服務（Docker）
+- 申請成為主辦方，經平台審核通過後即可建立活動
+- 設定活動資訊（時間、地點、舞風標籤、流程表、社群連結）
+- 建立多種票種（免費/付費、不同價格與數量限制）
+- 透過表單建構器自訂報名欄位（文字、下拉選單、勾選框等）
+- 邀請團隊成員協作，分配 Owner / Admin / Staff 權限
+- 活動當天用手機掃描 QR 或手動輸入完成核銷
+- 活動結束後查看結算明細，申請提領收入
+
+---
+
+## 平台特色
+
+| | CypherHub | 通用售票平台 |
+|---|---|---|
+| 舞風分類 | Hiphop、Popping、Locking、Breaking 等精準篩選 | 僅「舞蹈」大分類 |
+| 活動類型 | Cypher、Battle、Workshop、Showcase、Jam 專屬標籤 | 無對應分類 |
+| 報名表單 | 主辦方自訂欄位，可依票種設定不同問題 | 固定格式或需外掛 |
+| 核銷方式 | QR 掃碼 + 手動輸入雙模式，手機即可操作 | 多數需另購設備 |
+| 團隊協作 | Owner / Admin / Staff 三級權限 | 通常僅單一管理員 |
+| 費用結算 | 內建結算與提領申請 | 需另外對帳 |
+
+---
+
+## 目前狀態
+
+平台已完成三個主要開發階段：
+
+- **MVP-1** — 免費報名 + QR 核銷 + 舞風篩選 + 自訂報名表
+- **MVP-2** — 付費票種 + 綠界金流 + 訂單管理 + 退款
+- **MVP-3** — 多角色權限 + 主辦方審核 + 費用結算 + 審計紀錄
+
+120+ 自動化測試通過，214 項驗收項目全數完成。
+
+---
+
+## 技術棧
+
+| 層級 | 技術 |
+|------|------|
+| Backend | Python 3.12 / Flask / Pydantic v2 |
+| Frontend | Vue 3 / TypeScript / Vite / TailwindCSS |
+| Database | Supabase（PostgreSQL + Auth + RLS） |
+| Payment | 綠界 ECPay（信用卡、ATM、超商代碼） |
+| Email | Resend |
+| Infra | Docker Compose / GitHub Actions CI/CD |
+
+---
+
+## 文件
+
+所有開發、部署、API 文件集中在 [`docs/`](docs/) 目錄：
+
+| 需求 | 文件 |
+|------|------|
+| 開發環境架設 | [docs/setup/local-cloud-switch.md](docs/setup/local-cloud-switch.md) |
+| 開發規格與路線圖 | [docs/development/develop.md](docs/development/develop.md) |
+| API 端點總表 | [docs/api/endpoints.md](docs/api/endpoints.md) |
+| DB Schema | [docs/development/database-schema.md](docs/development/database-schema.md) |
+| 環境變數清單 | [docs/development/environment-variables.md](docs/development/environment-variables.md) |
+| 部署指南 | [docs/deployment/deploy-guide.md](docs/deployment/deploy-guide.md) |
+| CI/CD | [docs/deployment/ci-cd.md](docs/deployment/ci-cd.md) |
+| 驗收清單 | [docs/verification/acceptance-checklist.md](docs/verification/acceptance-checklist.md) |
+| 完整文件索引 | [docs/verification/README.md](docs/verification/README.md) |
+
+---
+
+## 快速啟動
 
 ```bash
+# 1. Clone
+git clone https://github.com/your-org/CypherHub.git
+cd CypherHub
+
+# 2. 環境設定
+cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env
+# 編輯 .env 填入 Supabase keys
+
+# 3. 啟動
 docker compose -f infra/docker-compose.yml up --build
 ```
 
-另開 terminal 驗 health：
+- Frontend: http://localhost:5173
+- Backend API: http://localhost:8000/api/v1/health
 
-```bash
-curl -s http://localhost:8000/api/v1/health
-```
-
-預期至少包含：
-
-```json
-{"status":"ok"}
-```
-
-前端網址：`http://localhost:5173`
-
-### 2) 若 events 為空，先建測試資料
-
-若 `GET /api/v1/events` 回 `{"items":[]}`，請在前端用 Organizer 頁（目前路由是 `/organizer`）建立：
-1. Apply organizer
-2. Create event（`status=published`，`start_at/end_at` 為未來時間）
-3. Create ticket type（免費，`capacity > 0`，`per_user_limit >= 1`）
-
-建立後回首頁確認活動可見。
-
-### 3) UI 閉環驗收（必做）
-
-1. Guest：首頁看到 published 活動，點進活動詳情可見票種
-2. User：到 `/login` 登入後，回活動詳情按 `Register (Free)`
-3. My Tickets：到 `/tickets` 可見票券與 QR
-4. QR payload 格式（JSON 字串）：
-   - `{"ticket_id":"...","qr_secret":"..."}`
-5. Organizer check-in：到 `/organizer/checkin/{event_id}` 輸入 `ticket_id + qr_secret`
-6. Verify 預期：`valid=true`、`can_checkin=true`、`status=issued`
-7. Commit 第一次預期：`ok=true`、`already_checked_in=false`
-8. Commit 第二次預期：`ok=true`、`already_checked_in=true`（idempotent）
-
-### 3.1 掃碼核銷（手機）
-
-1. 到 `/organizer/checkin/{event_id}`（需登入 organizer member）
-2. 切到「掃碼模式」並點 `Start Scan`
-3. 允許相機權限，將 `/tickets` 頁上的 QR 對準鏡頭
-4. 掃到後預期：
-   - 自動停止掃描
-   - 自動填入 `ticket_id` / `qr_secret`
-   - 自動執行 Verify
-5. 按 `Commit Check-in`
-   - 第一次：`ok=true`, `already_checked_in=false`
-   - 第二次：`ok=true`, `already_checked_in=true`
-
-QR payload 支援格式：
-- JSON：`{"ticket_id":"...","qr_secret":"..."}`
-- querystring（可選）：`ticket_id=...&qr_secret=...`
-- pipe（可選）：`<ticket_id>|<qr_secret>`
-
-若相機權限被拒：
-- 會顯示提示，改用手動輸入模式完成核銷。
-- `/tickets` 提供 `Copy Payload` 按鈕，可快速貼到核銷頁。
-
-### 3.2 MVP-1.5-A（活動資訊完善 + 私密備註）
-
-1. Organizer 到 `/organizer` 建立或載入活動（`Load Event`）。
-2. 在 Create/Update 區塊填寫：
-   - `registration_start_at` / `registration_end_at`
-   - `map_url`
-   - `contact_email` / `contact_phone`
-   - `socials`（IG/FB/YouTube/LINE/Website）
-   - `eligibility` / `event_language`
-   - `checkin_open_at` / `checkin_note`
-   - `schedule`（JSON array）
-3. 在 `Internal Note` 欄位填寫主辦方私密備註並送出。
-4. Guest 打開活動詳情頁（`/events/{event_id}`）：
-   - 應看到上述公開欄位（報名時間、聯絡、社群、流程等）。
-   - 不會看到 `internal_note`。
-5. Organizer 使用 `GET /api/v1/organizer/events/{event_id}` 讀取編輯資料時可看到 `internal_note`。
-
-#### 手動驗收步驟
-
-1. 套用 migrations：
-   - `supabase db push --dry-run`
-   - `supabase db push`
-2. 啟動服務：`docker compose -f infra/docker-compose.yml up --build`
-3. Organizer 登入後在 `/organizer` 建立活動，填入報名時間、聯絡、社群、流程與 internal note。
-4. Guest 開啟同活動 `/events/{event_id}`，確認公開 metadata 都可見。
-5. Organizer 再次進 `/organizer` 載入該活動，確認可以讀寫 internal note。
-6. Guest 再次查看活動頁，確認不會出現 internal note。
-
-### 3.3 MVP-1.5-B（報名表單 / Form Builder）
-
-1. Organizer 到 `/organizer`，在 `Form Builder (JSON Schema)` 區塊設定：
-   - `event_id`
-   - `ticket_type_id`（可留空，代表 event-level form）
-   - 表單 JSON schema
-2. 儲存後，User 到活動詳情頁選票種。
-3. 前端會呼叫 `GET /api/v1/events/{event_id}/forms?ticket_type_id=...` 並動態渲染欄位。
-4. User 填完必填欄位後送出報名。
-5. 報名成功後，票券會正常出現在 `/tickets`。
-6. Organizer 回 `/organizer` 的 `Attendees List` 載入同 event，可看到 `answers` JSON。
-
-#### 表單 schema 範例
-
-```json
-{
-  "version": 1,
-  "fields": [
-    {
-      "key": "full_name",
-      "label": "姓名",
-      "type": "text",
-      "required": true,
-      "placeholder": "請輸入姓名",
-      "help_text": "請填寫真實姓名",
-      "options": []
-    },
-    {
-      "key": "phone",
-      "label": "聯絡電話",
-      "type": "phone",
-      "required": true,
-      "placeholder": "0900-000-000",
-      "help_text": "活動聯絡使用",
-      "options": []
-    },
-    {
-      "key": "agree_media",
-      "label": "同意活動影像紀錄",
-      "type": "checkbox",
-      "required": true,
-      "placeholder": "我同意主辦方於活動現場拍攝與使用活動紀錄",
-      "help_text": "必填同意條款",
-      "options": []
-    }
-  ]
-}
-```
-
-### 4) API / 權限驗收（必做）
-
-未帶 token 呼叫受保護 API：
-
-```bash
-curl -i http://localhost:8000/api/v1/me/tickets
-```
-
-預期：
-- HTTP `401`
-- body 為標準錯誤格式：
-
-```json
-{"error":{"code":"...","message":"...","details":...}}
-```
-
-帶 token 讀我的票券（`<ACCESS_TOKEN>` 由前端登入後取得）：
-
-```bash
-curl -s -H "Authorization: Bearer <ACCESS_TOKEN>" \
-  http://localhost:8000/api/v1/me/tickets
-```
-
-預期：HTTP `200`，且只回該 user 的 tickets（RLS 生效）。
-
-錯誤情境至少測 1 個：
-- `per_user_limit=1` 時同 user 第二次 register 應失敗（400/409）
-- 或 capacity 滿時應 `SOLD_OUT`
-
-活動篩選（MVP-1.1）：
-
-```bash
-curl -s "http://localhost:8000/api/v1/events?styles=hiphop,popping&types=cypher,battle"
-```
-
-語意：
-- `styles`：`dance_styles` 任一重疊（overlap）即符合
-- `types`：`event_types` 任一重疊（overlap）即符合
-
-### 5) 測試/建置指令（必做）
-
-```bash
-docker compose -f infra/docker-compose.yml run --rm backend ruff check .
-docker compose -f infra/docker-compose.yml run --rm backend pytest -q
-docker compose -f infra/docker-compose.yml run --rm frontend sh -lc "npm install && npm run build"
-```
-
-### 6) 範圍與安全檢查（必做）
-
-```bash
-git status
-git grep -n "sb_secret_" .
-git grep -n "SUPABASE_ACCESS_TOKEN" .
-```
-
-預期：
-- 無新增 MVP-2/3 功能（orders/payments/refunds/settlements/ledger/audit_logs）
-- repo 不含真實 key/token（僅 `.env.example` placeholder）
-
-## Non-Docker Local Development
-
-### Backend
-
-專案需要 **Python 3.12+**（`pyproject.toml` 設定 `target-version = "py312"`）。若本機為 3.9，請先 `brew install python@3.12`。
-
-```bash
-cd backend
-python3.12 -m venv .venv   # 或 pyenv 時：python -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-flask --app app run --debug --host 0.0.0.0 --port 8000
-```
-
-### Frontend
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-## Lint / Test
-
-### Backend
-
-```bash
-cd backend
-ruff format .
-ruff check .
-pytest -q
-```
-
-若本機 Python 不是 3.12，建議直接用 Docker 跑：
-
-```bash
-docker compose -f infra/docker-compose.yml run --rm backend ruff check .
-docker compose -f infra/docker-compose.yml run --rm backend pytest -q
-```
-
-### Frontend
-
-```bash
-cd frontend
-npm run dev
-npm run build
-```
-
-Docker build 驗證：
-
-```bash
-docker compose -f infra/docker-compose.yml run --rm frontend sh -lc "npm install && npm run build"
-```
-
-API smoke test：
-
-```bash
-curl -sS http://localhost:8000/api/v1/health
-curl -sS http://localhost:8000/api/v1/events
-curl -sS http://localhost:8000/api/v1/me/tickets
-```
-
-## Environment Variables & Migrations
-
-- **環境變數**：範本為 `backend/.env.example`、`frontend/.env.example`；本地/雲端切換時由 `use-local-supabase.sh` 或 `use-cloud-supabase.sh` 複製對應 `.env.local.example` / `.env.cloud.example`。勿提交真實 secrets。
-- **ECPay 金流開發**：專案使用 [.claude/skills/ecpay](.claude/skills/ecpay) 綠界 Agent Skill；本地 Webhook 測試需用 **ngrok**（`ngrok http 8000`）轉發，因綠界 ReturnURL 不支援 localhost。詳見 [develop.md §MVP-2.2](docs/development/develop.md#mvp-22-綠界金流-ecpay-phase-22-)。
-- **Migrations（MVP-1）**：見下方清單與套用方式；開發階段與 DB 設計詳見 [docs/development/develop.md](docs/development/develop.md)。
-
-### Supabase Migrations 清單
-
-Migrations:
-- `0001_mvp1_init.sql` ～ `0011_mvp15b_register_free_v2_rpc.sql`（MVP-1 核心）
-- `0012_cancel_ticket_rpc.sql`（使用者取消報名）
-- `0013_org_public_select_for_published_events.sql`
-- `0014_storage_event_media_bucket.sql`
-- `0015_platform_governance.sql`（disabled 狀態、核銷阻擋 ended/cancelled）
-- `0016_storage_event_media_public_read.sql`
-- `0017_mvp2_orders_payments_webhooks.sql`（orders、order_items、payments、webhook_events、ticket_types.hold_count）
-
-### 套用方式（local Supabase）
-
-```bash
-supabase start
-supabase db reset
-```
-
-`supabase db reset` 會依序套用 migration（0001 → 0017）與 `supabase/seed.sql`。
-
-### DB migrations（cloud）
-
-使用一鍵腳本（推薦）：
-
-```bash
-supabase login
-./scripts/push-to-cloud.sh
-```
-
-或手動：
-
-```bash
-supabase login
-supabase link --project-ref YOUR_PROJECT_REF
-supabase db push --dry-run
-supabase db push
-supabase migration list
-```
-
-安全提醒：
-- 不要使用 `supabase db reset --linked`（會重置遠端資料庫）。
-- `SUPABASE_ACCESS_TOKEN` 只用本機環境變數，不要寫入檔案、不要 commit 到 repo。
-
-### 套用方式（Supabase SQL Editor）
-
-請依序貼上 0001 ～ 0017 共 17 檔。順序不可顛倒（RLS 依賴 tables；RPC 依賴 tables 與 helper functions）。  
-若 CLI 登入/token 卡住，SQL Editor 是官方可行 fallback。
-
-### Drift check（cloud）
-
-```bash
-supabase migration list
-supabase db diff --linked > supabase/drift_check.sql
-```
-
-若 `supabase/drift_check.sql` 非空，表示 linked cloud 與 migrations 有差異，需新增 migration 修正後再 `supabase db push`。
-
-## MVP-1 DB 驗證
-
-**雲端**：可使用 `python scripts/seed-cloud-test-data.py` 自動建立測試用戶與資料（需已填入 `SUPABASE_SERVICE_ROLE_KEY`）。
-
-**Cloud SQL Editor 手動驗證**：
-1. 到 Supabase Dashboard -> Authentication -> Users，建立兩個測試使用者。
-   - `OWNER_UUID`：主辦方 owner
-   - `ATTENDEE_UUID`：報名者
-2. 打開 `supabase/verify_mvp1.sql`，只替換兩個 UUID 變數值。
-3. 在 SQL Editor 直接整份執行（單檔一鍵跑）。
-4. 預期輸出（NOTICE）至少包含：
-   - `register_free success`
-   - `first commit result` 與 `second commit result`（第二次 `already_checked_in=true`）
-   - `per_user_limit test pass`（成功擋下第二次報名）
-
-## DB 權限行為（MVP-1）
-
-- 公開：`events`（published）、`event_media`（published event）、`ticket_types`（active + published）
-- 使用者：只能讀自己 `tickets` / `profiles`
-- 主辦成員：可讀自己 org/event 相關資料與 attendee tickets
-- `tickets` 不開放 client 直接 `INSERT/UPDATE`，只能透過 RPC
-
-## Rollback 備註
-
-- Local 開發：使用 `supabase db reset` 回到 migration 定義狀態。
-- Shared/production 環境：以「新 migration forward 修正」為主，不建議手動回滾已執行 migration。
-
-## Known Limitations (MVP-1)
-
-- Organizer check-in 已支援相機掃碼，但需瀏覽器提供相機權限；部分裝置/瀏覽器在非 `localhost` 的 `http` 會限制相機。
-- `POST /api/v1/me/tickets/{ticket_id}/resend` 由 Resend 寄送；若未設定 `RESEND_API_KEY` 則僅 log，不寄信，不影響報名流程。
-- Admin endpoint 目前只保留最小 allowlist 讀取能力，管理功能維持 MVP-1 最小化。
-
-## 參考
-
-- [docs/README.md](docs/README.md) — 完整文件索引（development、verification、setup 結構）
-- [docs/development/develop.md](docs/development/develop.md) — 開發路線圖、MVP 階段、推薦套件與未實作功能替代方案
-- [docs/development/Tools.md](docs/development/Tools.md) — 金流／郵件／監控／部署等工具選單
-- [docs/setup/local-cloud-switch.md](docs/setup/local-cloud-switch.md) — 本地與雲端 Supabase 切換
-- [docs/verification/mvp1/mvp1-verification-checklist.md](docs/verification/mvp1/mvp1-verification-checklist.md) — MVP-1 驗收清單
-- [docs/development/mvp2/](docs/development/mvp2/) — MVP-2 開發（就緒檢查、[.claude/skills/ecpay](.claude/skills/ecpay) 金流、背景任務）
-- [AGENTS.md](AGENTS.md) — 專案規範與 API
+詳細設定（本地 Supabase、雲端 Supabase、非 Docker 開發）請見 [docs/setup/local-cloud-switch.md](docs/setup/local-cloud-switch.md)。
