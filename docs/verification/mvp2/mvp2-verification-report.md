@@ -37,7 +37,7 @@ uv run pytest app/tests/test_order_state_machine.py app/tests/test_compensate_pa
 ## 2. 綠界 CheckMacValue 驗證
 
 - **Provider**：`backend/app/providers/ecpay.py`（`_ecpay_url_encode`、`_compute_checkmac`、`verify_webhook_checkmac`）
-- **對照**：`.cursor/skills/ecpay/guides/13-checkmacvalue.md`、test-vectors
+- **對照**：`.claude/skills/ecpay/guides/13-checkmacvalue.md`、test-vectors
 
 **結果**：演算法與官方規格一致。使用 test-vectors 的 SHA256 向量驗證：
 - 建立訂單：`exclude_empty=True`，略過空值

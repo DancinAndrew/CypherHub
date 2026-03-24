@@ -51,7 +51,7 @@
 
 | 項目 | 說明 | 狀態 |
 |------|------|------|
-| **ecpay skill** | 開發前必讀 [.cursor/skills/ecpay](../../../.cursor/skills/ecpay) | ✅ |
+| **ecpay skill** | 開發前必讀 [.claude/skills/ecpay](../../../.claude/skills/ecpay) | ✅ |
 | ECPay 文件 | 研讀 Webhook 驗簽、Form 參數 | ✅ |
 | payment_service | create_checkout、handle_ecpay_webhook、狀態機 | ✅ |
 | Webhook 冪等 | webhook_events 去重、CheckMacValue 驗證 | ✅ |

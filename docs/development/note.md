@@ -64,7 +64,7 @@
 
 # 與 MVP2 相關的技術債（MVP-2 已實作完成）
 
-**ECPay 金流開發工具**：專案使用 `.cursor/skills/ecpay`（綠界官方 Cursor Agent Skill）協助整合；本地 Webhook 測試需用 **ngrok**（`ngrok http 8000`）將綠界回調轉發至本機，因 ReturnURL 不支援 localhost。
+**ECPay 金流開發工具**：專案使用 `.claude/skills/ecpay`（綠界官方 Cursor Agent Skill）協助整合；本地 Webhook 測試需用 **ngrok**（`ngrok http 8000`）將綠界回調轉發至本機，因 ReturnURL 不支援 localhost。
 
 **狀態（2025-03）**：MVP-2 程式與 DB 已全部實作完成（訂單、Hold、ECPay、出票、補償、退款、表單擴充、逾時釋放）。詳見 [MVP1-2-3-implementation-status-report.md](../verification/MVP1-2-3-implementation-status-report.md)。
 
@@ -181,7 +181,7 @@ CREATE INDEX idx_webhook_events_provider_external ON webhook_events(provider, ex
 
 ### 三、金流（ECPay）
 
-> **詳見** [.cursor/skills/ecpay](../../.cursor/skills/ecpay) — ECPay 官方 Skill，含 AIO、CheckMacValue、Webhook。
+> **詳見** [.claude/skills/ecpay](../../.claude/skills/ecpay) — ECPay 官方 Skill，含 AIO、CheckMacValue、Webhook。
 
 **步驟 3.1** 研讀 ECPay 文件
 

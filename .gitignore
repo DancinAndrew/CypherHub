@@ -21,6 +21,9 @@ backend/package-lock.json
 supabase/.temp/
 supabase/.branches/
 
+# Claude Code ECPay Skill（獨立 clone，不納入版控）
+.claude/skills/
+
 # ChatGPT 匯出檔（非程式碼）
 ChatGPT-CypherHub*.md
 ChatGPT-CypherHub*.pdf

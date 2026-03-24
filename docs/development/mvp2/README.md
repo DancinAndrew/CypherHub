@@ -6,7 +6,7 @@
 | 檔案 | 說明 |
 |------|------|
 | [mvp2-readiness-checklist.md](./mvp2-readiness-checklist.md) | 進入 MVP-2 前的檢查清單（已完成，可作參考） |
-| [.cursor/skills/ecpay](../../../.cursor/skills/ecpay) | **金流開發必讀** — ECPay 官方 Skill，AIO、CheckMacValue、Webhook |
+| [.claude/skills/ecpay](../../../.claude/skills/ecpay) | **金流開發必讀** — ECPay 官方 Skill，AIO、CheckMacValue、Webhook |
 | [background-tasks-analysis.md](./background-tasks-analysis.md) | 背景任務選型分析（已採用 pg_cron + SQL RPC） |
 | [mvp2-4-inventory-safety-plan.md](./mvp2-4-inventory-safety-plan.md) | 庫存安全與背景任務（已實作） |
 | [mvp2-5-form-csv-plan.md](./mvp2-5-form-csv-plan.md) | 報名表單擴充與名單匯出 CSV（已實作） |

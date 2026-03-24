@@ -52,7 +52,7 @@
 | P0-02a-cloud | ✅ | cloud staging |
 | P0-03a | ✅ | `cd backend && uv sync` → exit 0 |
 | P0-04a/b | ✅ | `npm install` + `npm run build`（vue-tsc + vite）→ exit 0 |
-| P0-05 | ⚠️ | `backend/.env`：`SUPABASE_*`、`ADMIN_ALLOWLIST` 已設；`ECPAY_*`、`CRON_SECRET`、`ORG_APPROVAL_REQUIRED`、`PLATFORM_FEE_RATE` 為空（MVP-2 E2E／MVP-3 jobs 測前需補）；未驗證 P0-02-CLOUD／前端 `VITE_SUPABASE_*` |
+| P0-05 | ⚠️ | `backend/.env`：`SUPABASE_*`、`ADMIN_ALLOWLIST` 已設；`ECPAY_*`、`CRON_SECRET`、`ORG_APPROVAL_REQUIRED`、`PLATFORM_FEE_RATE` 為空（MVP-2 E2E／MVP-3 jobs 測前需補）；未驗證前端 `VITE_SUPABASE_*` |
 
 ### Phase 1 步驟證據（同一次執行；於 P0-02 失敗後仍跑自動化以取得回歸狀態）
 
