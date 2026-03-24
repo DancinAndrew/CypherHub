@@ -1,4 +1,5 @@
 """MVP-3.5: 內部 Cron jobs（活動提醒等）。需 X-Cron-Secret header 驗證。"""
+
 from __future__ import annotations
 
 from flask import Blueprint, current_app, jsonify, request

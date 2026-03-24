@@ -332,6 +332,8 @@ class AttendeeResponse(BaseModel):
     checked_in_at: datetime | None = None
     ticket_type_id: UUID
     answers: dict[str, Any] | None = None
+    ticket_type_name: str | None = None
+    user_display_name: str | None = None
 
 
 class OrganizerAttendeesResponse(BaseModel):

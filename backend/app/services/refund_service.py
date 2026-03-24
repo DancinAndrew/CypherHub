@@ -141,15 +141,15 @@ def create_refund(order_id: UUID, admin_user_id: str | None = None) -> dict:
 
     now = datetime.now(UTC).isoformat()
     if ok:
-        svc.table("refunds").update(
-            {"status": "refunded", "processed_at": now}
-        ).eq("id", str(refund_id)).execute()
+        svc.table("refunds").update({"status": "refunded", "processed_at": now}).eq(
+            "id", str(refund_id)
+        ).execute()
         svc.table("orders").update({"status": "refunded", "updated_at": now}).eq(
             "id", str(order_id)
         ).execute()
-        svc.table("payments").update({"status": "refunded"}).eq(
-            "order_id", str(order_id)
-        ).eq("provider", "ecpay").execute()
+        svc.table("payments").update({"status": "refunded"}).eq("order_id", str(order_id)).eq(
+            "provider", "ecpay"
+        ).execute()
 
         user_id = str(order.get("user_id", ""))
         to_email = supabase_client.get_user_email_by_id(user_id)

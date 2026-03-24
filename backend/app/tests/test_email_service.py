@@ -62,9 +62,7 @@ def test_send_registration_stub_logs_when_not_available(
     assert "[email_stub]" in call_str and "registration success would send" in call_str
 
 
-def test_send_registration_resend_success_logs_info(
-    app, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_send_registration_resend_success_logs_info(app, monkeypatch: pytest.MonkeyPatch) -> None:
     """Resend 分支成功：記錄 [email] info log。"""
     monkeypatch.setattr(email_service, "_is_resend_available", lambda: True)
     send_mock = MagicMock()
@@ -110,9 +108,7 @@ def test_send_registration_resend_failure_logs_warning_no_raise(
 # --- send_ticket_email ---
 
 
-def test_send_ticket_stub_logs_when_not_available(
-    app, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_send_ticket_stub_logs_when_not_available(app, monkeypatch: pytest.MonkeyPatch) -> None:
     """Stub 分支：記錄 [email_stub] log。"""
     monkeypatch.setattr(email_service, "_is_resend_available", lambda: False)
     logger_mock = MagicMock()
@@ -152,9 +148,7 @@ def test_send_ticket_resend_failure_logs_warning_and_raises(
     assert "send_ticket_email failed" in str(logger_mock.warning.call_args)
 
 
-def test_send_ticket_skipped_when_no_email(
-    app, monkeypatch: pytest.MonkeyPatch
-) -> None:
+def test_send_ticket_skipped_when_no_email(app, monkeypatch: pytest.MonkeyPatch) -> None:
     """to_email 空時跳過、記錄 skip log。"""
     monkeypatch.setattr(email_service, "_is_resend_available", lambda: True)
     logger_mock = MagicMock()

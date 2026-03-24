@@ -43,6 +43,7 @@ def test_login_success_returns_200_and_session_shape(client, monkeypatch) -> Non
 # --- 單元：帳密錯誤時 400 + AUTH_FAILED ---
 def test_login_invalid_credentials_returns_400_auth_failed(client, monkeypatch) -> None:
     """帳密錯誤時後端回 400、error.code 為 AUTH_FAILED（前端顯示「帳號或密碼不正確」）。"""
+
     def raise_auth_failed(_email: str, _password: str) -> None:
         raise AppError(
             code="AUTH_FAILED",
@@ -112,6 +113,7 @@ def test_login_passes_body_to_supabase_token(client) -> None:
 # --- 單元：_supabase_token 回傳形狀（改用 client 後仍含 access_token, refresh_token）---
 def test_supabase_token_returns_session_shape(app) -> None:
     """_supabase_token 成功時回傳 dict 含 access_token、refresh_token。"""
+
     class FakeSession:
         access_token = "access"
         refresh_token = "refresh"

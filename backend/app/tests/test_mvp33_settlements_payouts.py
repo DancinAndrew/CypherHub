@@ -115,9 +115,7 @@ def test_organizer_payout_amount_validation(client, monkeypatch) -> None:
     user_id = "org-user-2"
     monkeypatch.setattr(supabase_client, "get_user", lambda _: {"id": user_id})
 
-    with patch(
-        "app.services.settlement_service.settlement_service.create_payout_request"
-    ) as m:
+    with patch("app.services.settlement_service.settlement_service.create_payout_request") as m:
         m.side_effect = AppError(
             code="VALIDATION_ERROR",
             message="amount_cents must be positive",
@@ -140,9 +138,7 @@ def test_organizer_payout_insufficient_balance(client, monkeypatch) -> None:
     user_id = "org-user-3"
     monkeypatch.setattr(supabase_client, "get_user", lambda _: {"id": user_id})
 
-    with patch(
-        "app.services.settlement_service.settlement_service.create_payout_request"
-    ) as m:
+    with patch("app.services.settlement_service.settlement_service.create_payout_request") as m:
         m.side_effect = AppError(
             code="INSUFFICIENT_BALANCE",
             message="Available balance is insufficient",
@@ -167,12 +163,10 @@ def test_organizer_payout_success(client, monkeypatch) -> None:
     user_id = "org-user-4"
     monkeypatch.setattr(supabase_client, "get_user", lambda _: {"id": user_id})
 
-    with patch(
-        "app.services.settlement_service.settlement_service.create_payout_request"
-    ) as m:
+    with patch("app.services.settlement_service.settlement_service.create_payout_request") as m:
         m.return_value = {
-                "id": "00000000-0000-0000-0000-000000000099",
-                "org_id": "00000000-0000-0000-0000-000000000001",
+            "id": "00000000-0000-0000-0000-000000000099",
+            "org_id": "00000000-0000-0000-0000-000000000001",
             "amount_cents": 5000,
             "status": "requested",
         }
@@ -244,9 +238,7 @@ def test_admin_payout_approve_success(client, app, monkeypatch) -> None:
     monkeypatch.setattr(supabase_client, "get_user", lambda _: {"id": admin_id})
     app.config["ADMIN_ALLOWLIST"] = {admin_id}
 
-    with patch(
-        "app.services.settlement_service.settlement_service.approve_payout_request"
-    ) as m:
+    with patch("app.services.settlement_service.settlement_service.approve_payout_request") as m:
         m.return_value = {
             "id": "pr-uuid",
             "org_id": "org1",
@@ -270,9 +262,7 @@ def test_admin_payout_reject_success(client, app, monkeypatch) -> None:
     monkeypatch.setattr(supabase_client, "get_user", lambda _: {"id": admin_id})
     app.config["ADMIN_ALLOWLIST"] = {admin_id}
 
-    with patch(
-        "app.services.settlement_service.settlement_service.reject_payout_request"
-    ) as m:
+    with patch("app.services.settlement_service.settlement_service.reject_payout_request") as m:
         m.return_value = {
             "id": "pr-uuid",
             "status": "failed",
@@ -295,9 +285,7 @@ def test_admin_payout_not_found(client, app, monkeypatch) -> None:
     monkeypatch.setattr(supabase_client, "get_user", lambda _: {"id": admin_id})
     app.config["ADMIN_ALLOWLIST"] = {admin_id}
 
-    with patch(
-        "app.services.settlement_service.settlement_service.approve_payout_request"
-    ) as m:
+    with patch("app.services.settlement_service.settlement_service.approve_payout_request") as m:
         m.side_effect = AppError(
             code="PAYOUT_NOT_FOUND",
             message="Payout request not found",
@@ -351,10 +339,12 @@ def test_generate_settlements_integration(app) -> None:
     with app.app_context():
         sr = supabase_client.service_role_client()
         anon = supabase_client.public_client()
-        sign_in = anon.auth.sign_in_with_password({
-            "email": os.environ["TEST_USER_EMAIL"],
-            "password": os.environ["TEST_USER_PASSWORD"],
-        })
+        sign_in = anon.auth.sign_in_with_password(
+            {
+                "email": os.environ["TEST_USER_EMAIL"],
+                "password": os.environ["TEST_USER_PASSWORD"],
+            }
+        )
         user_id = None
         if hasattr(sign_in, "user") and sign_in.user:
             u = sign_in.user
@@ -372,49 +362,59 @@ def test_generate_settlements_integration(app) -> None:
         period_end = now + timedelta(days=1)
 
         try:
-            sr.table("organizations").insert({
-                "id": org_id,
-                "name": "Settlement Integration Org",
-                "owner_user_id": user_id,
-                "approval_status": "approved",
-            }).execute()
+            sr.table("organizations").insert(
+                {
+                    "id": org_id,
+                    "name": "Settlement Integration Org",
+                    "owner_user_id": user_id,
+                    "approval_status": "approved",
+                }
+            ).execute()
 
-            sr.table("events").insert({
-                "id": event_id,
-                "org_id": org_id,
-                "title": "Settlement Test Event",
-                "start_at": now.isoformat(),
-                "end_at": (now + timedelta(hours=2)).isoformat(),
-                "status": "published",
-                "published_at": now.isoformat(),
-                "created_by": user_id,
-            }).execute()
+            sr.table("events").insert(
+                {
+                    "id": event_id,
+                    "org_id": org_id,
+                    "title": "Settlement Test Event",
+                    "start_at": now.isoformat(),
+                    "end_at": (now + timedelta(hours=2)).isoformat(),
+                    "status": "published",
+                    "published_at": now.isoformat(),
+                    "created_by": user_id,
+                }
+            ).execute()
 
-            sr.table("ticket_types").insert({
-                "id": ticket_type_id,
-                "event_id": event_id,
-                "name": "Paid",
-                "price_cents": 500,
-                "capacity": 10,
-                "sold_count": 1,
-                "per_user_limit": 2,
-                "is_active": True,
-            }).execute()
+            sr.table("ticket_types").insert(
+                {
+                    "id": ticket_type_id,
+                    "event_id": event_id,
+                    "name": "Paid",
+                    "price_cents": 500,
+                    "capacity": 10,
+                    "sold_count": 1,
+                    "per_user_limit": 2,
+                    "is_active": True,
+                }
+            ).execute()
 
-            sr.table("orders").insert({
-                "id": order_id,
-                "user_id": user_id,
-                "status": "issued",
-                "total_cents": 500,
-                "updated_at": now.isoformat(),
-            }).execute()
+            sr.table("orders").insert(
+                {
+                    "id": order_id,
+                    "user_id": user_id,
+                    "status": "issued",
+                    "total_cents": 500,
+                    "updated_at": now.isoformat(),
+                }
+            ).execute()
 
-            sr.table("order_items").insert({
-                "order_id": order_id,
-                "ticket_type_id": ticket_type_id,
-                "quantity": 1,
-                "price_cents": 500,
-            }).execute()
+            sr.table("order_items").insert(
+                {
+                    "order_id": order_id,
+                    "ticket_type_id": ticket_type_id,
+                    "quantity": 1,
+                    "price_cents": 500,
+                }
+            ).execute()
 
             app.config["PLATFORM_FEE_RATE"] = 0.05
             results = settlement_service.generate_settlements(

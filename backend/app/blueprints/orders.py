@@ -26,9 +26,7 @@ def create_hold_order() -> tuple[dict, int]:
     """選票種 → 建立 holding 訂單，原子扣 hold_count。逾時 15 分鐘釋放。"""
     body = CreateHoldOrderRequest(**request.get_json(silent=True) or {})
     items = [{"ticket_type_id": i.ticket_type_id, "quantity": i.quantity} for i in body.items]
-    order_id = orders_service.create_hold_order(
-        g.jwt, items, hold_minutes=body.hold_minutes
-    )
+    order_id = orders_service.create_hold_order(g.jwt, items, hold_minutes=body.hold_minutes)
     data = orders_service.get_order_detail(g.jwt, order_id)
     payload = OrderDetailResponse(
         order=OrderResponse(**data["order"]),

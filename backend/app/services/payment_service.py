@@ -214,9 +214,9 @@ class PaymentService:
             current_app.logger.exception("[ecpay] issue_tickets_for_order failed: %s", exc)
             # 補償 job 會處理
 
-        svc.table("webhook_events").update(
-            {"processed_at": datetime.now(UTC).isoformat()}
-        ).eq("provider", "ecpay").eq("external_event_id", merchant_trade_no).execute()
+        svc.table("webhook_events").update({"processed_at": datetime.now(UTC).isoformat()}).eq(
+            "provider", "ecpay"
+        ).eq("external_event_id", merchant_trade_no).execute()
 
         return "1|OK"
 

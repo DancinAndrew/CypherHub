@@ -73,6 +73,7 @@ def _user_id_from_jwt(jwt_token: str) -> str | None:
     """從 JWT 解出 sub（user id），不依賴 admin.list_users()。"""
     import base64
     import json
+
     try:
         parts = jwt_token.split(".")
         if len(parts) != 3:
@@ -169,9 +170,7 @@ def test_concurrent_hold_last_ticket_one_succeeds_one_sold_out(client, app) -> N
                 result = supabase_client.call_rpc(
                     "create_hold_order",
                     {
-                        "p_items": [
-                            {"ticket_type_id": ticket_type_id, "quantity": 1}
-                        ],
+                        "p_items": [{"ticket_type_id": ticket_type_id, "quantity": 1}],
                         "p_hold_minutes": 15,
                     },
                     jwt=jwt,

@@ -75,9 +75,7 @@ class OrdersService:
         except Exception as exc:
             raise map_supabase_error(exc, fallback_code="ORDER_FETCH_FAILED") from exc
 
-    def create_hold_order(
-        self, jwt: str, items: list[dict], hold_minutes: int = 15
-    ) -> UUID:
+    def create_hold_order(self, jwt: str, items: list[dict], hold_minutes: int = 15) -> UUID:
         """選票種 → 建立 holding 訂單，原子扣 hold_count。逾時由 pg_cron 釋放。"""
         payload = [
             {
@@ -143,37 +141,21 @@ class OrdersService:
             # 透過 order_items -> ticket_types -> events 取得 order_ids
             tt_query = sr.table("ticket_types").select("id").eq("event_id", event_id or "")
             if org_id:
-                ev_resp = (
-                    sr.table("events")
-                    .select("id")
-                    .eq("org_id", org_id)
-                    .execute()
-                )
+                ev_resp = sr.table("events").select("id").eq("org_id", org_id).execute()
                 ev_rows = supabase_client.extract_data(ev_resp) or []
                 ev_ids = [str(r["id"]) for r in ev_rows]
                 if not ev_ids:
                     return []
-                tt_query = (
-                    sr.table("ticket_types")
-                    .select("id")
-                    .in_("event_id", ev_ids)
-                )
+                tt_query = sr.table("ticket_types").select("id").in_("event_id", ev_ids)
             else:
-                tt_query = (
-                    sr.table("ticket_types")
-                    .select("id")
-                    .eq("event_id", event_id)
-                )
+                tt_query = sr.table("ticket_types").select("id").eq("event_id", event_id)
             tt_resp = tt_query.execute()
             tt_rows = supabase_client.extract_data(tt_resp) or []
             tt_ids = [str(r["id"]) for r in tt_rows]
             if not tt_ids:
                 return []
             oi_resp = (
-                sr.table("order_items")
-                .select("order_id")
-                .in_("ticket_type_id", tt_ids)
-                .execute()
+                sr.table("order_items").select("order_id").in_("ticket_type_id", tt_ids).execute()
             )
             oi_rows = supabase_client.extract_data(oi_resp) or []
             order_ids_filter = list({str(r["order_id"]) for r in oi_rows})
@@ -206,18 +188,10 @@ class OrdersService:
             return []
         order_ids = [str(o["id"]) for o in orders]
         items_resp = (
-            sr.table("order_items")
-            .select(ORDER_ITEMS_SELECT)
-            .in_("order_id", order_ids)
-            .execute()
+            sr.table("order_items").select(ORDER_ITEMS_SELECT).in_("order_id", order_ids).execute()
         )
         items = supabase_client.extract_data(items_resp) or []
-        pay_resp = (
-            sr.table("payments")
-            .select(PAYMENTS_SELECT)
-            .in_("order_id", order_ids)
-            .execute()
-        )
+        pay_resp = sr.table("payments").select(PAYMENTS_SELECT).in_("order_id", order_ids).execute()
         payments = supabase_client.extract_data(pay_resp) or []
         items_by_order: dict[str, list] = {}
         for it in items:
@@ -230,11 +204,13 @@ class OrdersService:
         result = []
         for o in orders:
             oid = str(o["id"])
-            result.append({
-                "order": o,
-                "items": items_by_order.get(oid, []),
-                "payments": pays_by_order.get(oid, []),
-            })
+            result.append(
+                {
+                    "order": o,
+                    "items": items_by_order.get(oid, []),
+                    "payments": pays_by_order.get(oid, []),
+                }
+            )
         return result
 
 

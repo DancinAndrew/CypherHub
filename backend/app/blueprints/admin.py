@@ -178,7 +178,5 @@ def patch_payout_request_route(payout_id: str) -> tuple[dict, int]:
     if body.action == "approve":
         row = settlement_service.approve_payout_request(pid, str(g.user_id))
     else:
-        row = settlement_service.reject_payout_request(
-            pid, str(g.user_id), body.failure_reason
-        )
+        row = settlement_service.reject_payout_request(pid, str(g.user_id), body.failure_reason)
     return jsonify({"payout_request": row}), 200

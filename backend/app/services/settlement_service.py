@@ -60,21 +60,11 @@ class SettlementService:
 
             # 取得 ticket_type -> event -> org
             tt_ids = list({str(r["ticket_type_id"]) for r in items})
-            tt_resp = (
-                sr.table("ticket_types")
-                .select("id,event_id")
-                .in_("id", tt_ids)
-                .execute()
-            )
+            tt_resp = sr.table("ticket_types").select("id,event_id").in_("id", tt_ids).execute()
             tt_rows = supabase_client.extract_data(tt_resp) or []
             tt_to_event = {str(r["id"]): str(r["event_id"]) for r in tt_rows}
             event_ids = list(tt_to_event.values())
-            ev_resp = (
-                sr.table("events")
-                .select("id,org_id")
-                .in_("id", event_ids)
-                .execute()
-            )
+            ev_resp = sr.table("events").select("id,org_id").in_("id", event_ids).execute()
             ev_rows = supabase_client.extract_data(ev_resp) or []
             event_to_org = {str(r["id"]): str(r["org_id"]) for r in ev_rows}
 
@@ -116,18 +106,22 @@ class SettlementService:
             set_id = settlement.get("id")
 
             # ledger: sale (+gross), platform_fee (-fee)
-            sr.table("ledger_entries").insert({
-                "org_id": org_id,
-                "type": "sale",
-                "amount_cents": gross_cents,
-                "settlement_id": set_id,
-            }).execute()
-            sr.table("ledger_entries").insert({
-                "org_id": org_id,
-                "type": "platform_fee",
-                "amount_cents": -platform_fee_cents,
-                "settlement_id": set_id,
-            }).execute()
+            sr.table("ledger_entries").insert(
+                {
+                    "org_id": org_id,
+                    "type": "sale",
+                    "amount_cents": gross_cents,
+                    "settlement_id": set_id,
+                }
+            ).execute()
+            sr.table("ledger_entries").insert(
+                {
+                    "org_id": org_id,
+                    "type": "platform_fee",
+                    "amount_cents": -platform_fee_cents,
+                    "settlement_id": set_id,
+                }
+            ).execute()
 
             results.append(settlement)
 
@@ -151,7 +145,9 @@ class SettlementService:
         try:
             resp = (
                 client.table("settlements")
-                .select("id,org_id,period_start,period_end,gross_cents,platform_fee_cents,net_cents,status,created_at")
+                .select(
+                    "id,org_id,period_start,period_end,gross_cents,platform_fee_cents,net_cents,status,created_at"
+                )
                 .in_("org_id", org_ids)
                 .order("period_end", desc=True)
                 .limit(100)
@@ -167,7 +163,9 @@ class SettlementService:
         try:
             resp = (
                 client.table("settlements")
-                .select("id,org_id,period_start,period_end,gross_cents,platform_fee_cents,net_cents,status,created_at")
+                .select(
+                    "id,org_id,period_start,period_end,gross_cents,platform_fee_cents,net_cents,status,created_at"
+                )
                 .eq("id", str(settlement_id))
                 .limit(1)
                 .execute()
@@ -192,9 +190,7 @@ class SettlementService:
         rows = supabase_client.extract_data(resp) or []
         return sum(r.get("amount_cents", 0) for r in rows)
 
-    def create_payout_request(
-        self, jwt: str, org_id: str, amount_cents: int, user_id: str
-    ) -> dict:
+    def create_payout_request(self, jwt: str, org_id: str, amount_cents: int, user_id: str) -> dict:
         """主辦方申請提款。僅 owner/admin 可呼叫，餘額需足夠。"""
         events_service.require_org_admin(jwt, org_id, user_id)
         if amount_cents <= 0:
@@ -241,9 +237,12 @@ class SettlementService:
     def list_payout_requests_admin(self, status: str | None = None) -> list[dict]:
         """Admin 列表。"""
         sr = supabase_client.service_role_client()
-        q = sr.table("payout_requests").select(
-            "id,org_id,amount_cents,status,requested_at,processed_at,failure_reason"
-        ).order("requested_at", desc=True).limit(200)
+        q = (
+            sr.table("payout_requests")
+            .select("id,org_id,amount_cents,status,requested_at,processed_at,failure_reason")
+            .order("requested_at", desc=True)
+            .limit(200)
+        )
         if status:
             q = q.eq("status", status)
         resp = q.execute()
@@ -273,15 +272,19 @@ class SettlementService:
         amount_cents = int(pr.get("amount_cents", 0))
         now = datetime.now(UTC).isoformat()
 
-        sr.table("ledger_entries").insert({
-            "org_id": org_id,
-            "type": "payout",
-            "amount_cents": -amount_cents,
-        }).execute()
-        sr.table("payout_requests").update({
-            "status": "paid",
-            "processed_at": now,
-        }).eq("id", str(payout_id)).execute()
+        sr.table("ledger_entries").insert(
+            {
+                "org_id": org_id,
+                "type": "payout",
+                "amount_cents": -amount_cents,
+            }
+        ).execute()
+        sr.table("payout_requests").update(
+            {
+                "status": "paid",
+                "processed_at": now,
+            }
+        ).eq("id", str(payout_id)).execute()
 
         audit_service.log_payout_approve(payout_id, admin_user_id, org_id, amount_cents)
 
@@ -312,11 +315,13 @@ class SettlementService:
             )
 
         now = datetime.now(UTC).isoformat()
-        sr.table("payout_requests").update({
-            "status": "failed",
-            "processed_at": now,
-            "failure_reason": failure_reason,
-        }).eq("id", str(payout_id)).execute()
+        sr.table("payout_requests").update(
+            {
+                "status": "failed",
+                "processed_at": now,
+                "failure_reason": failure_reason,
+            }
+        ).eq("id", str(payout_id)).execute()
 
         audit_service.log_payout_reject(payout_id, admin_user_id, failure_reason)
 

@@ -18,9 +18,7 @@ def test_create_event_requires_org_approved(client, app, monkeypatch) -> None:
         "app.services.events_service.EventsService._get_org_role",
         return_value="admin",
     ):
-        with patch(
-            "app.services.events_service.EventsService._require_org_approved"
-        ) as mock_req:
+        with patch("app.services.events_service.EventsService._require_org_approved") as mock_req:
             mock_req.side_effect = AppError(
                 code="ORG_NOT_APPROVED",
                 message="Organization approval required before creating events",

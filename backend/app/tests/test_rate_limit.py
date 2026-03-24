@@ -49,6 +49,13 @@ class _FakeClient:
         return _FakeQuery(self.ticket_type_rows)
 
 
+def test_options_preflight_does_not_consume_default_limit(client) -> None:
+    """CORS OPTIONS 不計入 default_limits，避免與 GET 配對時雙倍耗盡額度。"""
+    for i in range(80):
+        resp = client.options("/api/v1/events")
+        assert resp.status_code != 429, f"OPTIONS {i + 1} should not be 429"
+
+
 def test_auth_login_returns_429_over_limit(client, monkeypatch) -> None:
     """POST /auth/login：10/min，第 11 次應回 429。"""
     monkeypatch.setattr(auth_bp, "_supabase_token", _fake_supabase_token)

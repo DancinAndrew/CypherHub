@@ -22,6 +22,33 @@ EVENT_PUBLIC_SELECT = (
 )
 
 
+def _escape_like_pattern(s: str) -> str:
+    """PostgreSQL LIKE：將使用者字元中的 % _ \\ 跳脫為字面比對。"""
+    return "".join("\\" + c if c in ("%", "_", "\\") else c for c in s)
+
+
+def _apply_keyword_search(query, q: str | None):
+    """
+    關鍵字搜尋：標題、短描述、地點名稱、地址（ILIKE 不分大小寫，多欄 OR）。
+    PostgREST or() 以逗號分隔條件，故搜尋字串內逗號改空白；含空白時值需雙引號包起來。
+    """
+    raw = (q or "").strip()
+    if not raw:
+        return query
+    cleaned = raw.replace(",", " ").replace('"', "").strip()
+    if len(cleaned) > 200:
+        cleaned = cleaned[:200].strip()
+    if not cleaned:
+        return query
+    pat = f"%{_escape_like_pattern(cleaned)}%"
+    # PostgREST：值含空白或保留字時以雙引號包住（內部 " 改為 ""）
+    quoted = '"' + pat.replace('"', '""') + '"'
+    return query.or_(
+        f"title.ilike.{quoted},short_desc.ilike.{quoted},"
+        f"location_name.ilike.{quoted},location_address.ilike.{quoted}"
+    )
+
+
 class EventsService:
     @staticmethod
     def _pg_array_literal(values: list[str]) -> str:
@@ -69,8 +96,7 @@ class EventsService:
         if org_id:
             query = query.eq("org_id", org_id)
 
-        if q:
-            query = query.ilike("title", f"%{q}%")
+        query = _apply_keyword_search(query, q)
 
         if from_at:
             query = query.gte("start_at", from_at)
@@ -168,8 +194,7 @@ class EventsService:
         query = client.table("events").select(EVENT_PUBLIC_SELECT)
         if org_id:
             query = query.eq("org_id", org_id)
-        if q:
-            query = query.ilike("title", f"%{q}%")
+        query = _apply_keyword_search(query, q)
         if from_at:
             query = query.gte("start_at", from_at)
         if to_at:
@@ -180,9 +205,7 @@ class EventsService:
         except Exception as exc:
             raise map_supabase_error(exc, fallback_code="ADMIN_EVENTS_LIST_FAILED") from exc
 
-    def list_admin_organizations(
-        self, status: str | None = None
-    ) -> list[dict]:
+    def list_admin_organizations(self, status: str | None = None) -> list[dict]:
         """Admin: 全站主辦方，可依 approval_status 篩選。MVP-3.2。"""
         client = supabase_client.service_role_client()
         org_select = (
@@ -223,10 +246,7 @@ class EventsService:
         }
         try:
             response = (
-                client.table("organizations")
-                .update(update_values)
-                .eq("id", str(org_id))
-                .execute()
+                client.table("organizations").update(update_values).eq("id", str(org_id)).execute()
             )
             rows = supabase_client.extract_data(response) or []
             if not rows:
@@ -455,11 +475,17 @@ class EventsService:
             )
         client = supabase_client.authed_client(jwt)
         try:
-            resp = client.table("organizer_members").insert({
-                "org_id": org_id,
-                "user_id": target_user_id,
-                "role": role,
-            }).execute()
+            resp = (
+                client.table("organizer_members")
+                .insert(
+                    {
+                        "org_id": org_id,
+                        "user_id": target_user_id,
+                        "role": role,
+                    }
+                )
+                .execute()
+            )
             rows = supabase_client.extract_data(resp) or []
             if not rows:
                 raise AppError(
@@ -542,9 +568,9 @@ class EventsService:
                 )
         client = supabase_client.authed_client(jwt)
         try:
-            client.table("organizer_members").delete().eq(
-                "org_id", org_id
-            ).eq("user_id", target_user_id).execute()
+            client.table("organizer_members").delete().eq("org_id", org_id).eq(
+                "user_id", target_user_id
+            ).execute()
         except Exception as exc:
             raise map_supabase_error(exc, fallback_code="REMOVE_ORG_MEMBER_FAILED") from exc
 
@@ -553,11 +579,7 @@ class EventsService:
         client = supabase_client.authed_client(jwt)
         try:
             resp = (
-                client.table("events")
-                .select("org_id")
-                .eq("id", str(event_id))
-                .limit(1)
-                .execute()
+                client.table("events").select("org_id").eq("id", str(event_id)).limit(1).execute()
             )
             rows = supabase_client.extract_data(resp) or []
             if not rows:
@@ -569,6 +591,36 @@ class EventsService:
                 )
             org_id = str(rows[0].get("org_id", ""))
             self.require_org_admin(jwt, org_id, user_id)
+        except AppError:
+            raise
+        except Exception as exc:
+            raise map_supabase_error(
+                exc, fallback_code="ORGANIZER_PERMISSION_CHECK_FAILED"
+            ) from exc
+
+    def require_event_member(self, jwt: str, event_id: UUID, user_id: str) -> None:
+        """event 所屬 org 的任何成員（owner/admin/staff）皆可存取。"""
+        client = supabase_client.authed_client(jwt)
+        try:
+            resp = (
+                client.table("events").select("org_id").eq("id", str(event_id)).limit(1).execute()
+            )
+            rows = supabase_client.extract_data(resp) or []
+            if not rows:
+                raise AppError(
+                    code="EVENT_NOT_FOUND",
+                    message="Event not found",
+                    details={"event_id": str(event_id)},
+                    http_status=404,
+                )
+            org_id = str(rows[0].get("org_id", ""))
+            role = self._get_org_role(jwt, org_id, user_id)
+            if role is None:
+                raise AppError(
+                    code="FORBIDDEN",
+                    message="You are not a member of this organization",
+                    http_status=403,
+                )
         except AppError:
             raise
         except Exception as exc:
@@ -921,9 +973,7 @@ class EventsService:
         except Exception as exc:
             raise map_supabase_error(exc, fallback_code="INTERNAL_NOTE_UPSERT_FAILED") from exc
 
-    def create_ticket_type(
-        self, jwt: str, event_id: UUID, payload: dict, user_id: str
-    ) -> dict:
+    def create_ticket_type(self, jwt: str, event_id: UUID, payload: dict, user_id: str) -> dict:
         self.require_event_admin(jwt, event_id, user_id)
         client = supabase_client.authed_client(jwt)
 
@@ -1066,6 +1116,25 @@ class EventsService:
             )
             rows = supabase_client.extract_data(ticket_response) or []
 
+            tt_resp = (
+                client.table("ticket_types")
+                .select("id,name")
+                .eq("event_id", str(event_id))
+                .execute()
+            )
+            tt_rows = supabase_client.extract_data(tt_resp) or []
+            type_name_by_id = {str(r.get("id")): (r.get("name") or "").strip() for r in tt_rows}
+
+            user_ids = list({str(r.get("user_id")) for r in rows if r.get("user_id")})
+            display_by_uid: dict[str, str] = {}
+            if user_ids:
+                sr = supabase_client.service_role_client()
+                pr = sr.table("profiles").select("id,display_name").in_("id", user_ids).execute()
+                prow = supabase_client.extract_data(pr) or []
+                display_by_uid = {
+                    str(p.get("id")): (p.get("display_name") or "").strip() for p in prow
+                }
+
             response_rows = (
                 client.table("ticket_form_responses")
                 .select("ticket_id,answers")
@@ -1079,6 +1148,10 @@ class EventsService:
 
             for row in rows:
                 row["answers"] = answers_by_ticket_id.get(str(row.get("id")))
+                tid = str(row.get("ticket_type_id") or "")
+                row["ticket_type_name"] = type_name_by_id.get(tid) or ""
+                uid = str(row.get("user_id") or "")
+                row["user_display_name"] = display_by_uid.get(uid) or ""
 
             if not keyword:
                 return rows
@@ -1090,6 +1163,8 @@ class EventsService:
                 if needle in str(row.get("id", "")).lower()
                 or needle in str(row.get("user_id", "")).lower()
                 or needle in str(row.get("status", "")).lower()
+                or needle in str(row.get("ticket_type_name", "")).lower()
+                or needle in str(row.get("user_display_name", "")).lower()
             ]
         except Exception as exc:
             raise map_supabase_error(exc, fallback_code="LIST_ATTENDEES_FAILED") from exc
@@ -1306,13 +1381,9 @@ class EventsService:
         to_email = supabase_client.get_user_email_by_id(str(recipient_id))
         if to_email:
             try:
-                email_service.send_ticket_email(
-                    to_email, event_title, ticket, frontend_url
-                )
+                email_service.send_ticket_email(to_email, event_title, ticket, frontend_url)
             except Exception as exc:
-                current_app.logger.warning(
-                    "[comp_ticket] send_ticket_email failed: %s", exc
-                )
+                current_app.logger.warning("[comp_ticket] send_ticket_email failed: %s", exc)
         return ticket
 
 

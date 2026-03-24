@@ -30,7 +30,9 @@ class Config:
     ECPAY_MERCHANT_ID = os.getenv("ECPAY_MERCHANT_ID", "")
     ECPAY_HASH_KEY = os.getenv("ECPAY_HASH_KEY", "")
     ECPAY_HASH_IV = os.getenv("ECPAY_HASH_IV", "")
-    ECPAY_RETURN_URL = os.getenv("ECPAY_RETURN_URL", "")  # Webhook 接收網址，如 https://api.xxx.com/api/v1/webhooks/ecpay
+    ECPAY_RETURN_URL = os.getenv(
+        "ECPAY_RETURN_URL", ""
+    )  # Webhook 接收網址，如 https://api.xxx.com/api/v1/webhooks/ecpay
     ECPAY_STAGE = os.getenv("ECPAY_STAGE", "1") in {"1", "true", "True"}
 
     # MVP-3.3: 平台抽成比例，例如 0.05 = 5%

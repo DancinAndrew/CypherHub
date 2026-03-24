@@ -1,4 +1,4 @@
-"""ECPay 綠界金流 provider. 依 .cursor/skills/ecpay guides/13 CheckMacValue 實作。"""
+"""ECPay 綠界金流 provider. 依 .claude/skills/ecpay guides/13 CheckMacValue 實作。"""
 
 from __future__ import annotations
 

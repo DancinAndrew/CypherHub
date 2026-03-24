@@ -251,9 +251,7 @@ class EmailService:
                         "html": html,
                     }
                 )
-                current_app.logger.info(
-                    "[email] event change sent to %s %s", to_email, event_title
-                )
+                current_app.logger.info("[email] event change sent to %s %s", to_email, event_title)
             except Exception as exc:
                 current_app.logger.warning("[email] Resend send_event_change_email failed: %s", exc)
                 raise

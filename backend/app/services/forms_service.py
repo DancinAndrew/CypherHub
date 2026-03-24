@@ -80,6 +80,7 @@ class FormsService:
                     )
 
             existing_forms = self.list_organizer_forms(jwt, event_id)
+
             def _form_matches(f: dict, tt_val: str | None) -> bool:
                 if tt_val is None and f.get("ticket_type_id") is None:
                     return True

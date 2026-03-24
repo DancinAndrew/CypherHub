@@ -114,9 +114,7 @@ class SupabaseClientWrapper:
                     return (u.get("id") or "").strip() or None
             return None
         except Exception as exc:
-            current_app.logger.warning(
-                "[auth] get_user_id_by_email failed for %s: %s", email, exc
-            )
+            current_app.logger.warning("[auth] get_user_id_by_email failed for %s: %s", email, exc)
             return None
 
     @property

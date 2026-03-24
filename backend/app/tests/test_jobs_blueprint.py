@@ -1,4 +1,5 @@
 """MVP-3.5: 內部 jobs endpoint 測試。"""
+
 from __future__ import annotations
 
 from unittest.mock import patch

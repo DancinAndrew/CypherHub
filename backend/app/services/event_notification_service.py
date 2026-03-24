@@ -91,8 +91,12 @@ class EventNotificationService:
                 for _uid, email in participants:
                     try:
                         email_service.send_event_reminder_email(
-                            email, title, start_display, reminder_type,
-                            event_id=ev_id, frontend_base_url=frontend_base,
+                            email,
+                            title,
+                            start_display,
+                            reminder_type,
+                            event_id=ev_id,
+                            frontend_base_url=frontend_base,
                         )
                         counter[0] += 1
                     except Exception as exc:
@@ -132,8 +136,12 @@ class EventNotificationService:
         for _uid, email in participants:
             try:
                 email_service.send_event_change_email(
-                    email, event_title, old_start, new_start,
-                    event_id=str(event_id), frontend_base_url=frontend_base,
+                    email,
+                    event_title,
+                    old_start,
+                    new_start,
+                    event_id=str(event_id),
+                    frontend_base_url=frontend_base,
                 )
             except Exception as exc:
                 current_app.logger.warning(
