@@ -176,12 +176,20 @@ class OrdersService:
         if order_ids_filter:
             query = query.in_("id", order_ids_filter)
         if q:
-            # q: 搜尋 order id（前綴或完整）
+            q_stripped = q.strip()
             try:
-                _ = UUID(q)
-                query = query.eq("id", q)
+                _ = UUID(q_stripped)
+                # UUID：可能是 order_id 或 ticket_id
+                # 先嘗試 order_id
+                query = query.eq("id", q_stripped)
             except (ValueError, TypeError):
-                pass
+                # 非 UUID：嘗試 email 精確匹配 → user_id → orders
+                matched_user_id = supabase_client.get_user_id_by_email(q_stripped)
+                if matched_user_id:
+                    query = query.eq("user_id", matched_user_id)
+                else:
+                    # 無匹配，回傳空結果
+                    query = query.eq("user_id", "00000000-0000-0000-0000-000000000000")
         resp = query.execute()
         orders = supabase_client.extract_data(resp) or []
         if not orders:
