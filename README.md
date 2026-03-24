@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="Logo/Logo.png" alt="CypherHub Logo" width='300'/>
+  <img src="Logo/Logo.png" alt="CypherHub Logo" width="600"/>
 </div>
 
 # CypherHub
