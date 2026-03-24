@@ -56,6 +56,10 @@ export async function authLogin(email: string, password: string): Promise<AuthLo
   return response.data;
 }
 
+export async function authLogout(): Promise<void> {
+  await client.post("/api/v1/auth/logout");
+}
+
 export type EventItem = {
   id: string;
   org_id: string;
@@ -472,6 +476,64 @@ export async function organizerRemoveMember(orgId: string, userId: string): Prom
   await client.delete(`/api/v1/organizer/organizations/${orgId}/members/${userId}`);
 }
 
+// --- MVP-3.3: 結算與提款 ---
+
+export type SettlementItem = {
+  id: string;
+  org_id: string;
+  period_start: string;
+  period_end: string;
+  gross_cents: number;
+  platform_fee_cents: number;
+  net_cents: number;
+  status: string;
+  created_at: string;
+};
+
+export type LedgerEntry = {
+  id: string;
+  org_id: string;
+  type: string;
+  amount_cents: number;
+  settlement_id: string | null;
+  created_at: string;
+};
+
+export type SettlementDetail = SettlementItem & {
+  ledger_entries: LedgerEntry[];
+};
+
+export async function organizerFetchSettlements(): Promise<SettlementItem[]> {
+  const response = await client.get<{ items: SettlementItem[] }>("/api/v1/organizer/settlements");
+  return response.data.items;
+}
+
+export async function organizerFetchSettlementDetail(settlementId: string): Promise<SettlementDetail> {
+  const response = await client.get<SettlementDetail>(`/api/v1/organizer/settlements/${settlementId}`);
+  return response.data;
+}
+
+export type PayoutRequest = {
+  id: string;
+  org_id: string;
+  amount_cents: number;
+  status: string;
+  requested_at?: string | null;
+  processed_at?: string | null;
+  failure_reason?: string | null;
+};
+
+export async function organizerCreatePayoutRequest(
+  orgId: string,
+  amountCents: number,
+): Promise<PayoutRequest> {
+  const response = await client.post<{ payout_request: PayoutRequest }>("/api/v1/organizer/payout-requests", {
+    org_id: orgId,
+    amount_cents: amountCents,
+  });
+  return response.data.payout_request;
+}
+
 export type CheckinPayload = {
   ticket_id?: string;
   qr_secret?: string;
@@ -567,6 +629,11 @@ export async function createHoldOrder(payload: {
     hold_minutes: payload.hold_minutes ?? 15,
   });
   return response.data;
+}
+
+export async function fetchMyOrders(): Promise<Order[]> {
+  const response = await client.get<{ items: Order[] }>("/api/v1/orders");
+  return response.data.items;
 }
 
 export async function fetchOrderDetail(orderId: string): Promise<OrderDetail> {
