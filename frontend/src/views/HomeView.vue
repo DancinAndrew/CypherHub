@@ -175,7 +175,7 @@ onMounted(() => {
             <input
               v-model="searchQuery"
               type="text"
-              placeholder="搜尋活動名稱、地點..."
+              placeholder="搜尋活動名稱、簡介、地點..."
               class="input-field w-full py-3.5 pl-5 pr-28"
               @keydown.enter="applyFilters"
             />
@@ -195,10 +195,15 @@ onMounted(() => {
             <span class="text-lg transition-transform duration-300" :class="filterOpen ? 'rotate-180' : ''">▼</span>
             篩選
             <span
-              v-if="selectedStyles.length || selectedTypes.length"
+              v-if="selectedStyles.length || selectedTypes.length || dateFrom || dateTo"
               class="rounded-full bg-cypher-accent px-2.5 py-0.5 text-xs font-bold text-white"
             >
-              {{ selectedStyles.length + selectedTypes.length }}
+              {{
+                selectedStyles.length +
+                selectedTypes.length +
+                (dateFrom ? 1 : 0) +
+                (dateTo ? 1 : 0)
+              }}
             </span>
           </button>
         </div>
@@ -225,11 +230,21 @@ onMounted(() => {
             <div class="mt-5 grid gap-4 sm:grid-cols-2">
               <div>
                 <label class="mb-2 block text-xs font-medium text-cypher-muted">開始日期</label>
-                <input v-model="dateFrom" type="date" class="input-field py-2.5 text-sm" />
+                <input
+                  v-model="dateFrom"
+                  type="date"
+                  class="input-field py-2.5 text-sm"
+                  @change="() => applyFilters().catch(() => {})"
+                />
               </div>
               <div>
                 <label class="mb-2 block text-xs font-medium text-cypher-muted">結束日期</label>
-                <input v-model="dateTo" type="date" class="input-field py-2.5 text-sm" />
+                <input
+                  v-model="dateTo"
+                  type="date"
+                  class="input-field py-2.5 text-sm"
+                  @change="() => applyFilters().catch(() => {})"
+                />
               </div>
             </div>
             <div class="mt-5">

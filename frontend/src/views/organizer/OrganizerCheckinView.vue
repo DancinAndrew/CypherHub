@@ -21,7 +21,7 @@ const attendeesStats = ref<{
   total: number;
   checkedIn: number;
   notCheckedIn: number;
-  byTicketType: Array<{ ticket_type_id: string; total: number; checkedIn: number }>;
+  byTicketType: Array<{ ticket_type_id: string; ticket_type_name: string; total: number; checkedIn: number }>;
 } | null>(null);
 const attendeesStatsLoading = ref(false);
 const attendeesStatsError = ref<string | null>(null);
@@ -327,10 +327,13 @@ async function loadAttendeesStats(): Promise<void> {
     const active = items.filter((r) => r.status !== "cancelled");
     const checkedIn = active.filter((r) => r.status === "checked_in").length;
     const notCheckedIn = active.length - checkedIn;
-    const byType: Record<string, { total: number; checkedIn: number }> = {};
+    const byType: Record<string, { total: number; checkedIn: number; name: string }> = {};
     for (const r of active) {
       const tt = r.ticket_type_id ?? "unknown";
-      if (!byType[tt]) byType[tt] = { total: 0, checkedIn: 0 };
+      const nm = (r.ticket_type_name || "").trim() || "（未知票種）";
+      if (!byType[tt]) {
+        byType[tt] = { total: 0, checkedIn: 0, name: nm };
+      }
       byType[tt].total += 1;
       if (r.status === "checked_in") byType[tt].checkedIn += 1;
     }
@@ -339,7 +342,8 @@ async function loadAttendeesStats(): Promise<void> {
       checkedIn,
       notCheckedIn,
       byTicketType: Object.entries(byType).map(([ticket_type_id, v]) => ({
-        ticket_type_id: ticket_type_id.slice(0, 8),
+        ticket_type_id,
+        ticket_type_name: v.name,
         total: v.total,
         checkedIn: v.checkedIn,
       })),
@@ -396,14 +400,14 @@ watch(mode, (nextMode) => {
           <table class="min-w-full text-sm">
             <thead class="border-b border-gray-200 text-left text-gray-600">
               <tr>
-                <th class="pb-2 pr-4">票種 ID</th>
+                <th class="pb-2 pr-4">票種</th>
                 <th class="pb-2 pr-4">已入場</th>
                 <th class="pb-2">總數</th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="row in attendeesStats.byTicketType" :key="row.ticket_type_id" class="border-b border-gray-200/50">
-                <td class="py-1.5 pr-4 font-mono text-xs">{{ row.ticket_type_id }}</td>
+                <td class="py-1.5 pr-4 text-gray-700">{{ row.ticket_type_name }}</td>
                 <td class="py-1.5 pr-4">{{ row.checkedIn }}</td>
                 <td class="py-1.5">{{ row.total }}</td>
               </tr>

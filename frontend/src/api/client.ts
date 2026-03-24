@@ -411,6 +411,10 @@ export type AttendeeItem = {
   status: string;
   checked_in_at: string | null;
   ticket_type_id: string;
+  /** 票種顯示名稱（後端由 ticket_types 表帶入） */
+  ticket_type_name?: string;
+  /** 報名者 profiles.display_name（後端 service_role 批次帶入） */
+  user_display_name?: string;
   answers?: Record<string, unknown> | null;
 };
 

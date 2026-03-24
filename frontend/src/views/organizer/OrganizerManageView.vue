@@ -42,7 +42,7 @@ const stats = ref<{
   total: number;
   checkedIn: number;
   notCheckedIn: number;
-  byTicketType: Array<{ ticket_type_id: string; total: number; checkedIn: number }>;
+  byTicketType: Array<{ ticket_type_id: string; ticket_type_name: string; total: number; checkedIn: number }>;
 } | null>(null);
 
 function formatAnswers(answers?: Record<string, unknown> | null): string {
@@ -67,7 +67,15 @@ function exportAttendeesCsv(): void {
       Object.keys(r.answers).forEach((k) => answerKeys.add(k));
     }
   }
-  const baseCols = ["ticket_id", "user_id", "ticket_type_id", "status", "checked_in_at"];
+  const baseCols = [
+    "ticket_id",
+    "user_id",
+    "user_display_name",
+    "ticket_type_id",
+    "ticket_type_name",
+    "status",
+    "checked_in_at",
+  ];
   const ansCols = [...answerKeys].sort();
   const headers = [...baseCols, ...ansCols];
   const rows: string[][] = [headers];
@@ -76,7 +84,9 @@ function exportAttendeesCsv(): void {
     const line = [
       csvEscape(r.ticket_id),
       csvEscape(r.user_id),
+      csvEscape(r.user_display_name ?? ""),
       csvEscape(r.ticket_type_id),
+      csvEscape(r.ticket_type_name ?? ""),
       csvEscape(r.status),
       csvEscape(r.checked_in_at ?? ""),
       ...ansCols.map((k) => csvEscape(ans[k])),
@@ -110,10 +120,13 @@ async function loadByEventId(): Promise<void> {
     const active = items.filter((r) => r.status !== "cancelled");
     const checkedIn = active.filter((r) => r.status === "checked_in").length;
     const notCheckedIn = active.length - checkedIn;
-    const byType: Record<string, { total: number; checkedIn: number }> = {};
+    const byType: Record<string, { total: number; checkedIn: number; name: string }> = {};
     for (const r of active) {
       const tt = r.ticket_type_id ?? "unknown";
-      if (!byType[tt]) byType[tt] = { total: 0, checkedIn: 0 };
+      const nm = (r.ticket_type_name || "").trim() || "（未知票種）";
+      if (!byType[tt]) {
+        byType[tt] = { total: 0, checkedIn: 0, name: nm };
+      }
       byType[tt].total += 1;
       if (r.status === "checked_in") byType[tt].checkedIn += 1;
     }
@@ -122,7 +135,8 @@ async function loadByEventId(): Promise<void> {
       checkedIn,
       notCheckedIn,
       byTicketType: Object.entries(byType).map(([ticket_type_id, v]) => ({
-        ticket_type_id: ticket_type_id.slice(0, 8),
+        ticket_type_id,
+        ticket_type_name: v.name,
         total: v.total,
         checkedIn: v.checkedIn,
       })),
@@ -207,14 +221,14 @@ async function handleResendAttendeeTicket(ticketId: string): Promise<void> {
           <table class="min-w-full text-sm">
             <thead class="border-b border-cypher-border text-left text-cypher-muted">
               <tr>
-                <th class="pb-2 pr-4">票種 ID</th>
+                <th class="pb-2 pr-4">票種</th>
                 <th class="pb-2 pr-4">已入場</th>
                 <th class="pb-2">總數</th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="row in stats.byTicketType" :key="row.ticket_type_id" class="border-b border-cypher-border">
-                <td class="py-1.5 pr-4 font-mono text-xs">{{ row.ticket_type_id }}</td>
+                <td class="py-1.5 pr-4 text-gray-200">{{ row.ticket_type_name }}</td>
                 <td class="py-1.5 pr-4">{{ row.checkedIn }}</td>
                 <td class="py-1.5">{{ row.total }}</td>
               </tr>
@@ -255,8 +269,9 @@ async function handleResendAttendeeTicket(ticketId: string): Promise<void> {
         <table class="min-w-full text-sm">
           <thead class="bg-cypher-surface-alt text-left text-cypher-muted">
             <tr>
+              <th class="px-3 py-2">票種</th>
+              <th class="px-3 py-2">報名者</th>
               <th class="px-3 py-2">票券 ID</th>
-              <th class="px-3 py-2">user_id</th>
               <th class="px-3 py-2">狀態</th>
               <th class="px-3 py-2">已核銷</th>
               <th class="px-3 py-2">報名答案</th>
@@ -265,8 +280,11 @@ async function handleResendAttendeeTicket(ticketId: string): Promise<void> {
           </thead>
           <tbody>
             <tr v-for="row in attendees" :key="row.ticket_id" class="border-t border-cypher-border align-top text-gray-300">
-              <td class="px-3 py-2 font-mono text-xs">{{ row.ticket_id }}</td>
-              <td class="px-3 py-2 font-mono text-xs">{{ row.user_id }}</td>
+              <td class="px-3 py-2 text-gray-200">{{ row.ticket_type_name?.trim() || "—" }}</td>
+              <td class="px-3 py-2 text-gray-200" :title="row.user_id">
+                {{ row.user_display_name?.trim() || "—" }}
+              </td>
+              <td class="px-3 py-2 font-mono text-[11px] text-cypher-muted" :title="row.ticket_id">{{ row.ticket_id }}</td>
               <td class="px-3 py-2">{{ row.status }}</td>
               <td class="px-3 py-2">{{ row.checked_in_at || "—" }}</td>
               <td class="px-3 py-2">
