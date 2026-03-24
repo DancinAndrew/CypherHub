@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, onUnmounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
 import { fetchOrderDetail, type OrderDetail } from "../api/client";
@@ -33,6 +33,39 @@ function formatDateTime(value?: string | null): string {
   return parsed.toLocaleString("zh-TW", { dateStyle: "medium", timeStyle: "short" });
 }
 
+const countdown = ref("");
+let countdownTimer: ReturnType<typeof setInterval> | null = null;
+
+function updateCountdown(): void {
+  const order = detail.value?.order;
+  if (!order || order.status !== "holding" || !order.hold_expires_at) {
+    countdown.value = "";
+    if (countdownTimer) {
+      clearInterval(countdownTimer);
+      countdownTimer = null;
+    }
+    return;
+  }
+  const diff = new Date(order.hold_expires_at).getTime() - Date.now();
+  if (diff <= 0) {
+    countdown.value = "已逾時";
+    if (countdownTimer) {
+      clearInterval(countdownTimer);
+      countdownTimer = null;
+    }
+    return;
+  }
+  const mins = Math.floor(diff / 60000);
+  const secs = Math.floor((diff % 60000) / 1000);
+  countdown.value = `${mins}:${String(secs).padStart(2, "0")}`;
+}
+
+function startCountdown(): void {
+  if (countdownTimer) clearInterval(countdownTimer);
+  updateCountdown();
+  countdownTimer = setInterval(updateCountdown, 1000);
+}
+
 async function loadDetail(): Promise<void> {
   if (!orderId.value) {
     errorMessage.value = "缺少訂單 ID";
@@ -43,6 +76,7 @@ async function loadDetail(): Promise<void> {
   errorMessage.value = null;
   try {
     detail.value = await fetchOrderDetail(orderId.value);
+    startCountdown();
   } catch (error: unknown) {
     errorMessage.value = toApiErrorMessage(error, "無法載入訂單");
   } finally {
@@ -52,6 +86,10 @@ async function loadDetail(): Promise<void> {
 
 onMounted(() => {
   loadDetail().catch(() => {});
+});
+
+onUnmounted(() => {
+  if (countdownTimer) clearInterval(countdownTimer);
 });
 </script>
 
@@ -92,7 +130,9 @@ onMounted(() => {
           <span class="font-semibold text-white">{{ formatPrice(detail.order.total_cents) }} {{ detail.order.currency }}</span>
         </div>
         <p v-if="detail.order.hold_expires_at && detail.order.status === 'holding'" class="mt-2 text-xs text-amber-400">
-          保留至 {{ formatDateTime(detail.order.hold_expires_at) }}，逾時將自動釋放
+          <span v-if="countdown && countdown !== '已逾時'" class="font-mono font-semibold">{{ countdown }}</span>
+          <span v-else-if="countdown === '已逾時'" class="font-semibold text-rose-400">已逾時，名額將自動釋放</span>
+          <span v-if="countdown && countdown !== '已逾時'"> 後逾時，名額將自動釋放</span>
         </p>
       </div>
 
