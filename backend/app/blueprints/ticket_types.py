@@ -183,6 +183,7 @@ def delete_ticket_type(event_id: str, ticket_type_id: str) -> tuple[dict, int]:
 @require_auth
 def list_attendees(event_id: str) -> tuple[dict, int]:
     event_uuid = parse_uuid(event_id, "event_id")
+    events_service.require_event_member(g.jwt, event_uuid, g.user_id)
     keyword = request.args.get("query")
 
     rows = events_service.list_attendees(g.jwt, event_uuid, keyword)
@@ -194,6 +195,8 @@ def list_attendees(event_id: str) -> tuple[dict, int]:
             "checked_in_at": row.get("checked_in_at"),
             "ticket_type_id": row.get("ticket_type_id"),
             "answers": row.get("answers"),
+            "ticket_type_name": row.get("ticket_type_name"),
+            "user_display_name": row.get("user_display_name"),
         }
         for row in rows
     ]
@@ -206,6 +209,7 @@ def list_attendees(event_id: str) -> tuple[dict, int]:
 @require_auth
 def resend_attendee_ticket(event_id: str, ticket_id: str) -> tuple[dict, int]:
     event_uuid = parse_uuid(event_id, "event_id")
+    events_service.require_event_member(g.jwt, event_uuid, g.user_id)
     ticket_uuid = parse_uuid(ticket_id, "ticket_id")
     events_service.resend_attendee_ticket(g.jwt, event_uuid, ticket_uuid)
     return jsonify({"ok": True}), 200

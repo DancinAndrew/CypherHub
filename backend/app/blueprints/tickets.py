@@ -36,7 +36,7 @@ def list_my_tickets() -> tuple[dict, int]:
 @require_auth
 def cancel_ticket(ticket_id: str) -> tuple[dict, int]:
     ticket_uuid = parse_uuid(ticket_id, "ticket_id")
-    ticket_service.cancel_ticket(g.jwt, ticket_uuid, g.user_id)
+    ticket_service.cancel_ticket(g.jwt, ticket_uuid)
     payload = GenericOKResponse(ok=True)
     return jsonify(payload.model_dump(mode="json")), 200
 

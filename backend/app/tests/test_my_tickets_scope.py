@@ -66,10 +66,9 @@ def test_cancel_ticket_route_scopes_to_authenticated_user(client, monkeypatch) -
 
     monkeypatch.setattr(supabase_client, "get_user", lambda _token: {"id": user_id})
 
-    def _fake_cancel_ticket(jwt_token: str, scoped_ticket_id, scoped_user_id: str) -> None:
+    def _fake_cancel_ticket(jwt_token: str, scoped_ticket_id) -> None:
         captured["jwt"] = jwt_token
         captured["ticket_id"] = str(scoped_ticket_id)
-        captured["user_id"] = scoped_user_id
 
     monkeypatch.setattr(ticket_service, "cancel_ticket", _fake_cancel_ticket)
 
@@ -79,4 +78,4 @@ def test_cancel_ticket_route_scopes_to_authenticated_user(client, monkeypatch) -
     )
 
     assert response.status_code == 200
-    assert captured == {"jwt": jwt, "ticket_id": ticket_id, "user_id": user_id}
+    assert captured == {"jwt": jwt, "ticket_id": ticket_id}

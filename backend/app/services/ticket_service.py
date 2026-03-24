@@ -71,7 +71,7 @@ class TicketService:
         except Exception as exc:
             raise map_supabase_error(exc, fallback_code="RESEND_TICKET_FAILED") from exc
 
-    def cancel_ticket(self, jwt: str, ticket_id: UUID, user_id: str) -> None:
+    def cancel_ticket(self, jwt: str, ticket_id: UUID) -> None:
         try:
             supabase_client.call_rpc(
                 "cancel_ticket",
