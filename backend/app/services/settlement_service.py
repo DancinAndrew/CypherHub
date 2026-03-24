@@ -158,7 +158,7 @@ class SettlementService:
             raise map_supabase_error(exc, fallback_code="SETTLEMENTS_LIST_FAILED") from exc
 
     def get_settlement_detail(self, jwt: str, settlement_id: UUID, user_id: str) -> dict:
-        """主辦方看單一結算明細（需為 org 成員）。"""
+        """主辦方看單一結算明細（需為 org 成員），含 ledger_entries。"""
         client = supabase_client.authed_client(jwt)
         try:
             resp = (
@@ -178,7 +178,18 @@ class SettlementService:
                     details={"settlement_id": str(settlement_id)},
                     http_status=404,
                 )
-            return rows[0]
+            settlement = rows[0]
+
+            ledger_resp = (
+                client.table("ledger_entries")
+                .select("id,org_id,type,amount_cents,settlement_id,created_at")
+                .eq("settlement_id", str(settlement_id))
+                .order("created_at", desc=False)
+                .execute()
+            )
+            settlement["ledger_entries"] = supabase_client.extract_data(ledger_resp) or []
+
+            return settlement
         except AppError:
             raise
         except Exception as exc:
@@ -249,18 +260,9 @@ class SettlementService:
         return supabase_client.extract_data(resp) or []
 
     def approve_payout_request(self, payout_id: UUID, admin_user_id: str) -> dict:
-        """Admin 核准提款：寫入 ledger payout 負額、更新 status=paid。"""
+        """Admin 核准提款：requested → approved，寫入 ledger payout 負額。"""
         sr = supabase_client.service_role_client()
-        resp = sr.table("payout_requests").select("*").eq("id", str(payout_id)).limit(1).execute()
-        rows = supabase_client.extract_data(resp) or []
-        if not rows:
-            raise AppError(
-                code="PAYOUT_NOT_FOUND",
-                message="Payout request not found",
-                details={"payout_id": str(payout_id)},
-                http_status=404,
-            )
-        pr = rows[0]
+        pr = self._get_payout_or_raise(sr, payout_id)
         if pr.get("status") != "requested":
             raise AppError(
                 code="PAYOUT_ALREADY_PROCESSED",
@@ -281,22 +283,43 @@ class SettlementService:
         ).execute()
         sr.table("payout_requests").update(
             {
-                "status": "paid",
+                "status": "approved",
                 "processed_at": now,
             }
         ).eq("id", str(payout_id)).execute()
 
         audit_service.log_payout_approve(payout_id, admin_user_id, org_id, amount_cents)
 
+        pr["status"] = "approved"
+        pr["processed_at"] = now
+        return pr
+
+    def mark_payout_paid(self, payout_id: UUID, admin_user_id: str) -> dict:
+        """Admin 標記已轉帳完成：approved → paid。"""
+        sr = supabase_client.service_role_client()
+        pr = self._get_payout_or_raise(sr, payout_id)
+        if pr.get("status") != "approved":
+            raise AppError(
+                code="PAYOUT_NOT_APPROVED",
+                message=f"Payout must be approved before marking paid "
+                f"(current: {pr.get('status')})",
+                http_status=409,
+            )
+
+        now = datetime.now(UTC).isoformat()
+        sr.table("payout_requests").update(
+            {
+                "status": "paid",
+                "processed_at": now,
+            }
+        ).eq("id", str(payout_id)).execute()
+
         pr["status"] = "paid"
         pr["processed_at"] = now
         return pr
 
-    def reject_payout_request(
-        self, payout_id: UUID, admin_user_id: str, failure_reason: str | None = None
-    ) -> dict:
-        """Admin 退件。"""
-        sr = supabase_client.service_role_client()
+    @staticmethod
+    def _get_payout_or_raise(sr, payout_id: UUID) -> dict:
         resp = sr.table("payout_requests").select("*").eq("id", str(payout_id)).limit(1).execute()
         rows = supabase_client.extract_data(resp) or []
         if not rows:
@@ -306,8 +329,15 @@ class SettlementService:
                 details={"payout_id": str(payout_id)},
                 http_status=404,
             )
-        pr = rows[0]
-        if pr.get("status") != "requested":
+        return rows[0]
+
+    def reject_payout_request(
+        self, payout_id: UUID, admin_user_id: str, failure_reason: str | None = None
+    ) -> dict:
+        """Admin 退件（requested 或 approved 皆可退件）。"""
+        sr = supabase_client.service_role_client()
+        pr = self._get_payout_or_raise(sr, payout_id)
+        if pr.get("status") not in ("requested", "approved"):
             raise AppError(
                 code="PAYOUT_ALREADY_PROCESSED",
                 message=f"Payout already {pr.get('status')}",

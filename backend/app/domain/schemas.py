@@ -431,7 +431,7 @@ class CreatePayoutRequestRequest(BaseModel):
 
 
 class AdminPayoutActionRequest(BaseModel):
-    action: str = Field(..., pattern="^(approve|reject)$")
+    action: str = Field(..., pattern="^(approve|reject|mark_paid)$")
     failure_reason: str | None = None
 
 

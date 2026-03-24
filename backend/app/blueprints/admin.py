@@ -7,6 +7,7 @@ from app.domain.schemas import (
     AdminOrganizationApprovalRequest,
     AdminPatchEventRequest,
     AdminPayoutActionRequest,
+    CompTicketRequest,
     GenerateSettlementsRequest,
 )
 from app.services.auth_service import require_auth
@@ -177,6 +178,29 @@ def patch_payout_request_route(payout_id: str) -> tuple[dict, int]:
     body = parse_json(AdminPayoutActionRequest)
     if body.action == "approve":
         row = settlement_service.approve_payout_request(pid, str(g.user_id))
+    elif body.action == "mark_paid":
+        row = settlement_service.mark_payout_paid(pid, str(g.user_id))
     else:
         row = settlement_service.reject_payout_request(pid, str(g.user_id), body.failure_reason)
     return jsonify({"payout_request": row}), 200
+
+
+@bp.post("/events/<event_id>/comp-ticket")
+@require_auth
+def admin_comp_ticket_route(event_id: str) -> tuple[dict, int]:
+    """Admin: 手動補票（公關票）。MVP-3.4。"""
+    _ensure_admin()
+    event_uuid = parse_uuid(event_id, "event_id")
+    body = parse_json(CompTicketRequest)
+    ticket = events_service.create_comp_ticket(
+        jwt=g.jwt,
+        event_id=event_uuid,
+        ticket_type_id=body.ticket_type_id,
+        email=(body.email or "").strip() or None,
+        user_id=str(body.user_id) if body.user_id else None,
+        note=body.note,
+        actor_user_id=g.user_id,
+        skip_permission_check=True,
+        actor_type="admin",
+    )
+    return jsonify({"ticket": ticket}), 201
