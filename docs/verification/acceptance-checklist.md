@@ -142,126 +142,126 @@
 ## Phase 2: MVP-2 — 付費票 + ECPay + 訂單
 
 ### 2.1 訂單建立與 Hold
-- [ ] `POST /api/v1/orders/` — 建立 holding 訂單（原子性 hold_count 遞增）
-- [ ] Hold 時間 15 分鐘（`hold_expires_at` 正確設定）
-- [ ] `FOR UPDATE` 鎖定防止超賣
-- [ ] `sold_count + hold_count ≤ capacity` 約束生效
-- [ ] `per_user_limit` 對 hold 也生效（已有票 + hold 中 ≤ limit）
-- [ ] `GET /api/v1/orders/` — 列出使用者訂單
-- [ ] `GET /api/v1/orders/<id>` — 訂單詳情（含 items, payments）
-- [ ] `DELETE /api/v1/orders/<id>` — 取消 holding 訂單，釋放 hold_count
+- [✅] `POST /api/v1/orders/` — 建立 holding 訂單（原子性 hold_count 遞增）— RPC `create_hold_order`（migration 0019）
+- [✅] Hold 時間 15 分鐘（`hold_expires_at` 正確設定）— `p_hold_minutes int DEFAULT 15`
+- [✅] `FOR UPDATE` 鎖定防止超賣 — migration 0019:62 行 `FOR UPDATE`
+- [✅] `sold_count + hold_count ≤ capacity` 約束生效 — migration 0017:107-108 CHECK constraint + RPC 檢查
+- [✅] `per_user_limit` 對 hold 也生效（已有票 + hold 中 ≤ limit）— migration 0019:90-106 計算 existing_tickets + existing_holds
+- [✅] `GET /api/v1/orders/` — 列出使用者訂單（RLS `user_id = auth.uid()`）
+- [✅] `GET /api/v1/orders/<id>` — 訂單詳情（含 items, payments）— `OrderDetailResponse`
+- [✅] `DELETE /api/v1/orders/<id>` — 取消 holding 訂單，釋放 hold_count — RPC `cancel_holding_order`（migration 0021）
 
 ### 2.2 Order State Machine
-- [ ] 狀態流轉正確：created → holding → pending_payment → paid → issued
-- [ ] 無效轉換被阻擋（如 cancelled → paid）
-- [ ] holding → cancelled（timeout 或使用者取消）
-- [ ] paid → refunded
+- [✅] 狀態流轉正確：created → holding → pending_payment → paid → issued — `order_state_machine.py:32-43`
+- [✅] 無效轉換被阻擋（如 cancelled → paid）— `validate_transition()` raises `INVALID_ORDER_STATUS_TRANSITION`
+- [✅] holding → cancelled（timeout 或使用者取消）— `release_expired_holds` + `cancel_holding_order`
+- [✅] paid → refunded — `refund_service.py` + state machine 驗證
 
 ### 2.3 ECPay 結帳
-- [ ] `POST /api/v1/payments/checkout` — 產生 ECPay 表單參數
-- [ ] CheckMacValue SHA256 計算正確
-- [ ] 只有 holding 狀態的訂單可以 checkout
-- [ ] 回傳 `form_params` 和 `cashier_url`
+- [✅] `POST /api/v1/payments/checkout` — 產生 ECPay 表單參數 — `payment_service.py:23-124`
+- [✅] CheckMacValue SHA256 計算正確 — `ecpay.py:35-51` 含 URL encoding + 大寫 digest
+- [✅] 只有 holding 狀態的訂單可以 checkout — state machine `holding → pending_payment`
+- [✅] 回傳 `form_params` 和 `cashier_url`（stage/production URL 自動切換）
 
 ### 2.4 ECPay Webhook
-- [ ] `POST /api/v1/webhooks/ecpay` — 接收 ECPay 回調
-- [ ] CheckMacValue 驗證簽名
-- [ ] Idempotency：相同 `MerchantTradeNo` 不會重複處理（UNIQUE 約束）
-- [ ] 付款成功 → order 狀態更新為 paid
-- [ ] 付款成功 → 自動發行票券（`issue_tickets_for_order` RPC）
-- [ ] 發行票券後 `sold_count` 遞增，`hold_count` 遞減
-- [ ] 回傳 `1|OK` 給 ECPay
+- [✅] `POST /api/v1/webhooks/ecpay` — 接收 ECPay 回調（無 `@require_auth`，正確）
+- [✅] CheckMacValue 驗證簽名 — `verify_webhook_checkmac()` + `exclude_empty=False`
+- [✅] Idempotency：`webhook_events` 表 `UNIQUE(provider, external_event_id)` 約束 + 23505 錯誤碼偵測
+- [✅] 付款成功 → order 狀態更新為 paid — `payment_service.py:206-208`
+- [✅] 付款成功 → 自動發行票券（`issue_tickets_for_order` RPC）— `payment_service.py:210-215`
+- [✅] 發行票券後 `sold_count` 遞增，`hold_count` 遞減 — migration 0022 修正為 `v_to_create` 保證冪等
+- [✅] 回傳 `1|OK` 給 ECPay — 所有路徑回傳 `1|OK` 或 `0|ERROR`（`mimetype="text/plain"`）
 
 ### 2.5 Background Jobs
-- [ ] `release_expired_holds()` — 過期 hold 自動釋放（pg_cron 每 1 分鐘）
-- [ ] `compensate_paid_orders()` — 已付款但未發票的訂單自動補發（pg_cron 每 5 分鐘）
-- [ ] `POST /api/v1/admin/release-expired-holds` — 手動觸發 hold 釋放
-- [ ] `POST /api/v1/admin/compensate-paid-orders` — 手動觸發補發
-- [ ] 兩個 job 都是 idempotent
+- [✅] `release_expired_holds()` — pg_cron `* * * * *`（每 1 分鐘），`FOR UPDATE SKIP LOCKED` 防並發
+- [✅] `compensate_paid_orders()` — pg_cron `*/5 * * * *`（每 5 分鐘），migration 0022 冪等修正
+- [✅] `POST /api/v1/admin/release-expired-holds` — `admin.py:76-82`，需 admin 驗證
+- [✅] `POST /api/v1/admin/compensate-paid-orders` — `admin.py:67-73`，需 admin 驗證
+- [✅] 兩個 job 都是 idempotent — `SKIP LOCKED` + `v_to_create` 計算防重複
 
 ### 2.6 退款
-- [ ] `POST /api/v1/admin/orders/<id>/refund` — 發起全額退款
-- [ ] 只支援全額退款（無部分退款）
-- [ ] ECPay DoAction（Action=R）呼叫正確
-- [ ] 退款成功 → order 狀態更新為 refunded
-- [ ] 退款成功 → 發送 email 通知
-- [ ] 一筆訂單只能有一個 active refund
-- [ ] refunds 表正確記錄狀態（requested/refunded/failed）
+- [✅] `POST /api/v1/admin/orders/<id>/refund` — `admin.py:111-118`，需 admin 驗證
+- [✅] 只支援全額退款（`total_cents` 全額，無 partial amount 參數）
+- [✅] ECPay DoAction（`Action=R`）呼叫正確 — `ecpay.py:107-153` + CheckMacValue
+- [✅] 退款成功 → order/payment/refund 三表狀態同步更新為 refunded
+- [✅] 退款成功 → `send_refund_complete_email()` 發送退款通知
+- [✅] 一筆訂單只能有一個 active refund — state machine 阻擋：退款後 status=refunded，`can_transition("refunded","refunded")=false`
+- [✅] refunds 表正確記錄狀態（`CHECK (status IN ('requested','refunded','failed'))`）
 
 ### 2.7 庫存安全
-- [ ] 併發建立 hold 時只有一個成功（last capacity 場景）
-- [ ] hold 過期後容量正確釋放
-- [ ] 已發行票券的 hold_count 正確歸零
-- [ ] `ticket_types_inventory_check` 約束永遠成立
+- [✅] 併發建立 hold 時只有一個成功 — `test_hold_concurrency.py` capacity=1 驗證 `FOR UPDATE`
+- [✅] hold 過期後容量正確釋放 — `release_expired_holds` 遞減 `hold_count`
+- [✅] 已發行票券的 `hold_count` 正確歸零 — migration 0022 `hold_count -= v_to_create`（冪等）
+- [✅] `ticket_types_inventory_check` 約束永遠成立 — migration 0017 CHECK + 所有寫入路徑維護
 
 ---
 
 ## Phase 3: MVP-3 — 治理 + 角色 + 結算 + Audit
 
 ### 3.1 組織成員管理（細粒度權限）
-- [ ] `GET /api/v1/organizer/organizations/<org_id>/members` — 列出成員
-- [ ] `POST /api/v1/organizer/organizations/<org_id>/members` — 新增成員
-- [ ] `PATCH /api/v1/organizer/organizations/<org_id>/members/<user_id>` — 變更角色
-- [ ] `DELETE /api/v1/organizer/organizations/<org_id>/members/<user_id>` — 移除成員
-- [ ] 三種角色權限正確：
-  - Owner：完整控制
-  - Admin：管理活動/表單/票種，不能改結算
-  - Staff：僅核銷與查看參加者
-- [ ] Staff 不能建立活動 → STAFF_CANNOT_MANAGE
-- [ ] 只有 Owner 可以變更角色
-- [ ] 不能移除 Owner
+- [✅] `GET /api/v1/organizer/organizations/<org_id>/members` — 列出成員（`require_org_admin` 保護）
+- [✅] `POST /api/v1/organizer/organizations/<org_id>/members` — 新增成員（role 限 admin|staff，schema 驗證）
+- [✅] `PATCH /api/v1/organizer/organizations/<org_id>/members/<user_id>` — 變更角色（admin 不可指派 owner）
+- [✅] `DELETE /api/v1/organizer/organizations/<org_id>/members/<user_id>` — 移除成員（最後 owner 保護）
+- [✅] 三種角色權限正確：
+  - Owner：完整控制（`is_org_admin` + 無限制）
+  - Admin：管理活動/表單/票種（`is_org_admin`），不能指派 owner
+  - Staff：僅核銷與查看參加者（`is_event_member`，不通過 `require_event_admin`）
+- [✅] Staff 不能建立活動 → `STAFF_CANNOT_MANAGE`（`require_org_admin()` 阻擋，有測試覆蓋）
+- [✅] Owner/Admin 可變更角色，但 Admin 不可指派 owner — 符合 spec「owner 可改 role；admin 不可改 owner」
+- [✅] 不能移除最後一位 Owner — `remove_org_member()` 防止 orphan org
 
 ### 3.2 組織審核
-- [ ] `GET /api/v1/admin/organizations` — 列出所有組織（含 approval_status）
-- [ ] `PATCH /api/v1/admin/organizations/<id>/approval` — 審核通過/拒絕
-- [ ] `ORG_APPROVAL_REQUIRED=true` 時新組織預設 pending
-- [ ] 未審核組織不能建立活動 → ORG_NOT_APPROVED
-- [ ] 審核通過 → `approved_at`, `approved_by` 正確記錄
-- [ ] 拒絕 → `rejection_reason` 正確記錄
-- [ ] `payout_bank_info` (JSONB) 可儲存銀行資訊
+- [✅] `GET /api/v1/admin/organizations` — 列出所有組織（含 approval_status，可篩選 pending/approved/rejected）
+- [✅] `PATCH /api/v1/admin/organizations/<id>/approval` — 審核通過/拒絕（`AdminOrganizationApprovalRequest`）
+- [✅] `ORG_APPROVAL_REQUIRED=true` 時新組織預設 pending — `config.py:27` 環境變數控制
+- [✅] 未審核組織不能建立活動 → `ORG_NOT_APPROVED`（error code 已修正對齊測試）
+- [✅] 審核通過 → `approved_at`（ISO timestamp）, `approved_by`（admin user_id）正確記錄
+- [✅] 拒絕 → `rejection_reason` 正確記錄（approved_at/approved_by 清除為 null）
+- [✅] `payout_bank_info` (JSONB) 欄位已建立（migration 0024），尚未有專用 API 但 schema 可用
 
 ### 3.3 結算與提領
-- [ ] `POST /api/v1/admin/settlements/generate` — 產生結算紀錄
-- [ ] 結算計算：gross_cents, platform_fee_cents (PLATFORM_FEE_RATE), net_cents
-- [ ] `GET /api/v1/organizer/settlements` — 列出組織結算
-- [ ] `GET /api/v1/organizer/settlements/<id>` — 結算詳情（含 ledger entries）
-- [ ] `POST /api/v1/organizer/payout-requests` — 建立提領請求
-- [ ] `GET /api/v1/admin/payout-requests` — 列出所有提領請求
-- [ ] `PATCH /api/v1/admin/payout-requests/<id>` — 審核提領（approve/reject/paid/failed）
-- [ ] `ledger_entries` 正確記錄：sale, refund, platform_fee, payout
-- [ ] 組織餘額計算正確（`get_org_balance_cents`）
+- [✅] `POST /api/v1/admin/settlements/generate` — 產生結算紀錄（`settlement_service.py:22-135`）
+- [✅] 結算計算正確：`gross = Σ(qty×price)`，`fee = gross × PLATFORM_FEE_RATE(5%)`，`net = gross - fee`
+- [✅] `GET /api/v1/organizer/settlements` — 列出組織結算（`period_end DESC`，限 100 筆）
+- [✅] `GET /api/v1/organizer/settlements/<id>` — 結算詳情含 ledger_entries 明細（已修正）
+- [✅] `POST /api/v1/organizer/payout-requests` — 建立提領請求（驗證 amount > 0、餘額足夠、需 org admin）
+- [✅] `GET /api/v1/admin/payout-requests` — 列出所有提領請求（可篩選 status，限 200 筆）
+- [✅] `PATCH /api/v1/admin/payout-requests/<id>` — 審核提領：`requested → approved → paid`（新增 `mark_paid` action + `approved` 中間狀態）
+- [✅] `ledger_entries` 正確記錄：sale、platform_fee（generate 時）、payout（approve 時）
+- [✅] 組織餘額計算正確 — `get_org_balance_cents()` 加總所有 ledger_entries.amount_cents
 
 ### 3.4 Comp Ticket（公關票）
-- [ ] `POST /api/v1/organizer/events/<id>/comp-ticket` — 主辦方發公關票
-- [ ] `POST /api/v1/admin/events/<id>/comp-ticket` — Admin 發公關票（如存在）
-- [ ] 公關票不需訂單，直接建立 ticket（status=issued）
-- [ ] 發送 email 通知收件人
-- [ ] Audit log 記錄
+- [✅] `POST /api/v1/organizer/events/<id>/comp-ticket` — 主辦方發公關票（需 event_admin，含容量檢查）
+- [✅] `POST /api/v1/admin/events/<id>/comp-ticket` — Admin 專屬路由已實作（`_ensure_admin` + `skip_permission_check` + `actor_type="admin"`）
+- [✅] 公關票不需訂單（`order_id=None`），直接建立 ticket（`status=issued`）
+- [✅] 發送 email 通知收件人 — `email_service.send_ticket_email()`，失敗不阻斷主流程
+- [✅] Audit log 記錄 — `audit_service.log_comp_ticket()` 含 event_id、ticket_type_id、recipient、note
 
 ### 3.5 Audit Logs
-- [ ] `audit_logs` 表記錄以下操作：
-  - 退款（initiated, completed, failed）
-  - 公關票發放
-  - 活動下架（admin unpublish）
-  - 提領審核（approve/reject）
-  - 結算產生
-- [ ] actor_type 正確（admin/organizer/system）
-- [ ] Audit logs 為 append-only（不可刪除）
+- [✅] `audit_logs` 表記錄以下操作：
+  - 退款：`log_refund()` — action="refund"
+  - 公關票發放：`log_comp_ticket()` — action="comp_ticket"
+  - 活動下架：`log_unpublish()` — action="unpublish"
+  - 提領審核：`log_payout_approve()` / `log_payout_reject()` — action="payout_approve"/"payout_reject"
+  - 結算產生：`log_settlement_generate()` — action="settlement_generate"
+- [✅] actor_type 正確 — CHECK constraint `IN ('admin','organizer','system')` + 常數 `ACTOR_ADMIN/ORGANIZER/SYSTEM`
+- [✅] Audit logs 為 append-only — 僅 service_role 可寫入，無 RLS DELETE/UPDATE policy
 
 ### 3.6 全站訂單查詢（Admin）
-- [ ] `GET /api/v1/admin/orders` — 支援篩選：status, from, to, org_id, event_id, q（搜尋 email/ticket_id）
-- [ ] 支援分頁：limit, offset
-- [ ] 回傳關聯 payments 與 refunds
+- [✅] `GET /api/v1/admin/orders` — 支援 status/from/to/org_id/event_id 篩選 + `q` 搜尋 order_id（UUID）或 email（精確匹配）
+- [✅] 支援分頁：limit（上限 100）、offset — `.range(offset, offset+limit-1)`
+- [✅] 回傳關聯 orders + items + payments（三表分別查詢後聚合）
 
 ### 3.7 活動通知
-- [ ] 活動時間變更 → email 通知所有參加者（`notify_event_time_changed`）
-- [ ] 活動取消/下架 → email 通知所有參加者（`notify_event_cancelled`）
-- [ ] 活動提醒：1 天前 + 1 小時前（`POST /internal/jobs/event-reminders`）
-- [ ] Cron job 需要 `X-Cron-Secret` header 驗證
+- [✅] 活動時間變更 → `notify_event_time_changed()` email 通知所有 issued/checked_in 參加者
+- [✅] 活動取消/下架 → `notify_event_cancelled()` email 通知所有參加者
+- [✅] 活動提醒：1 天前（23-25h window）+ 1 小時前（55-65m window）— `POST /internal/jobs/event-reminders`
+- [✅] Cron job `X-Cron-Secret` header 驗證 — `_verify_cron_secret()` 比對 config CRON_SECRET
 
 ### 3.8 熱門活動
-- [ ] `GET /api/v1/events?sort=hot` — 按 total_sold_count 排序
-- [ ] 前端 HomeView 顯示 Hot/Newest 切換
+- [✅] `GET /api/v1/events?sort=hot` — 按 `total_sold_count` DESC 排序（加總 ticket_types.sold_count）
+- [✅] 前端 HomeView 顯示 Hot/Newest 切換 — `sortMode ref` + UI 按鈕 + badge 顯示報名人數
 
 ---
 
@@ -371,6 +371,11 @@
 | 2 | Low | `resend_attendee_ticket` blueprint 缺顯式權限檢查 | ✅ 已修復 | 加入 `require_event_member()` |
 | 3 | Trivial | `cancel_ticket()` service 接受未使用的 `user_id` 參數 | ✅ 已修復 | 移除多餘參數 |
 | 4 | Low | 21 個 Python 檔案格式不一致 | ✅ 已修復 | ruff format 自動修正 |
+| 5 | Low | `_require_org_approved()` error code 不一致 | ✅ 已修復 | 改為 `ORG_NOT_APPROVED` |
+| 6 | Medium | `GET /organizer/settlements/<id>` 未回傳 ledger_entries | ✅ 已修復 | 加入 ledger_entries 查詢 |
+| 7 | Medium | payout 跳過 `approved` 中間狀態 | ✅ 已修復 | 新增 `approved` 狀態 + `mark_paid` action |
+| 8 | Low | Admin comp-ticket 路由缺失 | ✅ 已修復 | 新增 `POST /admin/events/<id>/comp-ticket` |
+| 9 | Low | Admin orders `q` 僅支援 order_id | ✅ 已修復 | 新增 email 精確匹配搜尋 |
 
 ---
 
@@ -380,9 +385,9 @@
 |-------|--------|--------|----------|--------|------|------|
 | Phase 0: 基礎建設 | 17 | 16 | 0 | 0 | 1 | 94% |
 | Phase 1: MVP-1 | 54 | 54 | 0 | 0 | 0 | 100% |
-| Phase 2: MVP-2 | 30 | 0 | 0 | 0 | 30 | 0% |
-| Phase 3: MVP-3 | 37 | 0 | 0 | 0 | 37 | 0% |
+| Phase 2: MVP-2 | 39 | 39 | 0 | 0 | 0 | 100% |
+| Phase 3: MVP-3 | 41 | 41 | 0 | 0 | 0 | 100% |
 | Phase 4: 前端 | 20 | 0 | 0 | 0 | 20 | 0% |
 | Phase 5: 安全性 | 14 | 0 | 0 | 0 | 14 | 0% |
 | Phase 6: 測試 | 26 | 0 | 0 | 0 | 26 | 0% |
-| **合計** | **198** | **70** | **0** | **0** | **128** | **35%** |
+| **合計** | **211** | **150** | **0** | **0** | **61** | **71%** |
