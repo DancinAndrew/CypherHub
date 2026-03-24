@@ -81,7 +81,7 @@ frontend/src/
 └── utils/errorMessages.ts
 
 supabase/migrations/      # 0001-0027.sql（MVP-1 → MVP-3）
-docs/                     # development/, setup/, verification/
+docs/                     # setup/, development/, design/, verification/, archive/
 ```
 
 ## 開發規範 — Backend
@@ -171,9 +171,9 @@ docs/                     # development/, setup/, verification/
 | 文件總覽 | [docs/README.md](docs/README.md) |
 | ECPay 金流 Skill | [.claude/skills/ecpay/SKILL.md](.claude/skills/ecpay/SKILL.md) |
 | 環境切換（本地/雲端） | [docs/setup/local-cloud-switch.md](docs/setup/local-cloud-switch.md) |
-| 驗證總計畫 | [docs/verification/MVP1-2-3-automated-verification-master-plan.md](docs/verification/MVP1-2-3-automated-verification-master-plan.md) |
-| MVP-2 開發（金流、訂單） | [docs/development/mvp2/](docs/development/mvp2/) |
-| MVP-3 開發（治理、結算） | [docs/development/mvp3/](docs/development/mvp3/) |
+| 驗證總計畫 | [docs/verification/master-plan.md](docs/verification/master-plan.md) |
+| 驗收清單 | [docs/verification/acceptance-checklist.md](docs/verification/acceptance-checklist.md) |
+| 設計參考 | [docs/design/design-reference.md](docs/design/design-reference.md) |
 | 工具選單 | [docs/development/Tools.md](docs/development/Tools.md) |
 
 ## ECPay 金流
