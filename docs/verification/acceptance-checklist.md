@@ -1,7 +1,7 @@
 # CypherHub MVP-1/2/3 完整驗收清單
 
 > **建立日期**: 2026-03-24
-> **最後更新**: 2026-03-24（Phase 0 + Phase 1 驗收完成）
+> **最後更新**: 2026-03-24（Phase 0~4 驗收完成）
 > **目的**: 逐項驗證 MVP-1~3 所有功能是否正確實作、可運行、無缺陷
 > **更新規則**: 每完成一個驗收項目，立即更新本文件狀態
 
@@ -268,33 +268,33 @@
 ## Phase 4: 前端頁面驗收
 
 ### 4.1 公開頁面
-- [ ] `HomeView.vue` — 活動列表、篩選（舞風/類型/日期/搜尋/排序）、卡片顯示
-- [ ] `EventDetailView.vue` — 活動詳情、免費報名表單、付費票結帳流程
-- [ ] `LoginView.vue` — 登入/註冊/忘記密碼三模式
-- [ ] `ResetPasswordView.vue` — 密碼重設功能
+- [✅] `HomeView.vue` — 活動列表、篩選（舞風/類型/日期/搜尋/排序）、卡片顯示（含熱門排序、URL 參數保留）
+- [✅] `EventDetailView.vue` — 活動詳情、免費報名表單（DynamicForm + 驗證）、付費票結帳流程（hold → ECPay redirect）
+- [✅] `LoginView.vue` — 登入/註冊/忘記密碼三模式切換、email 驗證、redirect 支援
+- [✅] `ResetPasswordView.vue` — 密碼重設表單、最小長度驗證、密碼確認、自動重導
 
 ### 4.2 使用者頁面
-- [ ] `MyTicketsView.vue` — QR 碼顯示、票券狀態、取消、重寄
-- [ ] `OrderDetailView.vue` — 訂單詳情、holding 倒計時、狀態顯示
-- [ ] `ProfileView.vue` — 個人資料編輯 + 主辦方摘要
+- [✅] `MyTicketsView.vue` — QR 碼顯示（qrcode.vue）、票券狀態 badge、取消（含確認）、重寄 email、copy payload
+- [✅] `OrderDetailView.vue` — 訂單詳情、狀態顯示、holding 即時倒數計時器（mm:ss 格式，逾時自動停止）
+- [✅] `ProfileView.vue` — 個人資料編輯（姓名/電話/社群連結）+ 主辦方組織/活動摘要、自動建立 profile
 
 ### 4.3 主辦方頁面
-- [ ] `OrganizerHomeView.vue` — 導引流程（4 步驟）
-- [ ] `OrganizerApplyView.vue` — 申請組織
-- [ ] `OrganizerEventView.vue` — 建立/編輯活動（含票種、媒體、排程、社群連結）
-- [ ] `OrganizerFormBuilderView.vue` — 表單設計器（9 種欄位、模板、預覽）
-- [ ] `OrganizerCheckinView.vue` — QR 掃描 + 手動輸入核銷
-- [ ] `OrganizerManageView.vue` — 參加者列表 + CSV 匯出 + 統計
-- [ ] `OrganizerMembersView.vue` — 成員管理（新增/角色變更/移除）
+- [✅] `OrganizerHomeView.vue` — 4 步驟導引流程 + 角色區分（owner/admin vs staff 顯示不同功能）
+- [✅] `OrganizerApplyView.vue` — 組織申請表單（名稱/email/logo/描述）+ email 驗證
+- [✅] `OrganizerEventView.vue` — 建立/編輯活動（票種 CRUD、媒體上傳、排程、社群連結 5 平台、內部備註）
+- [✅] `OrganizerFormBuilderView.vue` — 表單設計器（10 種欄位類型、預設模板、欄位排序、選項管理、預覽）
+- [✅] `OrganizerCheckinView.vue` — QR 掃描（@zxing/browser）+ 手動輸入（支援 JSON/query/pipe 格式）+ 統計
+- [✅] `OrganizerManageView.vue` — 參加者列表 + CSV 匯出（UTF-8 BOM、特殊字元跳脫）+ 票種統計 + 重寄功能
+- [✅] `OrganizerMembersView.vue` — 成員管理（新增/角色變更/移除）、owner 不可被移除、多組織切換
 
 ### 4.4 管理員頁面
-- [ ] `AdminView.vue` — 全站活動列表 + 下架功能
+- [✅] `AdminView.vue` — 全站活動列表 + 下架功能（status → disabled）+ 狀態 badge + 篩選
 
 ### 4.5 前端與後端 API 對接
-- [ ] `client.ts` 中所有 API function 都有對應的 backend endpoint
-- [ ] Bearer token 自動注入（axios interceptor）
-- [ ] 401 response 自動重導到 login 頁
-- [ ] 錯誤訊息映射正確（`errorMessages.ts`）
+- [✅] `client.ts` API 函式覆蓋 — 34 個函式對應後端路由（新增 authLogout, fetchMyOrders, organizerFetchSettlements, organizerFetchSettlementDetail, organizerCreatePayoutRequest）
+- [✅] Bearer token 自動注入 — axios request interceptor 從 Pinia authStore 注入 `Authorization: Bearer`
+- [✅] 401 response 自動重導 — response interceptor 清除 session + 重導 `/login?redirect=`（排除 login 本身避免循環）
+- [✅] 錯誤訊息映射 — ERROR_CODE_MAP 涵蓋 50+ 後端 error code 中文映射 + raw message fallback 匹配
 
 ---
 
@@ -376,6 +376,9 @@
 | 7 | Medium | payout 跳過 `approved` 中間狀態 | ✅ 已修復 | 新增 `approved` 狀態 + `mark_paid` action |
 | 8 | Low | Admin comp-ticket 路由缺失 | ✅ 已修復 | 新增 `POST /admin/events/<id>/comp-ticket` |
 | 9 | Low | Admin orders `q` 僅支援 order_id | ✅ 已修復 | 新增 email 精確匹配搜尋 |
+| 10 | Low | `OrderDetailView.vue` holding 倒計時僅顯示靜態到期時間 | ✅ 已修復 | 新增 setInterval 即時倒數（mm:ss） |
+| 11 | Medium | `client.ts` 缺 5 個 API 函式 | ✅ 已修復 | 新增 authLogout, fetchMyOrders, settlements ×2, payout |
+| 12 | Low | `errorMessages.ts` 僅映射 5 個 error code | ✅ 已修復 | 新增 ERROR_CODE_MAP 涵蓋 50+ error code |
 
 ---
 
@@ -387,7 +390,7 @@
 | Phase 1: MVP-1 | 54 | 54 | 0 | 0 | 0 | 100% |
 | Phase 2: MVP-2 | 39 | 39 | 0 | 0 | 0 | 100% |
 | Phase 3: MVP-3 | 41 | 41 | 0 | 0 | 0 | 100% |
-| Phase 4: 前端 | 20 | 0 | 0 | 0 | 20 | 0% |
+| Phase 4: 前端 | 20 | 20 | 0 | 0 | 0 | 100% |
 | Phase 5: 安全性 | 14 | 0 | 0 | 0 | 14 | 0% |
 | Phase 6: 測試 | 26 | 0 | 0 | 0 | 26 | 0% |
-| **合計** | **211** | **150** | **0** | **0** | **61** | **71%** |
+| **合計** | **211** | **170** | **0** | **0** | **40** | **81%** |
