@@ -649,7 +649,7 @@ class EventsService:
         status = (rows[0].get("approval_status") or "").strip()
         if status != "approved":
             raise AppError(
-                code="ORGANIZATION_PENDING_APPROVAL",
+                code="ORG_NOT_APPROVED",
                 message=(
                     "Organization is pending approval. "
                     "You cannot create events until Admin approves."
@@ -1297,9 +1297,13 @@ class EventsService:
         user_id: str | None,
         note: str | None,
         actor_user_id: str,
+        *,
+        skip_permission_check: bool = False,
+        actor_type: str | None = None,
     ) -> dict:
-        """手動補票（公關票）。MVP-3.4。需 event admin，不建立 order。"""
-        self.require_event_admin(jwt, event_id, actor_user_id)
+        """手動補票（公關票）。MVP-3.4。需 event admin（或 Admin 免檢），不建立 order。"""
+        if not skip_permission_check:
+            self.require_event_admin(jwt, event_id, actor_user_id)
         recipient_id = user_id
         if email:
             recipient_id = supabase_client.get_user_id_by_email(email)
@@ -1372,7 +1376,7 @@ class EventsService:
             event_id=event_id,
             ticket_type_id=ticket_type_id,
             recipient_user_id=str(recipient_id),
-            actor_type=audit_service.ACTOR_ORGANIZER,
+            actor_type=actor_type or audit_service.ACTOR_ORGANIZER,
             actor_id=actor_user_id,
             note=note,
         )
