@@ -20,10 +20,10 @@
 | 用途 | 路徑 |
 |------|------|
 | 規格主檔 | [docs/development/develop.md](../development/develop.md) |
-| MVP-1/2/3 實作狀態總覽 | [MVP1-2-3-implementation-status-report.md](./MVP1-2-3-implementation-status-report.md) |
-| MVP-1 手動驗收 | [mvp1/mvp1-verification-checklist.md](./mvp1/mvp1-verification-checklist.md) |
-| MVP-2 驗證（含綠界 E2E） | [mvp2/mvp2-verification-plan.md](./mvp2/mvp2-verification-plan.md) |
-| MVP-3 測試＋手動 | [mvp3/mvp3-verification-checklist.md](./mvp3/mvp3-verification-checklist.md) |
+| MVP-1/2/3 實作狀態總覽 | [implementation-status.md](./implementation-status.md) |
+| MVP-1 手動驗收 | [mvp1-verification.md](./mvp1-verification.md) |
+| MVP-2 驗證（含綠界 E2E） | [mvp2-verification.md](./mvp2-verification.md) |
+| MVP-3 測試＋手動 | [mvp3-verification.md](./mvp3-verification.md) |
 | 本地／雲端切換 | [docs/setup/local-cloud-switch.md](../setup/local-cloud-switch.md) |
 | Migrations 推到雲端 | [scripts/push-to-cloud.sh](../../scripts/push-to-cloud.sh)（內容為 `supabase db push` 等） |
 
@@ -221,7 +221,7 @@ uv run python -m ruff check .   # 或專案文件規定之指令
 
 ## Phase 2 — MVP-1：手動驗收（P2）
 
-**通過定義**：依 [mvp1/mvp1-verification-checklist.md](./mvp1/mvp1-verification-checklist.md) **逐項勾選**完成（或由 [mvp1-manual-verification.md](./mvp1/mvp1-manual-verification.md) 同等覆蓋）。
+**通過定義**：依 [mvp1-verification.md](./mvp1-verification.md) **逐項勾選**完成。
 
 ### P2 給 AI 的指令
 
@@ -238,7 +238,7 @@ uv run python -m ruff check .   # 或專案文件規定之指令
 
 **通過定義**：  
 - 自動化：Phase 1 已含訂單狀態機／補償等測試。  
-- **手動**：依 [mvp2/mvp2-verification-plan.md](./mvp2/mvp2-verification-plan.md) 完成 **綠界 E2E、Hold 逾時、補償**（現況見 [MVP1-2-3-implementation-status-report.md](./MVP1-2-3-implementation-status-report.md)）。
+- **手動**：依 [mvp2-verification.md](./mvp2-verification.md) 完成 **綠界 E2E、Hold 逾時、補償**（現況見 [implementation-status.md](./implementation-status.md)）。
 
 ### P3 子項核銷表
 
@@ -257,7 +257,7 @@ uv run python -m ruff check .   # 或專案文件規定之指令
 
 **通過定義**：  
 - 自動化：Phase 1 MVP-3 測試通過。  
-- 手動：依 [mvp3/mvp3-verification-checklist.md](./mvp3/mvp3-verification-checklist.md) 第三節起之 **手動驗證**。
+- 手動：依 [mvp3-verification.md](./mvp3-verification.md) 第二節起之 **手動驗證**。
 
 ### P4 子項核銷表
 

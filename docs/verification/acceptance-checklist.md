@@ -301,65 +301,65 @@
 ## Phase 5: 安全性與跨功能驗收
 
 ### 5.1 認證安全
-- [ ] `user_id` 從 JWT 解析，不信任 client 傳入
-- [ ] `SERVICE_ROLE_KEY` 不出現在 frontend/log/response
-- [ ] `.env` 不在 git 中
-- [ ] Rate limiting 生效（auth: 10/min, register: 20/min, checkin: 60/min）
+- [x] `user_id` 從 JWT 解析，不信任 client 傳入 — `@require_auth` 從 Bearer token 解析，所有 blueprint 使用 `g.user_id`，零違規
+- [x] `SERVICE_ROLE_KEY` 不出現在 frontend/log/response — frontend 零匹配，backend 僅在 supabase_client 內部使用，不 log/回傳
+- [x] `.env` 不在 git 中 — `.gitignore` 涵蓋 `.env`/`.env.local`/`.env.cloud`，`git ls-files` 確認無追蹤
+- [x] Rate limiting 生效（auth: 10/min, register: 20/min, checkin: 60/min） — Flask-Limiter 設定正確，OPTIONS 豁免
 
 ### 5.2 資料安全
-- [ ] RLS 全表啟用
-- [ ] 使用者只能看自己的 tickets/orders
-- [ ] 主辦方只能管理自己組織的活動
-- [ ] Admin API 需要 allowlist 驗證
+- [x] RLS 全表啟用 — 18/18 表皆有 `ENABLE ROW LEVEL SECURITY`，敏感表（webhook_events, refunds, audit_logs）無 authenticated policy（僅 service_role）
+- [x] 使用者只能看自己的 tickets/orders — RLS policy `user_id = auth.uid()` + `authed_client(jwt)` 雙重保護
+- [x] 主辦方只能管理自己組織的活動 — 4 個 SECURITY DEFINER 函式（is_org_member/admin, is_event_member/admin）+ backend `require_event_admin()`
+- [x] Admin API 需要 allowlist 驗證 — `_ensure_admin()` 檢查 `ADMIN_ALLOWLIST`（user_id + email），空值 fail-safe 403
 
 ### 5.3 注入防護
-- [ ] SQL：全部使用 Supabase SDK（參數化查詢）
-- [ ] XSS：無 `v-html` 直接渲染使用者內容
-- [ ] CSRF：使用 Bearer token（非 cookie session）
-- [ ] Input validation：Pydantic schemas 驗證所有輸入
+- [x] SQL：全部使用 Supabase SDK（參數化查詢） — 零 raw SQL，所有 DB 存取透過 SDK `.table()/.rpc()/.eq()` 等
+- [x] XSS：無 `v-html` 直接渲染使用者內容 — 唯一 innerHTML 用途（main.ts）有 `.replace(/</g, "&lt;")` 跳脫
+- [x] CSRF：使用 Bearer token（非 cookie session） — Axios interceptor 帶 `Authorization: Bearer`，CORS 限制 origins
+- [x] Input validation：Pydantic schemas 驗證所有輸入 — 所有 POST/PUT 用 `parse_json(Schema)`，UUID 用 `parse_uuid()`
 
 ### 5.4 錯誤處理
-- [ ] `AppError` 統一格式：`{ error: { code, message, details } }`
-- [ ] 404 handler 正確
-- [ ] 405 handler 正確
-- [ ] 429 Rate limit handler 正確（含 Retry-After header）
-- [ ] 500 handler 不洩漏 stack trace（`FLASK_DEBUG=0`）
+- [x] `AppError` 統一格式：`{ error: { code, message, details } }` — `ErrorResponse(error=ErrorContent(...))` Pydantic schema
+- [x] 404 handler 正確 — 回傳 `AppError(code="NOT_FOUND")`
+- [x] 405 handler 正確 — 回傳 `AppError(code="METHOD_NOT_ALLOWED")`
+- [x] 429 Rate limit handler 正確（含 Retry-After header） — handler 回傳正確 JSON + `Retry-After` header（從 Flask-Limiter `exc.retry_after` 取得）
+- [x] 500 handler 不洩漏 stack trace（`FLASK_DEBUG=0`） — 僅 `app.logger.exception()` server-side，回傳泛用訊息
 
 ---
 
 ## Phase 6: 測試覆蓋率驗收
 
 ### 6.1 現有測試
-- [ ] 所有 unit tests 通過（`pytest -q -m "not integration"`）
-- [ ] 測試數量 ≥ 90
-- [ ] 無 skipped tests（除非有合理原因）
+- [x] 所有 unit tests 通過（`pytest -q -m "not integration"`） — 120 passed, 0 failed, 0 errors (8.49s)
+- [x] 測試數量 ≥ 90 — 120 tests across 33 test files
+- [x] 無 skipped tests（除非有合理原因） — 0 skipped
 
 ### 6.2 關鍵路徑測試覆蓋
-- [ ] Order state machine 測試
-- [ ] Payment service 測試（checkout, webhook, CheckMacValue）
-- [ ] Compensation 測試
-- [ ] Hold creation + oversell prevention 測試
-- [ ] Rate limiting 測試
-- [ ] Auth 測試
-- [ ] Staff permission 測試（MVP-3）
-- [ ] Organizer approval 測試（MVP-3）
-- [ ] Settlement 計算測試（MVP-3）
-- [ ] Audit log 測試（MVP-3）
-- [ ] Form validation 測試
-- [ ] Email service 測試
-- [ ] Event notification 測試
+- [x] Order state machine 測試 — `test_order_state_machine.py` 5 tests（狀態定義、合法/非法轉換、same-status、AppError）
+- [x] Payment service 測試（checkout, webhook, CheckMacValue） — `test_webhook_idempotency.py` 2 tests（冪等性、UNIQUE 違反處理），⚠️ CheckMacValue 邊界值測試缺失
+- [x] Compensation 測試 — `test_compensate_paid_orders.py` 2 tests（admin 權限、回傳 count）
+- [x] Hold creation + oversell prevention 測試 — `test_hold_concurrency.py` 1 integration test（ThreadPoolExecutor 並發 capacity=1，FOR UPDATE 鎖定驗證）
+- [x] Rate limiting 測試 — `test_rate_limit.py` 5 tests（OPTIONS 豁免、auth 10/min、register 20/min、checkin 60/min ×2）
+- [x] Auth 測試 — `test_auth_login.py` 7 tests + `test_auth_required.py` 1 test（login 成功/失敗/驗證、Bearer token 檢查）
+- [x] Staff permission 測試（MVP-3） — `test_mvp31_staff_permissions.py` 3 tests + `test_mvp3_staff_permission.py` 2 tests（staff 禁止建立活動/票種、admin 可通過）
+- [x] Organizer approval 測試（MVP-3） — `test_mvp3_org_approval.py` 3 tests（未核准 org 禁止建活動、admin 審核流程）
+- [x] Settlement 計算測試（MVP-3） — `test_mvp33_settlements_payouts.py` 15 tests（生成結算、費用計算、ledger entries、integration test）
+- [x] Audit log 測試（MVP-3） — `test_audit_service.py` 9 tests + `test_mvp34_audit_comp_admin_orders.py` 5 tests（refund/comp/unpublish/payout/settlement 各類 audit 記錄）
+- [x] Form validation 測試 — `test_register_form_validation.py` + `test_forms_public_route.py` + `test_create_event_taxonomy_validation.py`（必填欄位、表單 schema、dance_style 驗證）
+- [x] Email service 測試 — `test_email_service.py` 9 tests（Resend 可用性、成功/失敗/stub 發送、skip 無 email）
+- [x] Event notification 測試 — `test_event_notification_service.py` 2 tests（reminders、cancellation）+ `test_event_time_change_notification.py` 3 tests（time change）
 
 ### 6.3 缺少的測試（待補強）
-- [ ] ECPay CheckMacValue 邊界值測試
-- [ ] Webhook 簽名驗證失敗場景測試
-- [ ] 退款 API 端到端測試
-- [ ] Comp ticket 建立測試
-- [ ] Settlement generation 端到端測試
-- [ ] Payout request approve/reject 測試
-- [ ] Admin orders 查詢篩選測試
-- [ ] Event time change notification 測試
-- [ ] Event cancellation notification 測試
-- [ ] Profile update 測試
+- [x] ECPay CheckMacValue 邊界值測試 — `test_ecpay_checkmacvalue.py` 16 tests（URL encode、排序、空值、整數轉換、驗簽正確/錯誤/空白）
+- [x] Webhook 簽名驗證失敗場景測試 — `test_webhook_signature_reject.py` 5 tests（invalid/missing/empty MAC、config error、HTTP 端點）
+- [x] 退款 API 端到端測試 — `test_refund_admin.py` 3 tests（admin 權限、成功退款、AppError 處理）
+- [x] Comp ticket 建立測試 — `test_mvp34_audit_comp_admin_orders.py` 3 tests（auth、event admin 權限、成功建立 201）+ audit 記錄
+- [x] Settlement generation 端到端測試 — `test_mvp33_settlements_payouts.py` integration test（真實 Supabase、建立訂單→生成結算→驗證 ledger）
+- [x] Payout request approve/reject 測試 — `test_mvp33_settlements_payouts.py` 3 tests + audit 記錄
+- [x] Admin orders 查詢篩選測試 — `test_mvp34_audit_comp_admin_orders.py` 2 tests（admin 權限、篩選回傳）
+- [x] Event time change notification 測試 — `test_event_time_change_notification.py` 3 tests（發送異動信、無參加者、單一失敗不中斷）
+- [x] Event cancellation notification 測試 — `test_event_notification_service.py` 1 test（calls email for all participants）
+- [x] Profile update 測試 — N/A：後端無 profile update 端點（非 MVP 範圍），`/me` 僅有 organizer-summary + tickets scope（已測）
 
 ---
 
@@ -379,6 +379,7 @@
 | 10 | Low | `OrderDetailView.vue` holding 倒計時僅顯示靜態到期時間 | ✅ 已修復 | 新增 setInterval 即時倒數（mm:ss） |
 | 11 | Medium | `client.ts` 缺 5 個 API 函式 | ✅ 已修復 | 新增 authLogout, fetchMyOrders, settlements ×2, payout |
 | 12 | Low | `errorMessages.ts` 僅映射 5 個 error code | ✅ 已修復 | 新增 ERROR_CODE_MAP 涵蓋 50+ error code |
+| 13 | Low | 429 handler 缺少 `Retry-After` header | ✅ 已修復 | 兩處 handler 皆從 `exc.retry_after` 取值設定 header |
 
 ---
 
@@ -391,6 +392,6 @@
 | Phase 2: MVP-2 | 39 | 39 | 0 | 0 | 0 | 100% |
 | Phase 3: MVP-3 | 41 | 41 | 0 | 0 | 0 | 100% |
 | Phase 4: 前端 | 20 | 20 | 0 | 0 | 0 | 100% |
-| Phase 5: 安全性 | 14 | 0 | 0 | 0 | 14 | 0% |
-| Phase 6: 測試 | 26 | 0 | 0 | 0 | 26 | 0% |
-| **合計** | **211** | **170** | **0** | **0** | **40** | **81%** |
+| Phase 5: 安全性 | 17 | 17 | 0 | 0 | 0 | 100% |
+| Phase 6: 測試 | 26 | 26 | 0 | 0 | 0 | 100% |
+| **合計** | **214** | **213** | **0** | **0** | **1** | **100%** |

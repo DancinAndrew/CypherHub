@@ -21,7 +21,7 @@
 
 ### 2.1 規格對照
 
-依 `develop.md` 與 `docs/verification/mvp1/mvp1-verification-checklist.md`：
+依 `develop.md` 與 `docs/verification/mvp1-verification.md`：
 
 | 子階段 | 範圍 | 狀態 |
 |--------|------|------|
@@ -35,8 +35,8 @@
 ### 2.2 驗證依據
 
 - 功能對照表：`develop.md` 第 129–164 行  
-- 手動驗證流程：`docs/verification/mvp1/mvp1-verification-checklist.md`  
-- 既有報告：`docs/verification/mvp1/verification-report.md`、各 `reports/*.md`（API 整合、Email、Rate limit、Error boundary、導航按鈕等）
+- 手動驗證流程：`docs/verification/mvp1-verification.md`
+- 既有報告：各 `reports/*.md`（API 整合、Email、Rate limit、Error boundary、導航按鈕等）
 
 ### 2.3 結論
 
@@ -130,7 +130,7 @@ uv run pytest app/tests/test_order_state_machine.py app/tests/test_compensate_pa
 
 ### 4.5 結論
 
-**MVP-3 程式與 DB 全部實作完畢**，且 MVP-3 相關單元測試 48 筆全數通過。手動驗證項目已列於 `docs/verification/mvp3/mvp3-verification-checklist.md`，執行後即可勾選驗收。
+**MVP-3 程式與 DB 全部實作完畢**，且 MVP-3 相關單元測試 48 筆全數通過。手動驗證項目已列於 `docs/verification/mvp3-verification.md`，執行後即可勾選驗收。
 
 ---
 
