@@ -12,6 +12,7 @@ from app.domain.schemas import (
     OrdersListResponse,
     PaymentResponse,
 )
+from app.extensions import rate_limiter
 from app.services.auth_service import require_auth
 from app.services.orders_service import orders_service
 
@@ -21,6 +22,7 @@ bp = Blueprint("orders", __name__, url_prefix="/api/v1/orders")
 
 
 @bp.post("/")
+@rate_limiter.limit("30 per minute")
 @require_auth
 def create_hold_order() -> tuple[dict, int]:
     """選票種 → 建立 holding 訂單，原子扣 hold_count。逾時 15 分鐘釋放。"""
@@ -46,6 +48,7 @@ def list_orders() -> tuple[dict, int]:
 
 
 @bp.delete("/<order_id>")
+@rate_limiter.limit("30 per minute")
 @require_auth
 def cancel_order(order_id: str) -> tuple[dict, int]:
     """取消自己的 holding 訂單，釋放名額。"""

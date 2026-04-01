@@ -4,6 +4,7 @@ import { useRoute, useRouter } from "vue-router";
 
 import { useAuthStore } from "../stores/auth";
 import { toAuthErrorMessage } from "../utils/errorMessages";
+import { sanitizeRedirect } from "../utils/sanitizeRedirect";
 
 const route = useRoute();
 const router = useRouter();
@@ -84,7 +85,7 @@ async function submit(): Promise<void> {
       }
     }
 
-    const redirect = typeof route.query.redirect === "string" ? route.query.redirect : "/";
+    const redirect = sanitizeRedirect(route.query.redirect);
     await router.push(redirect);
   } catch (error: unknown) {
     errorMessage.value = toAuthErrorMessage(error, mode.value);

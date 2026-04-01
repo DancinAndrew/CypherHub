@@ -8,6 +8,7 @@ from app.domain.schemas import (
     CreatePayoutRequestRequest,
     PayoutRequestResponse,
 )
+from app.extensions import rate_limiter
 from app.services.auth_service import require_auth
 from app.services.settlement_service import settlement_service
 
@@ -34,6 +35,7 @@ def get_settlement(settlement_id: str) -> tuple[dict, int]:
 
 
 @bp.post("/payout-requests")
+@rate_limiter.limit("5 per minute")
 @require_auth
 def create_payout_request() -> tuple[dict, int]:
     """主辦方申請提款。"""

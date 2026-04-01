@@ -40,3 +40,7 @@ class Config:
 
     # MVP-3.5: 活動提醒 job 需帶此 header 才可執行
     CRON_SECRET = os.getenv("CRON_SECRET", "").strip()
+
+    # SEC-1: HSTS（僅生產環境啟用）
+    ENABLE_HSTS = os.getenv("ENABLE_HSTS", "false").lower() in {"1", "true"}
+    HSTS_MAX_AGE = int(os.getenv("HSTS_MAX_AGE", "31536000"))

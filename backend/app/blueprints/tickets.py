@@ -3,6 +3,7 @@ from __future__ import annotations
 from flask import Blueprint, g, jsonify
 
 from app.domain.schemas import GenericOKResponse, TicketsListResponse
+from app.extensions import rate_limiter
 from app.services.auth_service import require_auth
 from app.services.ticket_service import ticket_service
 
@@ -33,6 +34,7 @@ def list_my_tickets() -> tuple[dict, int]:
 
 
 @bp.delete("/<ticket_id>")
+@rate_limiter.limit("20 per minute")
 @require_auth
 def cancel_ticket(ticket_id: str) -> tuple[dict, int]:
     ticket_uuid = parse_uuid(ticket_id, "ticket_id")
@@ -42,6 +44,7 @@ def cancel_ticket(ticket_id: str) -> tuple[dict, int]:
 
 
 @bp.post("/<ticket_id>/resend")
+@rate_limiter.limit("5 per minute")
 @require_auth
 def resend_ticket(ticket_id: str) -> tuple[dict, int]:
     ticket_uuid = parse_uuid(ticket_id, "ticket_id")

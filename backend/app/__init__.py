@@ -11,6 +11,8 @@ from .blueprints.jobs import bp as jobs_bp
 from .blueprints.me import bp as me_bp
 from .blueprints.orders import bp as orders_bp
 from .blueprints.payments import bp as payments_bp
+from .blueprints.progress import organizer_bp as organizer_progress_bp
+from .blueprints.progress import public_bp as public_progress_bp
 from .blueprints.registrations import bp as registrations_bp
 from .blueprints.settlements import bp as settlements_bp
 from .blueprints.ticket_types import bp as ticket_types_bp
@@ -35,6 +37,9 @@ def create_app(test_config: dict | None = None) -> Flask:
         app.config.update(test_config)
 
     init_extensions(app)
+    _validate_cors_origins(app)
+    _validate_production_urls(app)
+    _validate_production_config(app)
     CORS(app, resources={r"/api/*": {"origins": app.config.get("CORS_ORIGINS", [])}})
     _register_blueprints(app)
     # 避免 /api/v1/orders 被 308 重定向至 /api/v1/orders/，CORS preflight 不允許 redirect
@@ -42,6 +47,7 @@ def create_app(test_config: dict | None = None) -> Flask:
         if rule.strict_slashes:
             rule.strict_slashes = False
     _register_error_handlers(app)
+    _register_security_headers(app)
 
     @app.get("/api/v1/health")
     def health() -> tuple[dict, int]:
@@ -65,12 +71,77 @@ def _register_blueprints(app: Flask) -> None:
     app.register_blueprint(payments_bp)
     app.register_blueprint(webhooks_bp)
     app.register_blueprint(settlements_bp)
+    app.register_blueprint(organizer_progress_bp)
+    app.register_blueprint(public_progress_bp)
+
+
+def _validate_production_urls(app: Flask) -> None:
+    """生產環境 URL 安全檢查（SEC-1）"""
+    if app.config.get("APP_ENV") != "production":
+        return
+    supabase_url = app.config.get("SUPABASE_URL", "")
+    if supabase_url and ("localhost" in supabase_url or "127.0.0.1" in supabase_url):
+        raise ValueError("SEC-1: 生產環境 SUPABASE_URL 不可指向 localhost")
+    if supabase_url and not supabase_url.startswith("https://"):
+        raise ValueError("SEC-1: 生產環境 SUPABASE_URL 必須使用 HTTPS")
+
+
+def _validate_production_config(app: Flask) -> None:
+    """SEC-4: 生產環境必要環境變數檢查，缺少則拒絕啟動。"""
+    if app.config.get("APP_ENV") != "production":
+        return
+    required = {
+        "SUPABASE_URL": "Supabase 連線 URL",
+        "SUPABASE_ANON_KEY": "Supabase Anon Key",
+        "SUPABASE_SERVICE_ROLE_KEY": "Supabase Service Role Key",
+        "CRON_SECRET": "Cron Job 驗證密鑰",
+    }
+    for key, label in required.items():
+        if not app.config.get(key):
+            raise ValueError(f"SEC-4: 生產環境必須設定 {key}（{label}）")
+    if app.config.get("FLASK_DEBUG"):
+        raise ValueError("SEC-4: 生產環境禁止啟用 FLASK_DEBUG")
+
+
+def _validate_cors_origins(app: Flask) -> None:
+    """啟動時檢查 CORS 設定安全性（SEC-1）"""
+    origins = app.config.get("CORS_ORIGINS", [])
+    is_production = app.config.get("APP_ENV") == "production"
+    for origin in origins:
+        if origin == "*":
+            if is_production:
+                raise ValueError("SEC-1: CORS_ORIGINS 禁止在生產環境使用 '*'")
+            app.logger.warning("CORS_ORIGINS 包含 '*'，僅限開發環境使用")
+        elif is_production and origin.startswith("http://localhost"):
+            app.logger.warning("CORS_ORIGINS 包含 localhost: %s，請確認是否為誤設", origin)
+
+
+def _register_security_headers(app: Flask) -> None:
+    @app.after_request
+    def set_security_headers(response):  # type: ignore[no-untyped-def]
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Cross-Origin-Opener-Policy"] = "same-origin"
+        response.headers.pop("Server", None)
+        if app.config.get("ENABLE_HSTS"):
+            max_age = app.config.get("HSTS_MAX_AGE", 31536000)
+            response.headers["Strict-Transport-Security"] = f"max-age={max_age}; includeSubDomains"
+        return response
 
 
 def _register_error_handlers(app: Flask) -> None:
     @app.errorhandler(AppError)
     def handle_app_error(error: AppError) -> tuple[dict, int]:
-        return jsonify(error.to_dict()), error.http_status
+        body = error.to_dict()
+        # SEC-4: 生產環境不回傳內部錯誤細節（Supabase raw error 等）
+        if app.config.get("APP_ENV") == "production":
+            details = body.get("error", {}).get("details")
+            if isinstance(details, dict):
+                details.pop("raw", None)
+                if not details:
+                    body["error"]["details"] = None
+        return jsonify(body), error.http_status
 
     @app.errorhandler(404)
     def handle_not_found(_: Exception) -> tuple[dict, int]:

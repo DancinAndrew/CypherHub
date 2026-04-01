@@ -23,6 +23,7 @@ from app.domain.schemas import (
     UpdateTicketTypeRequest,
     UpsertEventFormRequest,
 )
+from app.extensions import rate_limiter
 from app.services.auth_service import require_auth
 from app.services.events_service import events_service
 from app.services.forms_service import forms_service
@@ -33,6 +34,7 @@ bp = Blueprint("ticket_types", __name__, url_prefix="/api/v1/organizer")
 
 
 @bp.post("/apply")
+@rate_limiter.limit("5 per minute")
 @require_auth
 def apply_organizer() -> tuple[dict, int]:
     request_model = parse_json(OrganizerApplyRequest)
@@ -45,6 +47,7 @@ def apply_organizer() -> tuple[dict, int]:
 
 
 @bp.post("/events")
+@rate_limiter.limit("10 per minute")
 @require_auth
 def create_event() -> tuple[dict, int]:
     request_model = parse_json(CreateEventRequest)
@@ -206,6 +209,7 @@ def list_attendees(event_id: str) -> tuple[dict, int]:
 
 
 @bp.post("/events/<event_id>/attendees/<ticket_id>/resend")
+@rate_limiter.limit("5 per minute")
 @require_auth
 def resend_attendee_ticket(event_id: str, ticket_id: str) -> tuple[dict, int]:
     event_uuid = parse_uuid(event_id, "event_id")
@@ -216,6 +220,7 @@ def resend_attendee_ticket(event_id: str, ticket_id: str) -> tuple[dict, int]:
 
 
 @bp.post("/events/<event_id>/comp-ticket")
+@rate_limiter.limit("20 per minute")
 @require_auth
 def create_comp_ticket_route(event_id: str) -> tuple[dict, int]:
     """手動補票（公關票）。MVP-3.4。需 event admin。"""
@@ -234,6 +239,7 @@ def create_comp_ticket_route(event_id: str) -> tuple[dict, int]:
 
 
 @bp.post("/events/<event_id>/media")
+@rate_limiter.limit("10 per minute")
 @require_auth
 def upload_event_media(event_id: str) -> tuple[dict, int]:
     event_uuid = parse_uuid(event_id, "event_id")
@@ -245,7 +251,14 @@ def upload_event_media(event_id: str) -> tuple[dict, int]:
             message="Missing file",
             http_status=400,
         )
-    content_type = file.content_type or "image/jpeg"
+    ALLOWED_IMAGE_TYPES = {"image/jpeg", "image/png", "image/webp", "image/gif"}
+    content_type = file.content_type or ""
+    if content_type not in ALLOWED_IMAGE_TYPES:
+        raise AppError(
+            code="VALIDATION_ERROR",
+            message="不支援的檔案類型，僅允許 JPEG、PNG、WebP、GIF",
+            http_status=400,
+        )
     file_data = file.read()
     if len(file_data) > 5 * 1024 * 1024:
         raise AppError(

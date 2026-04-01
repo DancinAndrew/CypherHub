@@ -1,3 +1,7 @@
+# ============================================================
+# 開發環境專用 docker-compose（Development Only）
+# 生產環境請直接使用 Dockerfile（gunicorn，無 --debug）
+# ============================================================
 services:
   backend:
     build:
@@ -6,6 +10,7 @@ services:
     env_file:
       - ../backend/.env
     working_dir: /app
+    # 開發模式：覆蓋 Dockerfile 的 gunicorn CMD，使用 flask dev server + hot reload
     command: flask --app app run --host=0.0.0.0 --port=8000 --debug
     ports:
       - "8000:8000"

@@ -10,6 +10,7 @@ from app.domain.schemas import (
     CompTicketRequest,
     GenerateSettlementsRequest,
 )
+from app.extensions import rate_limiter
 from app.services.auth_service import require_auth
 from app.services.compensation_service import run_compensate_paid_orders
 from app.services.events_service import events_service
@@ -110,6 +111,7 @@ def list_admin_orders_route() -> tuple[dict, int]:
 
 
 @bp.post("/orders/<order_id>/refund")
+@rate_limiter.limit("10 per minute")
 @require_auth
 def refund_order_route(order_id: str) -> tuple[dict, int]:
     """發起訂單全額退款。develop.md MVP-2.6。"""
@@ -130,6 +132,7 @@ def list_admin_organizations_route() -> tuple[dict, int]:
 
 
 @bp.patch("/organizations/<org_id>/approval")
+@rate_limiter.limit("10 per minute")
 @require_auth
 def patch_organization_approval_route(org_id: str) -> tuple[dict, int]:
     """Admin: 審核主辦方入駐。MVP-3.2。"""
@@ -146,6 +149,7 @@ def patch_organization_approval_route(org_id: str) -> tuple[dict, int]:
 
 
 @bp.post("/settlements/generate")
+@rate_limiter.limit("5 per minute")
 @require_auth
 def generate_settlements_route() -> tuple[dict, int]:
     """Admin: 產生結算批次。MVP-3.3。"""
@@ -170,6 +174,7 @@ def list_payout_requests_route() -> tuple[dict, int]:
 
 
 @bp.patch("/payout-requests/<payout_id>")
+@rate_limiter.limit("10 per minute")
 @require_auth
 def patch_payout_request_route(payout_id: str) -> tuple[dict, int]:
     """Admin: 核准或退件提款。MVP-3.3。"""

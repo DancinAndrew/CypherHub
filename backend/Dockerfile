@@ -12,4 +12,5 @@ COPY . .
 
 EXPOSE 8000
 
-CMD ["flask", "--app", "app", "run", "--host=0.0.0.0", "--port=8000", "--debug"]
+# 生產用 gunicorn；開發可透過 docker-compose command 覆蓋
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "2", "app:create_app()"]

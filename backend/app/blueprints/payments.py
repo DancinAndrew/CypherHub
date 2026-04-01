@@ -5,6 +5,7 @@ from __future__ import annotations
 from flask import Blueprint, g, jsonify, request
 
 from app.domain.errors import AppError
+from app.extensions import rate_limiter
 from app.services.auth_service import require_auth
 from app.services.payment_service import payment_service
 
@@ -14,6 +15,7 @@ bp = Blueprint("payments", __name__, url_prefix="/api/v1/payments")
 
 
 @bp.post("/checkout")
+@rate_limiter.limit("30 per minute")
 @require_auth
 def create_checkout() -> tuple[dict, int]:
     """
