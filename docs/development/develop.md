@@ -36,10 +36,10 @@
 | **MVP-3.2** | 主辦方入駐審核 | ✅ 完成 |
 | **MVP-3.3** | 結算與提款 | ✅ 完成 |
 | **MVP-3.4** | 平台治理與 Audit | ✅ 完成 |
-| **SEC-1** | 傳輸與端點安全（HTTPS、CORS、Headers） | ⬜ 未做 |
-| **SEC-2** | 身份與資料保護（帳密、URL、敏感資料） | ⬜ 未做 |
-| **SEC-3** | 注入與攻擊防護（SQL、XSS、CSRF、Rate limit） | 🟡 部分完成（Rate limit ✅） |
-| **SEC-4** | Secrets 與部署檢查（環境變數、錯誤、日誌） | ⬜ 未做 |
+| **SEC-1** | 傳輸與端點安全（HTTPS、CORS、Headers） | ✅ 完成 |
+| **SEC-2** | 身份與資料保護（帳密、URL、敏感資料） | ✅ 完成 |
+| **SEC-3** | 注入與攻擊防護（SQL、XSS、CSRF、Rate limit） | ✅ 完成 |
+| **SEC-4** | Secrets 與部署檢查（環境變數、錯誤、日誌） | ✅ 完成 |
 
 ---
 
@@ -100,29 +100,29 @@
 
 ---
 
-## 未實作功能 — 建議套件／平台／開源
+## 已實作功能 — 採用方案對照
 
-> 以下對應 develop 未做項目，可用現成套件或開源方案取代/加速實作。
+> 以下為原「未實作功能」清單，現已全數完成（除 PayPal 次要金流外）。
 
-| 功能區塊 | develop 章節 | 建議方案 | 說明 |
+| 功能區塊 | develop 章節 | 採用方案 | 狀態 |
 |----------|--------------|----------|------|
-| **背景任務（hold 逾時、補償出票）** | MVP-2.1 / 2.4 | **Redis + RQ** 或 **Celery**；或 **Supabase pg_cron + Edge Functions** | RQ 輕量、Celery 功能多；若全在 Supabase 可考慮 pg_cron 定時掃 + Edge 出票 |
-| **金流** | MVP-2.2 / 2.7 | **ECPay**（台灣）、**Stripe**（國際）、**PayPal**（可選） | 見 [.claude/skills/ecpay](.claude/skills/ecpay)、Tools.md；Webhook 驗簽與冪等需自實作 |
-| **訂單狀態機** | MVP-2.2 / 2.3 | 自實作 | 可參考 **python-statemachine** 或 **transitions** 做狀態轉換與守衛 |
-| **報名表單擴充（下拉/單選/多選/日期）** | MVP-2.5 | 擴充現有 DynamicForm schema | 不需新套件，在既有 JSON schema 加 type + options |
-| **名單匯出 CSV** | MVP-2.5 | 後端 `csv` 標準庫或 **pandas** | 簡單用 `csv.writer`；要 Excel 可 **openpyxl** |
-| **退款** | MVP-2.6 | 金流商 API（ECPay/Stripe refund） | 無獨立開源「退款服務」，依既有金流 API 實作 |
-| **結算與提款** | MVP-3.3 | **Stripe Connect**（若用 Stripe）或自建 ledger | 分潤/提款多數自建；Stripe Connect 可處理「主辦方收款與平台抽成」 |
-| **Audit 日誌** | MVP-3.4 | **Supabase Audit**（pg 擴展）、或自建 `audit_logs` 表 | 關鍵操作寫入 audit 表；進階可查 **pgAudit** |
-| **進階搜尋（全文/日期）** | 1.5.2e | **Postgres full-text search**（`tsvector`） | 先不引入 Elasticsearch；日期篩選用 `start_at` 區間即可 |
-| **異常告警 / Dashboard** | MVP-3.4 | **Sentry**（錯誤）、**UptimeRobot**（可用性）、**Grafana + Prometheus**（自架） | 小規模 Sentry + UptimeRobot 即可 |
-| **主辦方細權限（RBAC）** | MVP-3.1 | 自實作 + RLS | 角色已在 domain 定義，用 `organizer_members.role` + RLS policy 即可，無需引入 Casbin 等 |
+| **背景任務（hold 逾時、補償出票）** | MVP-2.1 / 2.4 | Cron endpoint（`jobs.py`）+ RPC | ✅ `hold_expiry_service`、`compensation_service` |
+| **金流** | MVP-2.2 | **ECPay**（AIO Cashier V5） | ✅ `providers/ecpay.py`、CheckMacValue SHA-256、Webhook 冪等 |
+| **訂單狀態機** | MVP-2.2 / 2.3 | 自實作 | ✅ `domain/order_state_machine.py`（created→holding→pending_payment→paid→issued/refunded） |
+| **報名表單擴充（下拉/單選/多選/日期）** | MVP-2.5 | 擴充 DynamicForm schema | ✅ `DynamicForm.vue` 支援 text/email/phone/url/date/number/textarea/checkbox/select/multi-select |
+| **名單匯出 CSV** | MVP-2.5 | 前端 CSV 產生（`csvEscape`） | ✅ `OrganizerManageView.vue`「匯出 CSV」按鈕 |
+| **退款** | MVP-2.6 | ECPay DoAction API | ✅ `refund_service.py`（信用卡全額退款 + Email 通知 + Audit） |
+| **結算與提款** | MVP-3.3 | 自建 ledger | ✅ `settlement_service.py`（週期結算 + 平台抽成 + payout 審核流程） |
+| **Audit 日誌** | MVP-3.4 | 自建 `audit_logs` 表 | ✅ `audit_service.py`（refund/comp_ticket/unpublish/payout/settlement） |
+| **進階搜尋（全文/日期）** | 1.5.2e | Supabase `ilike` + 日期區間 | ✅ `GET /events?q=&from=&to=` |
+| **主辦方細權限（RBAC）** | MVP-3.1 | `organizer_members.role` + RLS | ✅ owner/admin/staff 三級權限 |
+| **次要金流 PayPal** | MVP-2.7 | — | ⬜ 未做（可選） |
+| **異常告警 / Dashboard** | — | **Sentry** + **UptimeRobot** | ⬜ 上線後接入 |
 
 ### 開源專案參考（可研究、不一定要用）
 
-- **ticketing**：各語言都有開源售票（如 [Attendize](https://github.com/attendize/attendize) PHP），多數偏重活動報名與金流，可參考流程與狀態設計，不建議直接取代現有 stack。
+- **ticketing**：各語言都有開源售票（如 [Attendize](https://github.com/attendize/attendize) PHP），可參考流程與狀態設計。
 - **Stripe 範例**：[stripe-payments-demo](https://github.com/stripe-samples) 可參考 webhook、idempotency、refund 流程。
-- **任務佇列**：[RQ (Redis Queue)](https://github.com/rq/rq)、[Celery](https://docs.celeryq.dev/)。
 
 ---
 
@@ -137,9 +137,11 @@
 
 ---
 
-# MVP-1 已完成功能對照表
+# 已完成功能對照表
 
 > 供新開發者快速掌握既有實作位置，避免重複開發。
+
+### MVP-1 功能
 
 | 功能 | 實作位置 | API / 檔案 |
 |------|----------|------------|
@@ -167,14 +169,49 @@
 | 搜尋/日期 | HomeView | q、from、to |
 | 活動編輯限制 | events_service、OrganizerEventView | capacity<sold_count 阻擋、刪除 disabled、黃色警告 |
 | 活動狀態機 | OrganizerEventView、0015 | draft/published/ended/cancelled/disabled |
-| Rate limiting | flask-limiter | auth 10/min、register 20/min、checkin 60/min，超限 429 |
+| Rate limiting | flask-limiter | 全面覆蓋所有寫入端點，超限 429 |
 | 活動分享 | EventDetailView | 「分享活動」按鈕 |
 | 導航按鈕 | EventDetailView | map_url / lat,lng → Google Maps |
 | Error boundary | 前端 | stores/error.ts、main.ts、App.vue onErrorCaptured |
-| API 整合測試 | backend | test_api_integration.py |
-| Email 單元測試 | backend | test_email_service.py |
 
-**DB 原子性**：`register_free_v2` 使用 `FOR UPDATE` 鎖定 ticket_type，防止超賣。**QR 安全性**：payload 含 `ticket_id` + 隨機 `qr_secret`（`encode(gen_random_bytes(16), 'hex')`），查表比對；可選 HMAC(ticket_id, server_secret)。禁止可猜 id、自增 id、短碼無簽名。
+### MVP-2 功能
+
+| 功能 | 實作位置 | API / 檔案 |
+|------|----------|------------|
+| 訂單 hold（race-safe） | create_hold_order RPC | `POST /orders`、`orders_service.py`、0019 migration |
+| ECPay 金流 | Cashier V5 | `providers/ecpay.py`、`payment_service.py`、`POST /payments/:id/checkout` |
+| Webhook 驗簽冪等 | webhooks blueprint | `POST /webhooks/ecpay`、CheckMacValue SHA-256 |
+| 訂單狀態機 | domain | `order_state_machine.py`（created→holding→pending→paid→issued/refunded） |
+| 自動出票 | issue_tickets RPC | Webhook paid → issued、0020 migration |
+| 補償出票 | compensation_service | `POST /jobs/compensate`、paid 但未 issued 自動補償 |
+| Hold 逾時釋放 | hold_expiry_service | `POST /jobs/release-holds`、cancel_holding_order RPC |
+| 表單擴充 | DynamicForm | select、multi-select、date 等新欄位型別 |
+| 名單匯出 CSV | OrganizerManageView | 前端 `csvEscape` + 匯出按鈕 |
+| 全額退款 | refund_service | `POST /admin/orders/:id/refund`、ECPay DoAction |
+| 退款通知 | email_service | `send_refund_complete_email` |
+
+### MVP-3 功能
+
+| 功能 | 實作位置 | API / 檔案 |
+|------|----------|------------|
+| RBAC 三級權限 | organizer_members | owner/admin/staff、`require_org_admin`/`require_event_admin` |
+| 主辦方入駐審核 | admin blueprint | pending/approved/rejected、`ORG_APPROVAL_REQUIRED` |
+| 結算批次 | settlement_service | 週期結算、平台抽成（5% 預設）、ledger_entries |
+| 提款審核 | admin blueprint | requested→approved→paid/failed、`approve/reject payout` |
+| Audit 日誌 | audit_service | refund/comp_ticket/unpublish/payout/settlement |
+| 手動補票 | tickets blueprint | `compensate_tickets` + audit `comp_ticket` |
+| 熱門活動 | events_service | `GET /events?sort=hot`、total_sold_count |
+| 活動提醒 Email | event_notification_service | 前一天、前一小時、cron endpoint |
+| 活動異動通知 | event_notification_service | 時間變更、活動取消 → Email 通知參加者 |
+| 即時進度追蹤 | progress blueprint | stages + progress + log、`OrganizerProgressView`、`LiveProgressBar` |
+| Security Headers | Flask factory | X-Content-Type-Options、X-Frame-Options、CORP、HSTS |
+| Open Redirect 防護 | sanitizeRedirect | `sanitizeRedirect.ts` 前端防護 |
+
+### 測試覆蓋
+
+38+ 測試檔案，涵蓋：API 整合、Auth、表單驗證、Audit、ECPay CheckMacValue、Email、活動通知、活動篩選、Hold 併發、冪等性、補償出票、組織審核與權限、結算提款、訂單狀態機、即時進度、Rate Limit、Security Headers、Webhook 驗簽。
+
+**DB 原子性**：`register_free_v2` 與 `create_hold_order` 使用 `FOR UPDATE` 鎖定 ticket_type，防止超賣。**QR 安全性**：payload 含 `ticket_id` + 隨機 `qr_secret`（`encode(gen_random_bytes(16), 'hex')`），查表比對。
 
 ---
 
@@ -500,17 +537,17 @@
 
 > **GroovePass Phase 2–4**：嚴格禁止複雜退款或折扣碼。專注訂單狀態機與綠界串接。
 
-## MVP-2.1 訂單系統與庫存保留 (Phase 2 + 3.1) ⬜
+## MVP-2.1 訂單系統與庫存保留 (Phase 2 + 3.1) ✅
 
 ### 2.1.1 DB 與模型
 
 | 項目 | 說明 | 驗證方式 |
 |------|------|----------|
-| orders 表 | order_id, user_id, status, total_cents 等 | migration |
-| order_items 表 | order_id, ticket_type_id, quantity, price_cents | migration |
-| payments 表 | order_id, provider, external_id, amount, status | migration |
+| orders 表 | order_id, user_id, status, total_cents 等 | 0017 migration ✅ |
+| order_items 表 | order_id, ticket_type_id, quantity, price_cents | 0017 migration ✅ |
+| payments 表 | order_id, provider, external_id, amount, status | 0017 migration ✅ |
 
-**Done 條件**：migrations 可套用，RLS 設定完成。
+**Done 條件**：migrations 可套用，RLS 設定完成。✅
 
 ---
 
@@ -518,18 +555,18 @@
 
 | 項目 | 說明 | 驗證方式 |
 |------|------|----------|
-| 選票種 → 建立 order | status=holding | 不付款不入庫 |
-| hold 扣名額 | 原子扣 capacity（或 hold_count） | 同 ticket_type 邏輯 |
-| hold_timeout | 例如 15 分鐘 | 逾時自動取消並釋放 |
-| 釋放 | 更新 sold_count / hold_count | 名額可再賣 |
+| 選票種 → 建立 order | status=holding | `create_hold_order` RPC（0019） ✅ |
+| hold 扣名額 | 原子扣 hold_count（FOR UPDATE） | race-safe RPC ✅ |
+| hold_timeout | 15 分鐘 | `hold_expiry_service` + cron ✅ |
+| 釋放 | cancel_holding_order RPC（0021） | 名額釋放 ✅ |
 
-**Done 條件**：Hold 建立後不付款，逾時後名額釋放，他人可再買。
+**Done 條件**：Hold 建立後不付款，逾時後名額釋放，他人可再買。✅
 
 ---
 
-## MVP-2.2 綠界金流 ECPay (Phase 2.2) ⬜
+## MVP-2.2 綠界金流 ECPay (Phase 2.2) ✅
 
-> **開發前必讀**：[.claude/skills/ecpay](.claude/skills/ecpay) — ECPay 官方 Skill，含 AIO、CheckMacValue、Webhook 格式。
+> **開發參考**：[.claude/skills/ecpay](.claude/skills/ecpay) — ECPay 官方 Skill，含 AIO、CheckMacValue、Webhook 格式。
 
 **本專案採用的開發工具**：
 
@@ -540,11 +577,11 @@
 
 | 項目 | 說明 | 驗證方式 |
 |------|------|----------|
-| 建立付款 | 導向 ECPay 金流頁 | 可完成測試付款 |
-| Webhook | 接收付款結果 | 驗簽、冪等處理 |
-| webhook_event_id | 去重 | 重送不重複出票 |
+| 建立付款 | Cashier V5 checkout URL | `providers/ecpay.py` ✅ |
+| Webhook | 接收付款結果 | CheckMacValue SHA-256 驗簽 + 冪等 ✅ |
+| webhook_event_id | 去重 | `webhook_events` UNIQUE 去重 ✅ |
 
-**Done 條件**：前端結帳頁 → 產生綠界訂單與 Form 參數 → 跳轉付款 → Webhook 驗簽、冪等處理、記錄 webhook_event_id；僅 paid 觸發出票。
+**Done 條件**：前端結帳頁 → 產生綠界訂單與 Form 參數 → 跳轉付款 → Webhook 驗簽、冪等處理、記錄 webhook_event_id；僅 paid 觸發出票。✅
 
 ---
 
@@ -560,19 +597,19 @@
 | cancelled | 逾時或手動取消 |
 | refunded | 已退款 |
 
-**Done 條件**：僅 `paid` 可轉 `issued`；狀態流符合規格。
+**Done 條件**：僅 `paid` 可轉 `issued`；狀態流符合規格。✅ 實作於 `domain/order_state_machine.py`。
 
 ---
 
-## MVP-2.3 出票與補償 ⬜
+## MVP-2.3 出票與補償 ✅
 
 | 項目 | 說明 | 驗證方式 |
 |------|------|----------|
-| paid → issued | Webhook 收到 paid 後建立 tickets | 同 register_free 邏輯 |
-| 補償任務 | paid 但未 issued 可重跑 | 背景 job 或手動觸發 |
-| 冪等 | 已 issued 不再建立 | 重跑安全 |
+| paid → issued | Webhook 收到 paid 後建立 tickets | `issue_tickets` RPC（0020） ✅ |
+| 補償任務 | paid 但未 issued 自動補償 | `compensation_service.py` + cron ✅ |
+| 冪等 | 已 issued 不再建立 | 冪等 RPC + `test_compensation` ✅ |
 
-**Done 條件**：付款成功後自動出票；補償 job 可處理漏單。
+**Done 條件**：付款成功後自動出票；補償 job 可處理漏單。✅
 
 ---
 
@@ -657,40 +694,39 @@
 
 ---
 
-## MVP-3.3 結算與提款 ⬜
+## MVP-3.3 結算與提款 ✅
 
 | 項目 | 說明 | 驗證方式 |
 |------|------|----------|
-| settlements 表 | 週期、金額、平台費、淨額 | - |
-| ledger_entries | 每筆交易分錄 | - |
-| payout_requests | 提款申請 | requested / approved / paid / failed |
-| 平台抽成 | 可設定比例 | - |
+| settlements 表 | 週期、金額、平台費（5% 預設）、淨額 | 0026 migration ✅ |
+| ledger_entries | 每筆交易分錄（sale/platform_fee/payout） | 0026 migration ✅ |
+| payout_requests | 提款申請 | requested → approved → paid/failed ✅ |
+| 平台抽成 | 可設定比例 | `settlement_service.py` ✅ |
+| Admin 審核 | 核准/退件提款 | `admin.py` approve/reject payout ✅ |
 
-**Done 條件**：可產生結算批次，主辦方可申請提款，Admin 可審核。
+**Done 條件**：可產生結算批次，主辦方可申請提款，Admin 可審核。✅
 
 ---
 
-## MVP-3.4 平台治理與 Audit（Phase 7） ⬜
+## MVP-3.4 平台治理與 Audit（Phase 7） ✅
 
 > **GroovePass Phase 7**：營運治理與審計。
 
 | 項目 | 說明 | 驗證方式 |
 |------|------|----------|
-| audit_logs | 退款、補票、結算、提款、下架等關鍵操作 | 重要操作有紀錄 |
-| 異常告警 Dashboard | 付款成功未出票、核銷失敗率異常 | 後台監控面板 |
-| 全站訂單總覽 | Admin 可查全站訂單、付款、退款、Webhook | 後台介面 |
-| 手動補票 (Comp) | 主辦方/Admin 手動發放公關票，強制寫入 Audit | 有 Comp 按鈕且 audit 有紀錄 |
-| Admin 治理 | 活動下架、主辦方封鎖 | - |
-| **平台進階治理設定** | 退款規則模板、Email 通知模板管理 | Admin 後台可設定 |
-| | 黑名單/限購規則（進階：封鎖 user/email/ip） | 可選，note.md 3.5 |
-| **進階分析報表** | 銷售概覽（總收入、票數） | 主辦方報表 |
-| | 時間序列（每小時/每日售票） | 圖表或 CSV |
-| | 匯出報表 | 銷售/核銷/名單 |
-| **進階財務比對** | 交易對帳差異比對（金流記錄 vs 平台 ledger） | Admin 後台，note.md 3.3 可選 |
+| audit_logs | 退款、補票、結算、提款、下架等關鍵操作 | `audit_service.py` + 0027 migration ✅ |
+| 全站訂單總覽 | Admin 可查全站訂單、付款、退款 | `AdminView.vue` ✅ |
+| 手動補票 (Comp) | 主辦方/Admin 手動發放公關票，寫入 Audit | `compensate_tickets` + audit `comp_ticket` ✅ |
+| Admin 治理 | 活動下架、主辦方審核 | `admin.py` PATCH status/approval ✅ |
+| 異常告警 Dashboard | 付款成功未出票、核銷失敗率異常 | ⬜ 上線後接入 Sentry + UptimeRobot |
+| **平台進階治理設定** | 退款規則模板、Email 通知模板管理 | ⬜ 可選，未實作 |
+| | 黑名單/限購規則（進階：封鎖 user/email/ip） | ⬜ 可選，note.md 3.5 |
+| **進階分析報表** | 銷售概覽、時間序列、匯出報表 | ⬜ 可選，未實作 |
+| **進階財務比對** | 交易對帳差異比對（金流記錄 vs 平台 ledger） | ⬜ 可選，未實作 |
 
-**Done 條件**：Critical 操作寫入 audit_logs；Admin 有全站查詢與 Comp；平台設定與進階報表可選實作。
+**Done 條件**：Critical 操作寫入 audit_logs ✅；Admin 有全站查詢與 Comp ✅。平台進階設定與進階報表為可選項目。
 
-**架構提醒**：實作本階段「全站訂單總覽、進階分析報表、多種匯出」時，若發現 REST endpoint 數量或單一胖 API 參數過多，請回到 [架構擴充評估（API 層）](#架構擴充評估api-層) 做一次是否引入 GraphQL 或 BFF 的評估。
+**架構提醒**：若未來實作「進階分析報表、多種匯出」時，若發現 REST endpoint 數量或單一胖 API 參數過多，請回到 [架構擴充評估（API 層）](#架構擴充評估api-層) 做一次是否引入 GraphQL 或 BFF 的評估。
 
 ---
 
@@ -700,11 +736,12 @@
 
 | 項目 | 說明 | 驗證方式 |
 |------|------|----------|
-| 熱門活動列表 | GET /events?sort=hot 依售票數排序；前端「依時間」/「熱門」tab | 首頁可顯示熱門、total_sold_count badge |
-| 活動提醒 Email | POST /internal/jobs/event-reminders（X-Cron-Secret）；前一天 23–25h、前一小時 55–65min | 外部 cron 定期呼叫 |
-| 活動異動/取消通知 | update_event、admin_update_event_status 鈎入；Email 參加者 | 異動時觸發、取消時觸發 |
+| 熱門活動列表 | GET /events?sort=hot 依售票數排序；前端「依時間」/「熱門」tab | 首頁可顯示熱門、total_sold_count badge ✅ |
+| 活動提醒 Email | POST /jobs/event-reminders（X-Cron-Secret）；前一天、前一小時 | `event_notification_service.py` ✅ |
+| 活動異動/取消通知 | update_event、admin_update_event_status 鈎入；Email 參加者 | 異動時觸發、取消時觸發 ✅ |
+| 即時進度追蹤 | 主辦方設定 stages → 更新 progress → 參加者即時查看 | `progress_service.py`、`OrganizerProgressView`、`LiveProgressBar`、0028 migration ✅ |
 
-**Done 條件**：上述功能已實作；見 mvp3-master-plan.md § 六。
+**Done 條件**：上述功能已實作。✅
 
 ---
 
@@ -716,70 +753,71 @@
 
 | 項目 | 現況 | 說明 |
 |------|------|------|
-| **傳輸加密** | 本地 HTTP，上線需 HTTPS | 生產環境必須 HTTPS；Supabase 連線本身為 HTTPS |
-| **帳密** | 密碼欄位 `type="password"` | Supabase Auth 處理，不經 CypherHub backend |
-| **URL 敏感資料** | 重設密碼 token 在 hash | Supabase 標準流程，一次性 token；需避免將 email/token 寫入一般 query |
-| **SQL Injection** | 使用 Supabase client + RPC | 參數化查詢；無手寫 raw SQL 串接使用者輸入 |
-| **XSS** | Vue 預設 escape | 需審查 `v-html`、`innerHTML`、動態插入 |
-| **CSRF** | API 用 Bearer token | 非 cookie-based，典型 CSRF 風險較低 |
-| **Rate limiting** | ✓ flask-limiter | auth 10/min、register 20/min、checkin 60/min |
-| **Secrets** | .env 在 .gitignore | 需確認無 key 寫入程式碼、log、前端 bundle |
+| **傳輸加密** | ✅ HSTS + HTTPS 啟動驗證 | `ENABLE_HSTS=true`、`_validate_production_config` 禁止 localhost/HTTP |
+| **Security Headers** | ✅ 全面設定 | X-Content-Type-Options、X-Frame-Options、Referrer-Policy、COOP、Server 移除 |
+| **帳密** | ✅ 密碼不經後端 | Supabase Auth 處理；密碼欄位 `type="password"` |
+| **URL 敏感資料** | ✅ sanitizeRedirect | 防 open redirect；重設密碼 token 在 hash |
+| **SQL Injection** | ✅ 參數化查詢 | Supabase client + RPC，無 raw SQL 串接 |
+| **XSS** | ✅ 零 v-html | MIME 白名單阻擋 SVG/HTML 上傳 |
+| **CSRF** | ✅ Bearer token | 非 cookie-based，典型 CSRF 風險極低 |
+| **Rate limiting** | ✅ 全面覆蓋 | 所有寫入端點限流（auth/register/checkin/orders/payments/tickets/organizer/admin） |
+| **Secrets** | ✅ .env 在 .gitignore | 啟動時驗證必要 env var；`details.raw` 生產自動過濾 |
 
 ---
 
-## SEC-1：傳輸與端點安全 ⬜
+## SEC-1：傳輸與端點安全 ✅
 
 | 項目 | 說明 | 驗證方式 | 現況 |
 |------|------|----------|------|
-| **HTTPS** | 生產環境全站 HTTPS | 瀏覽器無混合內容警告；API 與 Supabase 皆走 `https://` | 上線前設 |
-| **HSTS** | 強制 HTTPS（Strict-Transport-Security） | 回傳 header 含 `Strict-Transport-Security` | 未設 |
-| **CORS** | 限制允許來源 | `CORS_ORIGINS` 僅允許已知 domain，禁止 `*` | 已有 CORS |
-| **API Base URL** | 前端呼叫後端用環境變數 | `VITE_API_BASE_URL` 指向正確 API | ✓ |
-| **Supabase URL** | 生產用 Cloud 正式 URL | 非 `127.0.0.1`、非 localhost | 上線前設 |
+| **HTTPS** | 生產環境全站 HTTPS | 瀏覽器無混合內容警告；API 與 Supabase 皆走 `https://` | 上線前設（部署指引已備） ✅ |
+| **HSTS** | 強制 HTTPS（Strict-Transport-Security） | 回傳 header 含 `Strict-Transport-Security` | `ENABLE_HSTS=true` 啟用 ✅ |
+| **CORS** | 限制允許來源 | `CORS_ORIGINS` 僅允許已知 domain，禁止 `*` | 已有 CORS + 生產環境啟動驗證 ✅ |
+| **API Base URL** | 前端呼叫後端用環境變數 | `VITE_API_BASE_URL` 指向正確 API | ✅ + 建置時 HTTPS 檢查 |
+| **Supabase URL** | 生產用 Cloud 正式 URL | 非 `127.0.0.1`、非 localhost | 啟動時驗證 ✅ |
 
 **Done 條件**：生產環境全程 HTTPS；CORS 僅允許白名單；必要時加上 HSTS header（可由反向代理設定）。
 
 ---
 
-## SEC-2：身份與資料保護 ⬜
+## SEC-2：身份與資料保護 ✅
 
 | 項目 | 說明 | 驗證方式 | 現況 |
 |------|------|----------|------|
 | **密碼欄位** | 登入/註冊/重設密碼使用 `type="password"` | 檢視 LoginView、ResetPasswordView | ✓ |
 | **密碼不經後端** | 登入註冊由 Supabase Auth 處理 | 後端無接收密碼的 endpoint | ✓ |
 | **JWT 存放** | Token 在記憶體或 localStorage，非 cookie（可選） | 不將 token 放於易被 XSS 讀取的 cookie | ✓ |
-| **URL 不含敏感資料** | Email、密碼、完整 token 不出現在 query string | 審查 router、redirect、連結 | 需檢查 |
+| **URL 不含敏感資料** | Email、密碼、完整 token 不出現在 query string | 審查 router、redirect、連結 | ✅ 已審查 + `sanitizeRedirect` 防 open redirect |
 | **重設密碼連結** | Supabase 重設連結會帶 hash 參數 | 為一次性，使用後失效；避免 log 或轉寄 | ✓ |
-| **Referrer-Policy** | 避免敏感路徑外洩至第三方 | 可設 `Referrer-Policy: strict-origin-when-cross-origin` | 未設 |
+| **Referrer-Policy** | 避免敏感路徑外洩至第三方 | 可設 `Referrer-Policy: strict-origin-when-cross-origin` | ✅ SEC-1 已設定 |
 
 **Done 條件**：密碼不經手刻 API；URL 與 redirect 不含 email/密碼/token（重設密碼 hash 除外）；必要時加上 Referrer-Policy。
 
 ---
 
-## SEC-3：注入與攻擊防護 🟡
+## SEC-3：注入與攻擊防護 ✅
 
 | 項目 | 說明 | 驗證方式 | 現況 |
 |------|------|----------|------|
-| **SQL Injection** | 所有 DB 查詢使用參數化 | 使用 Supabase client、RPC 參數，無 raw SQL 串接輸入 | ✓ |
-| **XSS** | 使用者輸入輸出時 escape | 避免 `v-html` 渲染未淨化內容；動態插入需 sanitize | 需審查 |
-| **CSRF** | API 非 cookie session | Bearer token 在 header；表單 POST 用 JSON | ✓ |
-| **輸入驗證** | 後端 Pydantic schema 驗證 | UUID、字串長度、enum 等 | ✓ |
-| **IDOR** | 不可跨用戶/活動操作 | RLS + `user_id` 來自 JWT，不信任 client 傳入 | ✓ |
-| **Rate limiting** | 登入、報名、核銷等限流 | `flask-limiter`；auth 10/min、register 20/min、checkin 60/min | ✓ |
+| **SQL Injection** | 所有 DB 查詢使用參數化 | 使用 Supabase client、RPC 參數，無 raw SQL 串接輸入 | ✅ |
+| **XSS** | 使用者輸入輸出時 escape | 零 `v-html`；唯一 `innerHTML` 已 escape；MIME 白名單阻擋 SVG/HTML 上傳 | ✅ |
+| **CSRF** | API 非 cookie session | Bearer token 在 header；表單 POST 用 JSON | ✅ |
+| **輸入驗證** | 後端 Pydantic schema 驗證 | UUID、字串長度、enum 等 | ✅ |
+| **IDOR** | 不可跨用戶/活動操作 | RLS + `user_id` 來自 JWT，不信任 client 傳入 | ✅ |
+| **Rate limiting** | 所有寫入端點限流 | 全面覆蓋：auth/register/checkin/orders/payments/tickets/organizer/admin | ✅ |
 
 **Done 條件**：無 raw SQL 串接；前端無 unsafe `v-html` 渲染使用者內容；rate limit 已實作。
 
 ---
 
-## SEC-4：Secrets 與部署檢查 ⬜
+## SEC-4：Secrets 與部署檢查 ✅
 
 | 項目 | 說明 | 驗證方式 | 現況 |
 |------|------|----------|------|
 | **Secrets 不進 Git** | `.env`、`.env.cloud`、`.env.local` 在 .gitignore | `git status` 無上述檔；`.env.example` 僅 placeholder | ✓ |
 | **後端無 SERVICE_ROLE 外洩** | 僅 server-side 使用 | 前端 bundle、API 回傳、log 皆無 | ✓ |
-| **錯誤訊息** | 500 不回傳 stack trace、SQL、路徑 | 生產環境 `FLASK_DEBUG=0`；回傳通用訊息 | 上線前確認 |
-| **Log** | 不 log 密碼、完整 token、信用卡 | 審查 `current_app.logger`、第三方 log 整合 | 需審查 |
-| **環境變數** | 生產用獨立 keys | 與開發/測試環境分離 | 上線前設 |
+| **錯誤訊息** | 500 不回傳 stack trace、SQL、路徑 | 生產環境 `FLASK_DEBUG=0`；回傳通用訊息；`details.raw` 生產自動過濾 | ✅ |
+| **Log** | 不 log 密碼、完整 token、信用卡 | 審查 `current_app.logger`、第三方 log 整合 | ✅ |
+| **環境變數** | 生產用獨立 keys | 啟動時驗證必要 env var（`_validate_production_config`） | ✅ |
 
 **Done 條件**：無 secret 寫入程式碼或 Git；生產錯誤訊息不洩漏內部資訊；log 不含敏感資料。
 
@@ -787,25 +825,25 @@
 
 ## SEC 建議執行順序
 
-1. **SEC-4**（Secrets 與部署）— 先確保無外洩  
-2. **SEC-3**（注入與攻擊）— Rate limit 已完成 ✓；審查 XSS
-3. **SEC-2**（身份與資料）— 檢查 URL、redirect  
-4. **SEC-1**（傳輸與端點）— 上線前設定 HTTPS、CORS、HSTS  
+1. **SEC-4**（Secrets 與部署）— ✅ 完成（details.raw 生產過濾 + Dockerfile gunicorn + env var 啟動檢查）
+2. **SEC-3**（注入與攻擊）— ✅ 完成（Rate limit 全面補齊 + MIME 白名單 + XSS/CSRF/SQLi 審查）
+3. **SEC-2**（身份與資料）— ✅ 完成（Open Redirect 修復 + sanitizeRedirect）
+4. **SEC-1**（傳輸與端點）— ✅ 完成（Security Headers + HSTS + CORS + URL 驗證）
 
 ---
 
 ## SEC 檢查清單（上線前逐項勾選）
 
-- [ ] 生產環境全程 HTTPS
-- [ ] CORS 僅允許白名單 domain
-- [ ] 密碼欄位為 `type="password"`，無 log
-- [ ] URL 與 redirect 不含 email/密碼/完整 token
-- [ ] 無 raw SQL 串接使用者輸入
-- [ ] 前端無 unsafe `v-html` 渲染使用者輸入
-- [ ] 登入/報名/核銷 API 有 rate limit
-- [ ] `.env` 等含 key 的檔案皆在 .gitignore
-- [ ] 生產 `FLASK_DEBUG=0`，錯誤不洩漏 stack/SQL
-- [ ] Log 不含密碼、完整 token、信用卡號
+- [x] 生產環境全程 HTTPS（`ENABLE_HSTS=true`、`_validate_production_config`）
+- [x] CORS 僅允許白名單 domain（`CORS_ORIGINS` 禁止 `*`）
+- [x] 密碼欄位為 `type="password"`，無 log
+- [x] URL 與 redirect 不含 email/密碼/完整 token（`sanitizeRedirect` 防 open redirect）
+- [x] 無 raw SQL 串接使用者輸入（Supabase client + RPC 參數化）
+- [x] 前端無 unsafe `v-html` 渲染使用者輸入（零 `v-html`、MIME 白名單阻擋 SVG/HTML）
+- [x] 登入/報名/核銷 API 有 rate limit（全面覆蓋所有寫入端點）
+- [x] `.env` 等含 key 的檔案皆在 .gitignore
+- [x] 生產 `FLASK_DEBUG=0`，錯誤不洩漏 stack/SQL（`details.raw` 生產自動過濾）
+- [x] Log 不含密碼、完整 token、信用卡號
 
 ---
 
@@ -844,22 +882,18 @@
 
 ---
 
-# 建議執行順序
+# 執行順序（全數完成）
 
-1. **補齊 MVP-1.5**（擇一或依序）  
-   - 1.5.1 帳號與通知：Email 串接、忘記密碼、個人資料  
-   - 1.5.2 視覺與主辦方：圖片上傳/輪播、主辦方代寄、核銷統計  
-   - 1.5.3 平台治理：Admin 前端、下架活動、Rate limiting  
+1. ✅ **MVP-1.5** 帳號與通知、視覺與主辦方、平台治理基礎
+2. ✅ **MVP-2** 訂單與 hold → ECPay → 出票 → 背景任務 → 表單擴充 → 退款
+3. ✅ **MVP-3** 成員權限 → 審核 → 結算提款 → Audit 與治理 → 使用者端擴充
+4. ✅ **Phase SEC** SEC-4 → SEC-3 → SEC-2 → SEC-1 資安驗證
 
-2. **MVP-2** 依序  
-   - 2.1 訂單與 hold → 2.2 ECPay → 2.3 出票 → 2.4 背景任務 → 2.5 表單擴充 → 2.6 退款  
+### 下一步
 
-3. **MVP-3** 依序  
-   - 3.1 成員權限 → 3.2 審核 → 3.3 結算提款 → 3.4 Audit 與治理  
-   - 進入 3.4 時可一併評估 [架構擴充（GraphQL/BFF）](#架構擴充評估api-層) 是否納入  
-
-4. **上線前：Phase SEC 資安驗證**（見 [Phase SEC](#phase-sec上線前資安驗證)）  
-   - SEC-4 → SEC-3 → SEC-2 → SEC-1，完成檢查清單後再對外開放  
+- 部署上線（Vercel + Railway/Render + Cloudflare）
+- 接入 Sentry + UptimeRobot 監控
+- 可選：進階分析報表、進階治理設定、PayPal 次要金流
 
 ---
 
@@ -869,31 +903,43 @@
 /
 ├── backend/
 │   ├── app/
-│   │   ├── __init__.py          # app factory
-│   │   ├── config.py
+│   │   ├── __init__.py          # app factory + security headers
+│   │   ├── config.py            # Config class (env-based, production validation)
 │   │   ├── extensions.py        # supabase client, mail, rate limit
-│   │   ├── blueprints/          # auth, events, registrations, checkin, admin, orders, payments, settlements
-│   │   ├── services/            # supabase_client, auth_service, events_service, registration_service, checkin_service, email_service, payment_service, settlement_service, audit_service
-│   │   ├── domain/              # schemas.py, errors.py
+│   │   ├── blueprints/          # auth, events, registrations, checkin, admin,
+│   │   │                        # orders, payments, webhooks, settlements,
+│   │   │                        # ticket_types, tickets, me, jobs, progress
+│   │   ├── services/            # supabase_client, auth_service, events_service,
+│   │   │                        # registration_service, checkin_service, email_service,
+│   │   │                        # payment_service, refund_service, settlement_service,
+│   │   │                        # audit_service, orders_service, ticket_service,
+│   │   │                        # compensation_service, hold_expiry_service,
+│   │   │                        # event_notification_service, progress_service,
+│   │   │                        # forms_service
+│   │   ├── domain/              # schemas.py, errors.py, order_state_machine.py
+│   │   ├── providers/           # ecpay.py (ECPay SDK wrapper)
 │   │   ├── tasks/               # jobs.py
-│   │   └── tests/
+│   │   └── tests/               # 38+ test files
 │   ├── requirements.txt
 │   ├── pyproject.toml
 │   ├── .env.example
 │   └── Dockerfile
 ├── frontend/
 │   ├── src/
-│   │   ├── api/                 # axios clients
-│   │   ├── views/
-│   │   ├── components/
+│   │   ├── api/                 # client.ts (axios), supabase.ts
+│   │   ├── views/               # 16+ pages + organizer/ sub-directory
+│   │   ├── components/          # DynamicForm, LiveProgressBar, etc.
+│   │   ├── composables/         # Vue composables
 │   │   ├── router/
-│   │   └── stores/              # pinia
+│   │   ├── stores/              # pinia: auth, organizer, error
+│   │   ├── constants/           # taxonomy.ts
+│   │   └── utils/               # errorMessages.ts, sanitizeRedirect.ts
 │   ├── .env.example
 │   └── Dockerfile
 ├── infra/
 │   └── docker-compose.yml
 ├── supabase/
-│   ├── migrations/
+│   ├── migrations/              # 0001-0028
 │   └── seed.sql
 └── scripts/
 ```
@@ -905,14 +951,24 @@
 | 實體 | 說明 |
 |------|------|
 | **profiles** | 使用者 metadata（link auth.users）：display_name, avatar_url, phone, social_links |
-| **organizations** | 主辦方帳戶：name, owner_user_id |
+| **organizations** | 主辦方帳戶：name, owner_user_id, approval_status (pending/approved/rejected), payout_bank_info |
 | **organizer_members** | user-role 對應：org_id, user_id, role (owner/admin/staff) |
-| **events** | 單一場次活動：org_id, title, start_at, end_at, status, ... |
-| **ticket_types** | capacity, per_user_limit, price（MVP-1 price=0 only）|
+| **events** | 單一場次活動：org_id, title, start_at, end_at, status (draft/published/ended/cancelled/disabled), dance_styles[], event_types[] |
+| **ticket_types** | capacity, sold_count, hold_count, per_user_limit, price_cents |
 | **tickets** | 一張票一列：ticket_id, qr_secret, status (issued/checked_in/cancelled), checked_in_at, checker_id |
-| **orders** | MVP-2+ |
-| **payments** | MVP-2+ |
-| **settlements / payouts / ledger / audit_logs** | MVP-3+ |
+| **event_forms** | 動態報名表單 schema（event-level / ticket-type-level） |
+| **orders** | order_id, user_id, status, total_cents, hold_expires_at |
+| **order_items** | order_id, ticket_type_id, quantity, price_cents |
+| **payments** | order_id, provider (ecpay), external_id, amount_cents, status |
+| **webhook_events** | provider, external_id（UNIQUE 去重，冪等） |
+| **refunds** | order_id, amount_cents, status (requested/refunded/failed) |
+| **settlements** | org_id, period, gross_cents, platform_fee_cents, net_cents |
+| **ledger_entries** | org_id, type (sale/platform_fee/payout), amount_cents |
+| **payout_requests** | settlement_id, status (requested/approved/paid/failed) |
+| **audit_logs** | actor_id, action, target_type, target_id, details |
+| **event_stages** | event_id, title, description, sort_order |
+| **event_progress** | event_id, current_stage_id, status, note |
+| **event_progress_log** | event_id, stage_id, action, timestamp |
 
 ---
 
@@ -937,25 +993,35 @@
 | 路徑 | 說明 |
 |------|------|
 | `/` | 活動列表 |
-| `/events/:eventId` | 活動詳情 |
+| `/events/:eventId` | 活動詳情（含即時進度） |
 | `/login` | 登入 |
+| `/reset-password` | 重設密碼 |
 | `/tickets` | 我的票券（需登入） |
-| `/organizer` | 主辦方管理 |
+| `/orders/:orderId` | 訂單詳情 |
+| `/profile` | 個人資料 |
+| `/organizer` | 主辦方首頁 |
 | `/organizer/apply` | 申請主辦方 |
 | `/organizer/events` | 活動列表與建立 |
-| `/organizer/forms` | Form Builder |
-| `/organizer/checkin/:eventId` | 核銷 |
+| `/organizer/events/:eventId/edit` | 活動編輯 |
+| `/organizer/events/:eventId/forms` | Form Builder |
+| `/organizer/events/:eventId/manage` | 名單管理（含 CSV 匯出） |
+| `/organizer/events/:eventId/checkin` | 核銷 |
+| `/organizer/events/:eventId/progress` | 即時進度管理 |
+| `/organizer/members` | 成員管理 |
+| `/admin` | Admin 後台 |
 
 **後端 API（`/api/v1` 前綴）：**
 
 | 方法 | 路徑 | 說明 |
 |------|------|------|
-| GET | `/events` | 活動列表 |
+| GET | `/events` | 活動列表（支援 q/styles/types/from/to/sort） |
 | GET | `/events/:id` | 活動詳情 |
 | GET | `/events/:id/forms` | 取得報名表單 |
-| POST | `/events/:id/register` | 報名（需登入） |
+| POST | `/events/:id/register` | 免費報名（需登入） |
+| GET | `/events/:id/progress` | 公開即時進度 |
 | GET | `/me/tickets` | 我的票券（需登入） |
 | POST | `/me/tickets/:id/resend` | 重寄票券（需登入） |
+| GET | `/me/organizer` | 我的主辦方摘要 |
 | POST | `/organizer/apply` | 申請主辦方（需登入） |
 | POST | `/organizer/events` | 建立活動 |
 | PATCH | `/organizer/events/:id` | 編輯活動 |
@@ -963,28 +1029,69 @@
 | PATCH | `/organizer/events/:id/internal-note` | 設定私密備註 |
 | GET·POST | `/organizer/events/:id/forms` | 報名表單 |
 | POST | `/organizer/events/:id/ticket-types` | 建立票種 |
+| PATCH | `/organizer/events/:id/ticket-types/:ttId` | 更新票種 |
 | GET | `/organizer/events/:id/attendees` | 名單查詢 |
+| POST | `/organizer/events/:id/attendees/:ticketId/resend` | 主辦方代寄 |
 | POST | `/organizer/events/:id/checkin/verify` | 驗票 |
 | POST | `/organizer/events/:id/checkin/commit` | 核銷 |
-| GET | `/admin/events` | Admin 活動列表（allowlist） |
+| GET·PUT | `/organizer/events/:id/stages` | 即時進度 stages |
+| GET·PATCH | `/organizer/events/:id/progress` | 即時進度狀態 |
+| GET | `/organizer/events/:id/progress/log` | 進度歷史 |
+| GET | `/organizer/me/members` | 成員列表 |
+| GET | `/organizer/settlements` | 結算列表 |
+| POST | `/organizer/settlements/:id/payout` | 申請提款 |
+| POST | `/orders` | 建立 hold 訂單 |
+| GET | `/orders` | 訂單列表 |
+| GET | `/orders/:id` | 訂單詳情 |
+| DELETE | `/orders/:id` | 取消訂單 |
+| POST | `/payments/:orderId/checkout` | ECPay 結帳參數 |
+| POST | `/webhooks/ecpay` | ECPay Webhook |
+| GET | `/admin/events` | Admin 活動列表 |
+| PATCH | `/admin/events/:id` | Admin 更新活動狀態 |
+| PATCH | `/admin/organizations/:id/approval` | 主辦方審核 |
+| POST | `/admin/orders/:id/refund` | 退款 |
+| POST | `/admin/orders/:id/compensate` | 補票 |
+| POST | `/admin/settlements/generate` | 產生結算 |
+| PATCH | `/admin/payouts/:id` | 核准/退件提款 |
+| POST | `/jobs/event-reminders` | Cron: 活動提醒 |
+| POST | `/jobs/release-holds` | Cron: 釋放逾時 hold |
+| POST | `/jobs/compensate` | Cron: 補償出票 |
 
 **DB migrations（依序）：**
 
-- `0001_mvp1_init.sql`：profiles、organizations、events、ticket_types、tickets
-- `0002_mvp1_rls.sql`：RLS policies
-- `0003_mvp1_rpc.sql`：register_free、checkin RPC
-- `0004`～`0005`：patch
-- `0006_mvp11_event_taxonomy.sql`：dance_styles、event_types
-- `0007_mvp15a_event_metadata.sql`：活動 metadata
-- `0008_mvp15a_event_internal_notes.sql`：internal notes
-- `0009`～`0011`：forms 表 + register_free_v2
+- `0001`：MVP-1 初始 schema（profiles、organizations、events、ticket_types、tickets）
+- `0002`：MVP-1 RLS policies
+- `0003`：MVP-1 RPC（register_free、checkin）
+- `0004`～`0005`：MVP-1 patch（drift、pgcrypto search_path）
+- `0006`：MVP-1.1 event taxonomy（dance_styles、event_types）
+- `0007`：MVP-1.5a event metadata
+- `0008`：MVP-1.5a internal notes
+- `0009`～`0011`：MVP-1.5b forms 表 + register_free_v2
+- `0012`：cancel_ticket RPC
+- `0013`：Org public SELECT for published events
+- `0014`：Storage: event_media bucket
+- `0015`：Platform governance（roles、permissions）
+- `0016`：Storage: event_media public read
+- `0017`：MVP-2 orders、payments、webhooks
+- `0018`：MVP-2 background tasks
+- `0019`：MVP-2 create_hold_order RPC（race-safe）
+- `0020`：MVP-2 issue_tickets RPC
+- `0021`：MVP-2 cancel_holding_order RPC
+- `0022`：MVP-2.3 fix hold_count idempotency
+- `0023`：MVP-2 refunds 表
+- `0024`：MVP-3 org approval（approval_status）
+- `0025`：MVP-3.1 organizer_members（roles）
+- `0026`：MVP-3.3 settlements、ledger_entries、payout_requests
+- `0027`：MVP-3.4 audit_logs
+- `0028`：Live event progress（event_stages、event_progress、event_progress_log）
 
 ---
 
 # 參考文件
 
-- [AGENTS.md](../../AGENTS.md) - 專案規範、API、Supabase、防超賣
+- [CLAUDE.md](../../CLAUDE.md) - 專案開發指南（架構、規範、常用指令）
 - [.claude/skills/ecpay](.claude/skills/ecpay) - **金流開發必讀**（ECPay 官方 Skill，AIO、CheckMacValue、Webhook）
 - [Tools.md](./Tools.md) - 工具選單（金流、郵件、監控、部署等）
 - [note.md](./note.md) - M1/M2/M3 細項
-- [verification-report.md](../verification/mvp1/verification-report.md) - 功能驗證對照
+- [docs/verification/](../verification/) - 驗證報告與驗收清單
+- [AGENTS.md](../archive/old/AGENTS.md) - 原始專案規範（已歸檔）

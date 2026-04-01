@@ -9,7 +9,8 @@
 | `old/` | 舊版文件（AGENTS.md 舊規範、ChatGPT 對話整理、舊版 note） |
 | `mvp2-dev/` | MVP-2 已完成的開發計畫（訂單、金流、退款、背景任務） |
 | `mvp3-dev/` | MVP-3 已完成的開發計畫（權限、審核、結算、Audit） |
-| `feature-plans/` | 已完成的功能開發計畫（API 測試、Email、Rate limit、Error boundary、導航） |
+| `feature-plans/` | 已完成的功能開發計畫（API 測試、Email、Rate limit、Error boundary、導航、即時進度） |
+| `sec-dev/` | SEC-1~4 已完成的安全強化開發計畫（傳輸安全、身份保護、注入防護、Secrets 部署） |
 | `verification/` | 已合併的驗證原始檔（合併至 `docs/verification/` 新檔案） |
 | `DOCS_UPDATE_PLAN.md` | 2025-03-19 執行完畢的文件更新計畫 |
 | `CYPHER_REDESIGN_V2.md` | V2 深色改版設計（合併至 `docs/design/design-reference.md`） |

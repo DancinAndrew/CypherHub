@@ -1,6 +1,6 @@
 # CypherHub 文件說明
 
-`docs/` 依用途分為七類：**API 文件**、**環境設定**、**開發規格**、**設計參考**、**部署與 CI/CD**、**驗證與 QA**、**歸檔**。
+`docs/` 依用途分為八類：**API 文件**、**環境設定**、**開發規格**、**安全強化（SEC）**、**設計參考**、**部署與 CI/CD**、**驗證與 QA**、**歸檔**。
 
 ---
 
@@ -8,53 +8,55 @@
 
 ```
 docs/
-├── README.md                # 本說明
-├── api/                     # API 文件
-│   ├── endpoints.md         # REST API 端點總表（38 端點）
-│   ├── authentication.md    # 認證與權限機制
-│   └── error-codes.md       # Error code 對照表（60+ codes）
-├── setup/                   # 環境設定
+├── README.md                     # 本說明
+├── api/                          # API 文件
+│   ├── endpoints.md              # REST API 端點總表（38 端點）
+│   ├── authentication.md         # 認證與權限機制
+│   └── error-codes.md            # Error code 對照表（60+ codes）
+├── setup/                        # 環境設定
 │   ├── local-cloud-switch.md
 │   └── local-supabase-reference.md
-├── development/             # 開發規格（仍活躍）
-│   ├── develop.md           # 主規格（必讀）
-│   ├── Tools.md             # 工具選單
-│   ├── database-schema.md   # DB Schema 總覽（19 表 + 10 RPC）
-│   └── environment-variables.md # 環境變數完整清單（21 變數）
-├── design/                  # 設計參考
-│   └── design-reference.md  # V2 改版 + UI/UX 優化（合併版）
-├── deployment/              # 部署與 CI/CD
-│   ├── deploy-guide.md      # 完整部署指南（11 章節）
-│   └── ci-cd.md             # GitHub Actions CI/CD（11 章節）
-├── verification/            # 驗證與 QA
-│   ├── master-plan.md       # MVP-1/2/3 主驗證計畫（AI 可重複執行）
-│   ├── acceptance-checklist.md  # 最新完整驗收清單（397 項）
-│   ├── implementation-status.md # MVP-1/2/3 實作狀態總覽
-│   ├── mvp1-verification.md # MVP-1 手動清單 + 邏輯驗證（合併版）
-│   ├── mvp2-verification.md # MVP-2 驗證計畫 + 報告（合併版）
-│   ├── mvp3-verification.md # MVP-3 測試清單 + 報告（合併版）
-│   └── reports/             # 功能驗證報告
+├── development/                  # 開發規格與功能計畫
+│   ├── develop.md                # 主規格（必讀）— MVP-1~3 + SEC-1~4
+│   ├── Tools.md                  # 工具選單
+│   ├── database-schema.md        # DB Schema 總覽（20 表 + 10 RPC）
+│   ├── environment-variables.md  # 環境變數完整清單（21 變數）
+│   └── google-oauth-login.md     # Google OAuth 登入開發計畫（進行中）
+├── design/                       # 設計參考
+│   └── design-reference.md       # V2 改版 + UI/UX 優化（合併版）
+├── deployment/                   # 部署與 CI/CD
+│   ├── deploy-guide.md           # 完整部署指南（11 章節）
+│   └── ci-cd.md                  # GitHub Actions CI/CD（11 章節）
+├── verification/                 # 驗證與 QA
+│   ├── master-plan.md            # MVP-1/2/3 主驗證計畫（AI 可重複執行）
+│   ├── acceptance-checklist.md   # 最新完整驗收清單（397 項）
+│   ├── implementation-status.md  # MVP-1/2/3 實作狀態總覽
+│   ├── mvp1-verification.md      # MVP-1 手動清單 + 邏輯驗證（合併版）
+│   ├── mvp2-verification.md      # MVP-2 驗證計畫 + 報告（合併版）
+│   ├── mvp3-verification.md      # MVP-3 測試清單 + MVP-3.5 報告
+│   └── reports/                  # 功能驗證報告
 │       ├── api-integration-test-report.md
 │       ├── email-service-test-report.md
 │       ├── rate-limit-test-report.md
 │       ├── error-boundary-report.md
 │       └── navigate-button-report.md
-└── archive/                 # 歸檔（已完成/已取代）
+└── archive/                      # 歸檔（已完成/已取代）
     ├── README.md
-    ├── old/                 # 舊版文件（AGENTS.md、ChatGPT 整理等）
-    ├── mvp2-dev/            # MVP-2 已完成開發計畫
-    ├── mvp3-dev/            # MVP-3 已完成開發計畫
-    ├── feature-plans/       # 已完成功能計畫
-    ├── verification/        # 合併前的驗證原始檔
-    └── ...                  # 其他已執行的一次性計畫
+    ├── old/                      # 舊版文件（AGENTS.md、ChatGPT 整理等）
+    ├── mvp2-dev/                 # MVP-2 已完成開發計畫
+    ├── mvp3-dev/                 # MVP-3 已完成開發計畫
+    ├── feature-plans/            # 已完成功能計畫（含 live-event-progress）
+    ├── sec-dev/                  # SEC-1~4 已完成安全強化計畫
+    ├── verification/             # 合併前的驗證原始檔
+    └── ...                       # 其他已執行的一次性計畫
 ```
 
 ---
 
 ## api/ — API 文件
 
-| 檔案 | 應撰寫內容 | 讀者 |
-|------|------------|------|
+| 檔案 | 說明 | 讀者 |
+|------|------|------|
 | [endpoints.md](api/endpoints.md) | 38 個 REST API 端點，依 12 個 blueprint 分組，含 HTTP method、路徑、請求/回應範例、分頁參數、權限需求 | 人 + AI |
 | [authentication.md](api/authentication.md) | 認證流程說明：Supabase Auth JWT、Bearer token、`@require_auth`、Token refresh、四層權限模型 | 人 + AI |
 | [error-codes.md](api/error-codes.md) | 60+ 個 `AppError` error code 對照表（code → HTTP status → 中英文訊息 → 觸發場景），含前端 `errorMessages.ts` 映射 | 人 + AI |
@@ -70,14 +72,26 @@ docs/
 
 ---
 
-## development/ — 開發規格
+## development/ — 開發規格與功能計畫
+
+### 核心規格
 
 | 檔案 | 說明 | 讀者 |
 |------|------|------|
-| [develop.md](development/develop.md) | 開發路線圖、規格主檔（MVP-1~3、SEC、API、DB） | 人 + AI |
+| [develop.md](development/develop.md) | 開發路線圖、規格主檔（MVP-1~3、SEC-1~4、API、DB） | 人 + AI |
 | [Tools.md](development/Tools.md) | 工具選單（Vercel、Sentry、Resend 等） | 人 |
 | [database-schema.md](development/database-schema.md) | 19 張表 + 10 個 RPC + 8 個 enum：所有欄位定義、FK、RLS 策略、Check Constraints、索引、pg_cron 排程。依 migration（0001-0027）整理 | 人 + AI |
 | [environment-variables.md](development/environment-variables.md) | 21 個環境變數完整清單（Backend 17 + Frontend 4），含機密等級（🔴/🟡/🟢）、必填/選填、預設值、本地/雲端差異、快速設定指南、正式環境 Checklist | 人 + AI |
+
+### 安全強化（SEC-1~4）— 全部 ✅ 完成（已歸檔）
+
+SEC-1~4 開發計畫已移至 [archive/sec-dev/](archive/sec-dev/)。驗證結果見 develop.md [Phase SEC 章節](development/develop.md#phase-sec上線前資安驗證)。
+
+### 功能開發計畫
+
+| 檔案 | 說明 |
+|------|------|
+| [google-oauth-login.md](development/google-oauth-login.md) | Google OAuth 登入開發計畫（進行中） |
 
 ---
 
@@ -89,9 +103,18 @@ docs/
 
 ---
 
+## deployment/ — 部署與 CI/CD
+
+| 檔案 | 說明 | 讀者 |
+|------|------|------|
+| [deploy-guide.md](deployment/deploy-guide.md) | 完整部署指南：架構總覽、Supabase 雲端設定、Backend 4 種部署方案、Frontend Vercel 部署、DNS、環境變數、背景任務、Health Check、Checklist、Rollback、FAQ | 人 |
+| [ci-cd.md](deployment/ci-cd.md) | GitHub Actions CI/CD：觸發條件、backend/frontend Job、Branch 策略、Secrets 設定、CD 自動部署、Rollback、效能與快取 | 人 + AI |
+
+---
+
 ## verification/ — 驗證與 QA
 
-### 總覽（給 AI 或團隊負責人）
+### 總覽
 
 | 檔案 | 說明 | 讀者 |
 |------|------|------|
@@ -119,15 +142,6 @@ docs/
 
 ---
 
-## deployment/ — 部署與 CI/CD
-
-| 檔案 | 應撰寫內容 | 讀者 |
-|------|------------|------|
-| [deploy-guide.md](deployment/deploy-guide.md) | 完整部署指南：架構總覽、Supabase 雲端設定（migrations / Storage / Auth / pg_cron）、Backend 4 種部署方案（Cloud Run / Fly.io / Railway / VPS）、Frontend Vercel 部署、DNS 設定、環境變數配置、背景任務、Health Check、首次部署 Checklist、更新部署與 Rollback、常見問題 | 人 |
-| [ci-cd.md](deployment/ci-cd.md) | GitHub Actions CI/CD：觸發條件、backend/frontend 兩 Job 詳解、Branch 策略、Secrets 設定、手動部署流程、CD 自動部署範例（Cloud Run / Supabase migration）、Rollback、CI 失敗排查、效能與快取、未來改善方向 | 人 + AI |
-
----
-
 ## archive/ — 歸檔
 
 已完成或被取代的文件，保留作歷史參考。詳見 [archive/README.md](archive/README.md)。
@@ -141,6 +155,8 @@ docs/
 - **查 API 端點** → [api/endpoints.md](api/endpoints.md)
 - **查 Error Code** → [api/error-codes.md](api/error-codes.md)
 - **查 DB Schema** → [development/database-schema.md](development/database-schema.md)
+- **查環境變數** → [development/environment-variables.md](development/environment-variables.md)
+- **安全強化計畫** → SEC-1~4 已歸檔至 [archive/sec-dev/](archive/sec-dev/)，結果見 [develop.md](development/develop.md#phase-sec上線前資安驗證)
 - **部署上線** → [deployment/deploy-guide.md](deployment/deploy-guide.md)
 - **MVP-1/2/3 驗證（AI 用）** → [verification/master-plan.md](verification/master-plan.md)
 - **最新驗收清單** → [verification/acceptance-checklist.md](verification/acceptance-checklist.md)
