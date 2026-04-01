@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 
 import DynamicForm from "../components/DynamicForm.vue";
+import LiveProgressBar from "../components/LiveProgressBar.vue";
 import {
   createCheckout,
   createHoldOrder,
@@ -14,6 +15,7 @@ import {
   type EventForm,
   type TicketType,
 } from "../api/client";
+import { useEventProgress } from "../composables/useEventProgress";
 import { eventTypeLabelFromKey, styleLabelFromKey } from "../constants/taxonomy";
 import { useAuthStore } from "../stores/auth";
 import { toApiErrorMessage } from "../utils/errorMessages";
@@ -36,6 +38,10 @@ const selectedForm = ref<EventForm | null>(null);
 const formAnswers = ref<Record<string, unknown>>({});
 const carouselIndex = ref(0);
 const shareMessage = ref<string | null>(null);
+
+const { progress: liveProgress, stages: liveStages } = useEventProgress(
+  String(route.params.eventId ?? ""),
+);
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL ?? "";
 
@@ -304,6 +310,13 @@ onMounted(() => {
               {{ detail.event.description || detail.event.short_desc || "無描述" }}
             </p>
           </header>
+
+          <!-- Live Progress -->
+          <LiveProgressBar
+            v-if="liveStages.length > 0"
+            :progress="liveProgress"
+            :stages="liveStages"
+          />
 
           <!-- Organizer -->
           <section v-if="detail.organizer" class="card p-6 animate-slide-up">

@@ -341,12 +341,19 @@ class EventsService:
                 )
                 other_events = supabase_client.extract_data(other_response) or []
 
+            # Live progress
+            from .progress_service import progress_service
+
+            progress_data = progress_service.get_public_progress(event_id)
+
             return {
                 "event": event,
                 "event_media": supabase_client.extract_data(media_response) or [],
                 "ticket_types": supabase_client.extract_data(ticket_type_response) or [],
                 "organizer": organizer,
                 "other_events": other_events,
+                "progress": progress_data.get("progress"),
+                "stages": progress_data.get("stages", []),
             }
         except AppError:
             raise

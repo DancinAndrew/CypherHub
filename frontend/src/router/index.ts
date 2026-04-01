@@ -14,6 +14,7 @@ import OrganizerFormBuilderView from "../views/organizer/OrganizerFormBuilderVie
 import OrganizerHomeView from "../views/organizer/OrganizerHomeView.vue";
 import OrganizerManageView from "../views/organizer/OrganizerManageView.vue";
 import OrganizerMembersView from "../views/organizer/OrganizerMembersView.vue";
+import OrganizerProgressView from "../views/organizer/OrganizerProgressView.vue";
 import ProfileView from "../views/ProfileView.vue";
 import { useAuthStore } from "../stores/auth";
 import { pinia } from "../stores/index";
@@ -121,6 +122,12 @@ const router = createRouter({
       path: "/organizer/checkin",
       name: "organizer-checkin-manual",
       component: OrganizerCheckinView,
+      meta: { requiresAuth: true },
+    },
+    {
+      path: "/organizer/progress/:eventId",
+      name: "organizer-progress",
+      component: OrganizerProgressView,
       meta: { requiresAuth: true },
     },
     {

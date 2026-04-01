@@ -117,12 +117,47 @@ export type OrganizerSummary = {
   logo_url?: string | null;
 };
 
+export type EventStage = {
+  id: string;
+  event_id: string;
+  title: string;
+  description?: string | null;
+  sort_order: number;
+  created_at?: string | null;
+  updated_at?: string | null;
+};
+
+export type EventProgress = {
+  id: string;
+  event_id: string;
+  current_stage_id: string | null;
+  current_stage_title: string | null;
+  status: "not_started" | "in_progress" | "paused" | "ended";
+  note: string | null;
+  updated_at: string | null;
+  total_stages: number;
+  current_stage_order: number | null;
+};
+
+export type EventProgressLogEntry = {
+  id: string;
+  event_id: string;
+  stage_id: string | null;
+  stage_title: string | null;
+  status: string;
+  note: string | null;
+  changed_by: string;
+  changed_at: string | null;
+};
+
 export type EventDetail = {
   event: EventItem;
   event_media: Array<{ id: string; path: string; sort_order: number }>;
   ticket_types: TicketType[];
   organizer?: OrganizerSummary | null;
   other_events?: EventItem[];
+  progress?: EventProgress | null;
+  stages?: EventStage[];
 };
 
 export type FormFieldType =
@@ -663,6 +698,60 @@ export function redirectToEcpay(formParams: Record<string, string | number>, cas
   }
   document.body.appendChild(form);
   form.submit();
+}
+
+// --- Live Event Progress ---
+
+export async function fetchEventProgress(eventId: string): Promise<{ progress: EventProgress | null; stages: EventStage[] }> {
+  const response = await client.get<{ progress: EventProgress | null; stages: EventStage[] }>(
+    `/api/v1/events/${eventId}/progress`,
+  );
+  return response.data;
+}
+
+export async function organizerFetchStages(eventId: string): Promise<EventStage[]> {
+  const response = await client.get<{ stages: EventStage[] }>(
+    `/api/v1/organizer/events/${eventId}/stages`,
+  );
+  return response.data.stages;
+}
+
+export async function organizerReplaceStages(
+  eventId: string,
+  stages: Array<{ id?: string; title: string; description?: string; sort_order: number }>,
+): Promise<EventStage[]> {
+  const response = await client.put<{ stages: EventStage[] }>(
+    `/api/v1/organizer/events/${eventId}/stages`,
+    { stages },
+  );
+  return response.data.stages;
+}
+
+export async function organizerFetchProgress(
+  eventId: string,
+): Promise<{ progress: EventProgress | null; stages: EventStage[] }> {
+  const response = await client.get<{ progress: EventProgress | null; stages: EventStage[] }>(
+    `/api/v1/organizer/events/${eventId}/progress`,
+  );
+  return response.data;
+}
+
+export async function organizerUpdateProgress(
+  eventId: string,
+  payload: { current_stage_id?: string; status?: string; note?: string | null },
+): Promise<EventProgress> {
+  const response = await client.patch<{ progress: EventProgress }>(
+    `/api/v1/organizer/events/${eventId}/progress`,
+    payload,
+  );
+  return response.data.progress;
+}
+
+export async function organizerFetchProgressLog(eventId: string): Promise<EventProgressLogEntry[]> {
+  const response = await client.get<{ log: EventProgressLogEntry[] }>(
+    `/api/v1/organizer/events/${eventId}/progress/log`,
+  );
+  return response.data.log;
 }
 
 export default client;

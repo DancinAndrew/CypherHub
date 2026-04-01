@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import Enum
-from typing import Any
+from typing import Any, Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -153,6 +153,8 @@ class EventDetailResponse(BaseModel):
     ticket_types: list[TicketTypeResponse]
     organizer: OrganizerSummaryResponse | None = None
     other_events: list[EventResponse] = Field(default_factory=list)
+    progress: EventProgressResponse | None = None
+    stages: list[EventStageResponse] = Field(default_factory=list)
 
 
 class RegisterRequest(BaseModel):
@@ -531,3 +533,65 @@ class CompTicketRequest(BaseModel):
         if not (self.email or "").strip() and not self.user_id:
             raise ValueError("Provide email or user_id")
         return self
+
+
+# --- Live Event Progress ---
+
+
+class EventStageItem(BaseModel):
+    id: UUID | None = None
+    title: str = Field(min_length=1, max_length=100)
+    description: str | None = None
+    sort_order: int = Field(ge=0)
+
+
+class EventStagesRequest(BaseModel):
+    stages: list[EventStageItem] = Field(min_length=1, max_length=30)
+
+
+class EventStageResponse(BaseModel):
+    id: UUID
+    event_id: UUID
+    title: str
+    description: str | None = None
+    sort_order: int
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+
+
+class EventProgressUpdate(BaseModel):
+    current_stage_id: UUID | None = None
+    status: Literal["not_started", "in_progress", "paused", "ended"] | None = None
+    note: str | None = Field(default=None, max_length=500)
+
+
+class EventProgressResponse(BaseModel):
+    id: UUID
+    event_id: UUID
+    current_stage_id: UUID | None = None
+    current_stage_title: str | None = None
+    status: str
+    note: str | None = None
+    updated_at: datetime | None = None
+    total_stages: int = 0
+    current_stage_order: int | None = None
+
+
+class EventProgressLogEntry(BaseModel):
+    id: UUID
+    event_id: UUID
+    stage_id: UUID | None = None
+    stage_title: str | None = None
+    status: str
+    note: str | None = None
+    changed_by: UUID
+    changed_at: datetime | None = None
+
+
+class EventProgressLogResponse(BaseModel):
+    items: list[EventProgressLogEntry]
+
+
+class EventProgressWithStagesResponse(BaseModel):
+    progress: EventProgressResponse | None = None
+    stages: list[EventStageResponse] = Field(default_factory=list)
