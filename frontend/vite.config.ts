@@ -1,5 +1,4 @@
-/// <reference types="vitest" />
-import { defineConfig } from "vite";
+import { defineConfig } from "vitest/config";
 import vue from "@vitejs/plugin-vue";
 
 // SEC-1: 生產建置時檢查 API URL 是否使用 HTTPS
