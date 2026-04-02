@@ -5,11 +5,14 @@
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc --noEmit && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "@zxing/browser": "^0.1.5",
     "@supabase/supabase-js": "^2.49.8",
+    "@zxing/browser": "^0.1.5",
     "axios": "^1.7.9",
     "pinia": "^2.2.6",
     "qrcode.vue": "^3.6.0",
@@ -19,11 +22,15 @@
   "devDependencies": {
     "@types/node": "^22.10.1",
     "@vitejs/plugin-vue": "^5.2.1",
+    "@vitest/coverage-v8": "^4.1.2",
+    "@vue/test-utils": "^2.4.6",
     "autoprefixer": "^10.4.20",
+    "jsdom": "^29.0.1",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.16",
     "typescript": "^5.7.2",
     "vite": "^6.0.3",
+    "vitest": "^4.1.2",
     "vue-tsc": "^2.1.10"
   }
 }
