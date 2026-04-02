@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-import json
+import urllib.parse
 import urllib.request
 from dataclasses import dataclass
 from typing import Any
 
+import httpx
 from flask import Flask, current_app
 
 try:
@@ -23,6 +24,7 @@ class SupabaseClientWrapper:
     def __init__(self) -> None:
         self.settings = SupabaseSettings()
         self._initialized = False
+        self._http_client = httpx.Client(timeout=10.0)
 
     def init_app(self, app: Flask) -> None:
         self.settings = SupabaseSettings(
@@ -49,10 +51,9 @@ class SupabaseClientWrapper:
                     return em
         return None
 
-    @staticmethod
-    def get_user_email_by_id(user_id: str) -> str | None:
+    def get_user_email_by_id(self, user_id: str) -> str | None:
         """Resolve user email by id via Auth Admin API (requires SUPABASE_SERVICE_ROLE_KEY).
-        Handles both response shapes: { \"user\": {...} } or top-level user object.
+        Handles both response shapes: { "user": {...} } or top-level user object.
         """
         url = current_app.config.get("SUPABASE_URL", "").rstrip("/")
         key = current_app.config.get("SUPABASE_SERVICE_ROLE_KEY", "").strip()
@@ -61,27 +62,25 @@ class SupabaseClientWrapper:
                 "[auth] get_user_email_by_id: SUPABASE_URL or SERVICE_ROLE_KEY not set"
             )
             return None
-        req = urllib.request.Request(
-            f"{url}/auth/v1/admin/users/{user_id}",
-            headers={"Authorization": f"Bearer {key}", "apikey": key},
-            method="GET",
-        )
         try:
-            with urllib.request.urlopen(req, timeout=10) as resp:
-                data = json.loads(resp.read().decode())
+            resp = self._http_client.get(
+                f"{url}/auth/v1/admin/users/{user_id}",
+                headers={"Authorization": f"Bearer {key}", "apikey": key}
+            )
+            resp.raise_for_status()
+            data = resp.json()
             if not isinstance(data, dict):
                 return None
             # Some versions return { "user": {...} }, others return the user at top level
             user = data.get("user") if data.get("user") is not None else data
-            return SupabaseClientWrapper._email_from_user_like(user)
+            return self._email_from_user_like(user)
         except Exception as exc:
             current_app.logger.warning(
                 "[auth] get_user_email_by_id failed for %s: %s", user_id, exc
             )
             return None
 
-    @staticmethod
-    def get_user_id_by_email(email: str) -> str | None:
+    def get_user_id_by_email(self, email: str) -> str | None:
         """Resolve user id by email via Auth Admin API (requires SUPABASE_SERVICE_ROLE_KEY).
         Returns first matching user id or None.
         """
@@ -97,14 +96,13 @@ class SupabaseClientWrapper:
             return None
         # GoTrue filter: eq.email for exact match
         filter_val = urllib.parse.quote(f"eq.{email}")
-        req = urllib.request.Request(
-            f"{url}/auth/v1/admin/users?filter=email%3D{filter_val}",
-            headers={"Authorization": f"Bearer {key}", "apikey": key},
-            method="GET",
-        )
         try:
-            with urllib.request.urlopen(req, timeout=10) as resp:
-                data = json.loads(resp.read().decode())
+            resp = self._http_client.get(
+                f"{url}/auth/v1/admin/users?filter=email%3D{filter_val}",
+                headers={"Authorization": f"Bearer {key}", "apikey": key}
+            )
+            resp.raise_for_status()
+            data = resp.json()
             if not isinstance(data, dict):
                 return None
             users = data.get("users") or []

@@ -135,6 +135,7 @@ class TestProductionURLValidation:
                 "SUPABASE_SERVICE_ROLE_KEY": "k",
                 "CRON_SECRET": "s",
                 "CORS_ORIGINS": ["https://example.com"],
+                "FLASK_DEBUG": False,
             }
         )
         assert app is not None

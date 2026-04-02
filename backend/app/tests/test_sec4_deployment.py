@@ -56,6 +56,7 @@ def test_error_details_raw_hidden_in_production() -> None:
         SUPABASE_ANON_KEY="k",
         SUPABASE_SERVICE_ROLE_KEY="k",
         CRON_SECRET="s",
+        FLASK_DEBUG=False,
     )
 
     @app.get("/test-error")
@@ -106,6 +107,7 @@ def test_error_details_non_raw_preserved_in_production() -> None:
         SUPABASE_ANON_KEY="k",
         SUPABASE_SERVICE_ROLE_KEY="k",
         CRON_SECRET="s",
+        FLASK_DEBUG=False,
     )
 
     @app.get("/test-error")

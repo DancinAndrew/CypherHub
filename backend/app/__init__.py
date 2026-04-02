@@ -3,6 +3,8 @@ from __future__ import annotations
 from flask import Flask, jsonify
 from flask_cors import CORS
 
+from app.logger import setup_structured_logging
+
 from .blueprints.admin import bp as admin_bp
 from .blueprints.auth import bp as auth_bp
 from .blueprints.checkin import bp as checkin_bp
@@ -36,6 +38,7 @@ def create_app(test_config: dict | None = None) -> Flask:
     if test_config:
         app.config.update(test_config)
 
+    setup_structured_logging(app)
     init_extensions(app)
     _validate_cors_origins(app)
     _validate_production_urls(app)
