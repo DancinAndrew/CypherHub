@@ -75,7 +75,8 @@ class EventsService:
                 if eid:
                     totals[eid] = totals.get(eid, 0) + int(r.get("sold_count") or 0)
             return totals
-        except Exception:
+        except Exception as exc:
+            current_app.logger.warning(f"Error: {exc}")
             return {eid: 0 for eid in event_ids}
 
     def list_events(
@@ -159,7 +160,8 @@ class EventsService:
                 if eid and eid not in seen:
                     seen[eid] = str(r.get("path", ""))
             return seen
-        except Exception:
+        except Exception as exc:
+            current_app.logger.warning(f"Error: {exc}")
             return {}
 
     def list_public_events(
@@ -273,7 +275,8 @@ class EventsService:
             )
             rows = supabase_client.extract_data(response) or []
             return rows[0].get("title", "活動") if rows else "活動"
-        except Exception:
+        except Exception as exc:
+            current_app.logger.warning(f"Error: {exc}")
             return "活動"
 
     def get_public_event_detail(self, event_id: UUID) -> dict:
@@ -428,7 +431,8 @@ class EventsService:
             )
             rows = supabase_client.extract_data(resp) or []
             return rows[0].get("role") if rows else None
-        except Exception:
+        except Exception as exc:
+            current_app.logger.warning(f"Error: {exc}")
             return None
 
     def require_org_admin(self, jwt: str, org_id: str, user_id: str) -> None:
@@ -789,7 +793,8 @@ class EventsService:
                 )
                 old_rows = supabase_client.extract_data(resp) or []
                 old_event = old_rows[0] if old_rows else None
-            except Exception:
+            except Exception as exc:
+                current_app.logger.warning(f"Error: {exc}")
                 old_event = None
 
         update_values = {key: value for key, value in payload.items() if value is not None}
@@ -1216,7 +1221,8 @@ class EventsService:
                     answers = (ans_rows[0] or {}).get("answers") if ans_rows else {}
                     if isinstance(answers, dict):
                         to_email = (answers.get("email") or answers.get("信箱") or "").strip()
-                except Exception:
+                except Exception as exc:
+                    current_app.logger.warning(f"Error: {exc}")
                     to_email = ""
             if not to_email or not to_email.strip():
                 raise AppError(

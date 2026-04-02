@@ -11,8 +11,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from app.blueprints import auth as auth_bp
 from app.domain.errors import AppError
+from app.services.auth_service import auth_service
 
 
 # --- 單元：成功時回傳形狀 ---
@@ -26,7 +26,7 @@ def test_login_success_returns_200_and_session_shape(client, monkeypatch) -> Non
         "user": {"id": "user-123", "email": "test@example.com"},
     }
 
-    monkeypatch.setattr(auth_bp, "_supabase_token", lambda _e, _p: fake_session)
+    monkeypatch.setattr(auth_service, "login_with_password", lambda _e, _p: fake_session)
 
     resp = client.post(
         "/api/v1/auth/login",
@@ -51,7 +51,7 @@ def test_login_invalid_credentials_returns_400_auth_failed(client, monkeypatch) 
             http_status=400,
         )
 
-    monkeypatch.setattr(auth_bp, "_supabase_token", raise_auth_failed)
+    monkeypatch.setattr(auth_service, "login_with_password", raise_auth_failed)
 
     resp = client.post(
         "/api/v1/auth/login",
@@ -73,7 +73,7 @@ def _fake_token_ok(_e: str, _p: str) -> dict:
 
 def test_login_missing_email_returns_400(client, monkeypatch) -> None:
     """缺少 email 應 400（parse_json / LoginRequest）。"""
-    monkeypatch.setattr(auth_bp, "_supabase_token", _fake_token_ok)
+    monkeypatch.setattr(auth_service, "login_with_password", _fake_token_ok)
 
     resp = client.post("/api/v1/auth/login", json={"password": "secret"})
 
@@ -82,7 +82,7 @@ def test_login_missing_email_returns_400(client, monkeypatch) -> None:
 
 def test_login_missing_password_returns_400(client, monkeypatch) -> None:
     """缺少 password 應 400。"""
-    monkeypatch.setattr(auth_bp, "_supabase_token", _fake_token_ok)
+    monkeypatch.setattr(auth_service, "login_with_password", _fake_token_ok)
 
     resp = client.post("/api/v1/auth/login", json={"email": "a@b.com"})
 
@@ -99,7 +99,7 @@ def test_login_passes_body_to_supabase_token(client) -> None:
         captured["password"] = password
         return {"access_token": "ok", "refresh_token": "ok"}
 
-    with patch.object(auth_bp, "_supabase_token", side_effect=capture_and_succeed):
+    with patch.object(auth_service, "login_with_password", side_effect=capture_and_succeed):
         resp = client.post(
             "/api/v1/auth/login",
             json={"email": "  User@Example.COM  ", "password": "  pwd123  "},
@@ -129,11 +129,11 @@ def test_supabase_token_returns_session_shape(app) -> None:
     with app.test_request_context():
         app.config["SUPABASE_URL"] = "https://x.supabase.co"
         app.config["SUPABASE_ANON_KEY"] = "key"
-        with patch.object(auth_bp.supabase_client, "public_client") as mock_pc:
+        with patch("app.services.auth_service.supabase_client.public_client") as mock_pc:
             mock_client = MagicMock()
             mock_client.auth.sign_in_with_password = fake_sign_in
             mock_pc.return_value = mock_client
-            out = auth_bp._supabase_token("  u@x.com  ", "  pwd  ")
+            out = auth_service.login_with_password("  u@x.com  ", "  pwd  ")
     assert out["access_token"] == "access"
     assert out["refresh_token"] == "refresh"
 

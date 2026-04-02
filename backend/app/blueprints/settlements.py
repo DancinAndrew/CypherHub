@@ -4,12 +4,12 @@ from __future__ import annotations
 
 from flask import Blueprint, g, jsonify
 
+from app.blueprints._utils import require_auth
 from app.domain.schemas import (
     CreatePayoutRequestRequest,
     PayoutRequestResponse,
 )
 from app.extensions import rate_limiter
-from app.services.auth_service import require_auth
 from app.services.settlement_service import settlement_service
 
 from ._utils import parse_json, parse_uuid

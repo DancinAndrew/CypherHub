@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from flask import Blueprint, g, jsonify, request
 
+from app.blueprints._utils import require_auth
 from app.domain.schemas import (
     CreateHoldOrderRequest,
     OrderDetailResponse,
@@ -13,7 +14,6 @@ from app.domain.schemas import (
     PaymentResponse,
 )
 from app.extensions import rate_limiter
-from app.services.auth_service import require_auth
 from app.services.orders_service import orders_service
 
 from ._utils import parse_uuid

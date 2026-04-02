@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from unittest.mock import MagicMock
 
-from app.blueprints import auth as auth_bp
+from app.services.auth_service import auth_service
 from app.services.checkin_service import checkin_service
 from app.services.forms_service import forms_service
 from app.services.supabase_client import supabase_client
@@ -58,7 +58,7 @@ def test_options_preflight_does_not_consume_default_limit(client) -> None:
 
 def test_auth_login_returns_429_over_limit(client, monkeypatch) -> None:
     """POST /auth/login：10/min，第 11 次應回 429。"""
-    monkeypatch.setattr(auth_bp, "_supabase_token", _fake_supabase_token)
+    monkeypatch.setattr(auth_service, "login_with_password", _fake_supabase_token)
 
     for i in range(10):
         resp = client.post(

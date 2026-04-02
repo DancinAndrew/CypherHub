@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from flask import Blueprint, g, jsonify
 
+from app.blueprints._utils import require_auth
 from app.domain.schemas import MyOrganizerSummaryResponse
-from app.services.auth_service import require_auth
 from app.services.events_service import events_service
 
 bp = Blueprint("me", __name__, url_prefix="/api/v1/me")

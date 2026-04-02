@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from flask import Blueprint, g, jsonify
 
+from app.blueprints._utils import require_auth
 from app.domain.schemas import CheckinRequest
 from app.extensions import rate_limiter
-from app.services.auth_service import require_auth
 from app.services.checkin_service import checkin_service
 
 from ._utils import parse_json, parse_uuid

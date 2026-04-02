@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from flask import Blueprint, g, jsonify, request
 
+from app.blueprints._utils import require_auth
 from app.domain.errors import AppError
 from app.domain.schemas import (
     AddOrgMemberRequest,
@@ -24,7 +25,6 @@ from app.domain.schemas import (
     UpsertEventFormRequest,
 )
 from app.extensions import rate_limiter
-from app.services.auth_service import require_auth
 from app.services.events_service import events_service
 from app.services.forms_service import forms_service
 
