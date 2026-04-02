@@ -1,21 +1,7 @@
 import { createRouter, createWebHistory } from "vue-router";
 
-import AdminView from "../views/AdminView.vue";
-import EventDetailView from "../views/EventDetailView.vue";
-import OrderDetailView from "../views/OrderDetailView.vue";
 import HomeView from "../views/HomeView.vue";
 import LoginView from "../views/LoginView.vue";
-import MyTicketsView from "../views/MyTicketsView.vue";
-import ResetPasswordView from "../views/ResetPasswordView.vue";
-import OrganizerApplyView from "../views/organizer/OrganizerApplyView.vue";
-import OrganizerCheckinView from "../views/organizer/OrganizerCheckinView.vue";
-import OrganizerEventView from "../views/organizer/OrganizerEventView.vue";
-import OrganizerFormBuilderView from "../views/organizer/OrganizerFormBuilderView.vue";
-import OrganizerHomeView from "../views/organizer/OrganizerHomeView.vue";
-import OrganizerManageView from "../views/organizer/OrganizerManageView.vue";
-import OrganizerMembersView from "../views/organizer/OrganizerMembersView.vue";
-import OrganizerProgressView from "../views/organizer/OrganizerProgressView.vue";
-import ProfileView from "../views/ProfileView.vue";
 import { useAuthStore } from "../stores/auth";
 import { pinia } from "../stores/index";
 
@@ -30,7 +16,7 @@ const router = createRouter({
     {
       path: "/events/:eventId",
       name: "event-detail",
-      component: EventDetailView,
+      component: () => import("../views/EventDetailView.vue"),
     },
     {
       path: "/login",
@@ -40,42 +26,42 @@ const router = createRouter({
     {
       path: "/reset-password",
       name: "reset-password",
-      component: ResetPasswordView,
+      component: () => import("../views/ResetPasswordView.vue"),
     },
     {
       path: "/orders/:orderId",
       name: "order-detail",
-      component: OrderDetailView,
+      component: () => import("../views/OrderDetailView.vue"),
       meta: { requiresAuth: true },
     },
     {
       path: "/tickets",
       name: "my-tickets",
-      component: MyTicketsView,
+      component: () => import("../views/MyTicketsView.vue"),
       meta: { requiresAuth: true },
     },
     {
       path: "/profile",
       name: "profile",
-      component: ProfileView,
+      component: () => import("../views/ProfileView.vue"),
       meta: { requiresAuth: true },
     },
     {
       path: "/admin",
       name: "admin",
-      component: AdminView,
+      component: () => import("../views/AdminView.vue"),
       meta: { requiresAuth: true },
     },
     {
       path: "/organizer",
       name: "organizer-home",
-      component: OrganizerHomeView,
+      component: () => import("../views/organizer/OrganizerHomeView.vue"),
       meta: { requiresAuth: true },
     },
     {
       path: "/organizer/apply",
       name: "organizer-apply",
-      component: OrganizerApplyView,
+      component: () => import("../views/organizer/OrganizerApplyView.vue"),
       meta: { requiresAuth: true },
     },
     {
@@ -85,61 +71,61 @@ const router = createRouter({
     {
       path: "/organizer/events/create",
       name: "organizer-event-create",
-      component: OrganizerEventView,
+      component: () => import("../views/organizer/OrganizerEventView.vue"),
       meta: { requiresAuth: true, eventMode: "create" },
     },
     {
       path: "/organizer/events/edit",
       name: "organizer-event-edit",
-      component: OrganizerEventView,
+      component: () => import("../views/organizer/OrganizerEventView.vue"),
       meta: { requiresAuth: true, eventMode: "edit" },
     },
     {
       path: "/organizer/events/edit/:eventId",
       name: "organizer-event-edit-by-id",
-      component: OrganizerEventView,
+      component: () => import("../views/organizer/OrganizerEventView.vue"),
       meta: { requiresAuth: true, eventMode: "edit" },
     },
     {
       path: "/organizer/forms",
       name: "organizer-forms",
-      component: OrganizerFormBuilderView,
+      component: () => import("../views/organizer/OrganizerFormBuilderView.vue"),
       meta: { requiresAuth: true },
     },
     {
       path: "/organizer/forms/:eventId",
       name: "organizer-forms-with-event",
-      component: OrganizerFormBuilderView,
+      component: () => import("../views/organizer/OrganizerFormBuilderView.vue"),
       meta: { requiresAuth: true },
     },
     {
       path: "/organizer/checkin/:eventId",
       name: "organizer-checkin",
-      component: OrganizerCheckinView,
+      component: () => import("../views/organizer/OrganizerCheckinView.vue"),
       meta: { requiresAuth: true },
     },
     {
       path: "/organizer/checkin",
       name: "organizer-checkin-manual",
-      component: OrganizerCheckinView,
+      component: () => import("../views/organizer/OrganizerCheckinView.vue"),
       meta: { requiresAuth: true },
     },
     {
       path: "/organizer/progress/:eventId",
       name: "organizer-progress",
-      component: OrganizerProgressView,
+      component: () => import("../views/organizer/OrganizerProgressView.vue"),
       meta: { requiresAuth: true },
     },
     {
       path: "/organizer/manage",
       name: "organizer-manage",
-      component: OrganizerManageView,
+      component: () => import("../views/organizer/OrganizerManageView.vue"),
       meta: { requiresAuth: true },
     },
     {
       path: "/organizer/members",
       name: "organizer-members",
-      component: OrganizerMembersView,
+      component: () => import("../views/organizer/OrganizerMembersView.vue"),
       meta: { requiresAuth: true },
     },
     ...(import.meta.env.DEV
