@@ -8,7 +8,7 @@
 - **MVP-1**（免費報名 + QR 核銷）✅ 完成
 - **MVP-2**（付費票 + ECPay + 訂單 + 退款）✅ 完成
 - **MVP-3**（治理 + 角色 + 結算 + Audit）✅ 完成
-- 下一階段：SEC-1~4 安全強化（HTTPS、CORS、Secrets、Rate Limit 完善）
+- **SEC-1~4**（HTTPS、CORS、Secrets、Rate Limit 完善）✅ 完成
 
 ## 技術棧
 
@@ -143,15 +143,32 @@ docs/                     # setup/, development/, design/, verification/, archiv
 
 ## 開發流程（Definition of Done）
 
-1. **先寫短 plan**：列出要改的檔案、是否需 migration、要補哪些 tests
+1. **先規劃**：`/plan` 列出要改的檔案、是否需 migration、要補哪些 tests
 2. **控範圍**：單次改動聚焦單一功能，禁止「順手加功能」
 3. **查閱 MVP 階段**：確認功能屬於哪個 MVP，不得提前實作 Non-Goals
-4. **驗證通過**：
+4. **TDD 開發**：`/tdd` 先寫測試再實作
+5. **程式碼審查**：`/code-review` + `/python-review`（backend）或 `/security-scan`（安全相關）
+6. **驗證通過**：
    - `cd backend && ruff check . && ruff format --check .`
    - `cd backend && pytest -q`
    - `cd frontend && npm run build`（若改 API contract）
    - migrations 可乾淨套用
-5. **絕不加入 secrets**：`.env.example` 放 placeholder，禁止 commit 真實 key
+7. **絕不加入 secrets**：`.env.example` 放 placeholder，禁止 commit 真實 key
+
+## ECC 常用指令
+
+| 指令 | 用途 |
+|------|------|
+| `/plan` | 規劃功能實作（生成 task list + 架構分析） |
+| `/tdd` | TDD 開發流程（先寫測試） |
+| `/code-review` | 程式碼品質審查 |
+| `/python-review` | Python / Flask 專項審查 |
+| `/security-scan` | 安全性掃描（auth / payment 必跑） |
+| `/e2e` | 產生並執行 E2E 測試 |
+| `/ecpay-pay` | ECPay 金流實作 |
+| `/ecpay-debug` | ECPay webhook / CheckMacValue 除錯 |
+| `/std-security` | 安全強化架構參考（SEC-1~4） |
+| `/std-database` | Supabase / RLS / migration 設計 |
 
 ## 禁止事項
 

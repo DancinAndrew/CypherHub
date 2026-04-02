@@ -69,15 +69,52 @@ CypherHub 是一個街舞活動整合平台，解決街舞圈長期缺乏專屬�
 
 ## 目前狀態
 
-平台已完成三個主要開發階段：
+平台已完成所有規劃開發階段：
 
 - **MVP-1** — 免費報名 + QR 核銷 + 舞風篩選 + 自訂報名表
 - **MVP-2** — 付費票種 + 綠界金流 + 訂單管理 + 退款
 - **MVP-3** — 多角色權限 + 主辦方審核 + 費用結算 + 審計紀錄
+- **SEC-1~4** — HTTPS 強制、CORS 收斂、Secrets 管理、Rate Limit 完善
 
 120+ 自動化測試通過，214 項驗收項目全數完成。
 
 ---
+
+## 系統架構
+
+```mermaid
+graph TB
+    subgraph Client["瀏覽器 / 手機"]
+        FE["Vue 3 Frontend<br/>TypeScript · Pinia · TailwindCSS"]
+    end
+
+    subgraph Backend["Backend (Docker)"]
+        API["Flask API<br/>/api/v1"]
+        BP["Blueprints<br/>auth · events · tickets<br/>orders · payments · checkin"]
+        SVC["Services Layer<br/>business logic"]
+        API --> BP --> SVC
+    end
+
+    subgraph Supabase["Supabase Cloud"]
+        AUTH["Auth (JWT)"]
+        DB["PostgreSQL + RLS"]
+        STORAGE["Storage"]
+    end
+
+    subgraph External["外部服務"]
+        ECPAY["ECPay 綠界<br/>信用卡 · ATM · 超商"]
+        RESEND["Resend<br/>Email"]
+    end
+
+    FE -->|"Bearer JWT"| API
+    FE -->|"Supabase Auth SDK"| AUTH
+    AUTH -->|"JWT"| API
+    SVC -->|"service_role"| DB
+    SVC -->|"AIO API"| ECPAY
+    SVC -->|"SMTP API"| RESEND
+    ECPAY -->|"Webhook"| API
+    DB --- STORAGE
+```
 
 ## 技術棧
 
