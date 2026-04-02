@@ -44,10 +44,11 @@ def setup_structured_logging(app: Flask) -> None:
     # Create stream handler with JSON formatter
     handler = logging.StreamHandler()
     handler.setFormatter(JSONFormatter())
-    
+
     app.logger.addHandler(handler)
-    app.logger.setLevel(logging.INFO if app.config.get("APP_ENV") == "production" else logging.DEBUG)
-    
+    is_production = app.config.get("APP_ENV") == "production"
+    app.logger.setLevel(logging.INFO if is_production else logging.DEBUG)
+
     # Set werkzeug and gunicorn logger to use the same handler if needed
     logging.getLogger("werkzeug").addHandler(handler)
     logging.getLogger("werkzeug").setLevel(logging.WARNING)
@@ -56,4 +57,3 @@ def setup_structured_logging(app: Flask) -> None:
     def assign_trace_id() -> None:
         """Assign a unique trace ID to each request."""
         g.trace_id = request.headers.get("X-Trace-Id", str(uuid.uuid4()))
-

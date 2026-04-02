@@ -14,6 +14,7 @@ from app.services.supabase_client import supabase_client
 SchemaT = TypeVar("SchemaT", bound=BaseModel)
 F = TypeVar("F", bound=ABC_Callable[..., Any])
 
+
 def require_auth(func: F) -> F:
     @wraps(func)
     def wrapped(*args: Any, **kwargs: Any) -> Any:
@@ -58,6 +59,7 @@ def require_auth(func: F) -> F:
         return func(*args, **kwargs)
 
     return wrapped  # type: ignore[return-value]
+
 
 def parse_json(model: type[SchemaT]) -> SchemaT:
     payload = request.get_json(silent=True) or {}

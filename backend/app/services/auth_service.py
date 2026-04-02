@@ -67,7 +67,8 @@ class AuthService:
                     message="Invalid login credentials",
                     http_status=400,
                 ) from exc
-            detail = f": {exc!s}" if (current_app.config.get("TESTING") or current_app.debug) else ""
+            show = current_app.config.get("TESTING") or current_app.debug
+            detail = f": {exc!s}" if show else ""
             raise AppError(
                 code="AUTH_SERVICE_ERROR",
                 message=f"Unable to reach auth service{detail}",
@@ -100,5 +101,6 @@ class AuthService:
             "token_type": self._get_attr_or_key(session, "token_type") or "bearer",
             "user": user,
         }
+
 
 auth_service = AuthService()

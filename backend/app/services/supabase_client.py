@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import urllib.parse
-import urllib.request
 from dataclasses import dataclass
 from typing import Any
 
@@ -10,7 +9,7 @@ from flask import Flask, current_app
 
 try:
     from supabase import create_client
-except Exception:  # pragma: no cover - fallback when dependency is not installed
+except ImportError:  # pragma: no cover - fallback when dependency is not installed
     create_client = None
 
 
@@ -65,7 +64,7 @@ class SupabaseClientWrapper:
         try:
             resp = self._http_client.get(
                 f"{url}/auth/v1/admin/users/{user_id}",
-                headers={"Authorization": f"Bearer {key}", "apikey": key}
+                headers={"Authorization": f"Bearer {key}", "apikey": key},
             )
             resp.raise_for_status()
             data = resp.json()
@@ -99,7 +98,7 @@ class SupabaseClientWrapper:
         try:
             resp = self._http_client.get(
                 f"{url}/auth/v1/admin/users?filter=email%3D{filter_val}",
-                headers={"Authorization": f"Bearer {key}", "apikey": key}
+                headers={"Authorization": f"Bearer {key}", "apikey": key},
             )
             resp.raise_for_status()
             data = resp.json()

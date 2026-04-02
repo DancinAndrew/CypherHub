@@ -83,7 +83,8 @@ class EventNotificationService:
                     try:
                         dt = datetime.fromisoformat(start_at.replace("Z", "+00:00"))
                         start_display = dt.strftime("%Y-%m-%d %H:%M")
-                    except Exception:
+                    except Exception as exc:
+                        current_app.logger.warning("Date parse failed: %s", exc)
                         start_display = start_at
                 else:
                     start_display = str(start_at)
