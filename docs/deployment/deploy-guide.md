@@ -166,7 +166,7 @@ CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "2", "--timeout", "120",
 
 1. 在 Cloud Run 網頁主控台點擊 **「連結存放區」** (圖示為 GitHub)。
 2. 授權並選擇你的 GitHub `CypherHub` repository。
-3. **Build Configuration**：選擇 `Dockerfile`，並將路徑指定為 `/backend/Dockerfile`。
+3. **Build Configuration**：選擇 `Dockerfile`，並將來源位置 (Source location) 指定為 `/backend/Dockerfile`。
 4. **Environment Variables**：在進階設定中，填入所有需要的環境變數與 Secrets。
 5. 儲存部署。未來只要 push 到 GitHub `main` 分支，Cloud Run 就會自動建置更新！
 
