@@ -382,149 +382,290 @@ watch(mode, (nextMode) => {
 </script>
 
 <template>
-  <main class="mx-auto w-full max-w-3xl px-4 py-8 md:py-10">
-    <h1 class="font-street text-3xl tracking-widest text-white animate-slide-up">Organizer Check-in</h1>
-    <p class="mt-2 text-cypher-muted animate-slide-up-delay">手機可直接用相機掃碼核銷；若權限受限可切手動模式。</p>
+  <main class="relative min-h-[calc(100vh-4rem)] w-full overflow-hidden px-4 pb-20 pt-10">
+    <!-- Background layers -->
+    <div class="absolute inset-0 bg-gradient-mesh" aria-hidden="true" />
+    <div class="pointer-events-none absolute inset-0" style="background: radial-gradient(ellipse 60% 40% at 50% 0%, rgba(34,211,238,0.08) 0%, transparent 70%)" aria-hidden="true" />
 
-    <section v-if="eventId.trim()" class="card mt-6 p-5 md:p-6 animate-slide-up" style="animation-delay: 0.1s; animation-fill-mode: both;">
-      <h2 class="font-display text-lg font-semibold text-gray-800">核銷統計</h2>
-      <p v-if="attendeesStatsLoading" class="mt-2 text-sm text-gray-500">載入中…</p>
-      <p v-else-if="attendeesStatsError" class="mt-2 text-sm text-rose-400">{{ attendeesStatsError }}</p>
-      <div v-else-if="attendeesStats" class="mt-3">
-        <p class="text-base font-medium text-gray-600">
-          已入場 <span class="text-brand-600">{{ attendeesStats.checkedIn }}</span> / 未入場
-          <span class="text-gray-500">{{ attendeesStats.notCheckedIn }}</span>
-          <span class="ml-2 text-sm text-gray-500">（總計 {{ attendeesStats.total }} 張有效票）</span>
-        </p>
-        <div v-if="attendeesStats.byTicketType.length" class="mt-3 overflow-x-auto">
-          <table class="min-w-full text-sm">
-            <thead class="border-b border-gray-200 text-left text-gray-600">
-              <tr>
-                <th class="pb-2 pr-4">票種</th>
-                <th class="pb-2 pr-4">已入場</th>
-                <th class="pb-2">總數</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="row in attendeesStats.byTicketType" :key="row.ticket_type_id" class="border-b border-gray-200/50">
-                <td class="py-1.5 pr-4 text-gray-700">{{ row.ticket_type_name }}</td>
-                <td class="py-1.5 pr-4">{{ row.checkedIn }}</td>
-                <td class="py-1.5">{{ row.total }}</td>
-              </tr>
-            </tbody>
-          </table>
+    <div class="relative z-10 mx-auto w-full max-w-xl">
+
+      <!-- Page header -->
+      <header class="mb-8 animate-slide-up">
+        <p class="section-label mb-2">Check-in</p>
+        <div class="flex items-center gap-3">
+          <span class="h-6 w-0.5 rounded-full bg-gradient-to-b from-cypher-accent-cyan to-cypher-accent" aria-hidden="true" />
+          <h1 class="font-street text-2xl tracking-widest text-white">核銷介面</h1>
         </div>
-      </div>
-      <button
-        type="button"
-        class="btn-secondary mt-3"
-        :disabled="attendeesStatsLoading"
-        @click="loadAttendeesStats()"
+        <p class="mt-2 pl-3.5 text-sm text-cypher-muted">手機可直接掃碼核銷；若相機受限可切手動輸入。</p>
+      </header>
+
+      <!-- Stats card (only when eventId is set) -->
+      <section
+        v-if="eventId.trim()"
+        class="relative mb-5 overflow-hidden rounded-2xl border border-white/10 bg-cypher-surface/90 shadow-card-glass backdrop-blur-md animate-slide-up-delay"
       >
-        重新載入統計
-      </button>
-    </section>
-
-    <section class="card mt-6 p-5 md:p-6 animate-slide-up" style="animation-delay: 0.15s; animation-fill-mode: both;">
-      <label class="block">
-        <span class="mb-1 block text-sm text-gray-600">Event ID</span>
-        <input v-model="eventId" class="input-field" />
-      </label>
-
-      <div class="mt-4 flex flex-wrap gap-2">
-        <button
-          type="button"
-          class="rounded-xl px-3 py-2 text-sm font-semibold transition-all"
-          :class="mode === 'scan' ? 'bg-brand-500 text-white' : 'border border-gray-200 text-gray-500 hover:text-brand-600 hover:border-brand-500/50'"
-          @click="mode = 'scan'"
-        >
-          掃碼模式
-        </button>
-        <button
-          type="button"
-          class="rounded-xl px-3 py-2 text-sm font-semibold transition-all"
-          :class="mode === 'manual' ? 'bg-brand-500 text-white' : 'border border-gray-200 text-gray-500 hover:text-brand-600 hover:border-brand-500/50'"
-          @click="mode = 'manual'"
-        >
-          手動模式
-        </button>
-      </div>
-
-      <div v-if="mode === 'scan'" class="mt-4 rounded-xl border border-gray-200 bg-gray-50 p-4">
-        <p class="text-xs text-gray-500">Start Scan 後請允許相機權限，掃到後會自動填入並執行 Verify。</p>
-        <div class="mt-3 overflow-hidden rounded-xl border border-gray-200 bg-black">
-          <video ref="scannerVideoRef" class="h-64 w-full object-cover md:h-72" muted playsinline />
-        </div>
-        <div class="mt-3 flex flex-wrap gap-3">
+        <div class="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cypher-accent-cyan/50 to-transparent" aria-hidden="true" />
+        <div class="flex items-center justify-between border-b border-white/5 px-5 py-3.5">
+          <h2 class="text-sm font-semibold text-white">即時核銷統計</h2>
           <button
             type="button"
-            class="btn-primary disabled:opacity-50"
-            :disabled="scanning || loading"
-            @click="startScan"
+            class="flex items-center gap-1 text-xs text-cypher-muted transition-colors hover:text-cypher-accent"
+            :disabled="attendeesStatsLoading"
+            @click="loadAttendeesStats()"
           >
-            Start Scan
-          </button>
-          <button
-            type="button"
-            class="btn-secondary disabled:opacity-50"
-            :disabled="!scanning"
-            @click="stopScan"
-          >
-            Stop Scan
+            <svg class="h-3.5 w-3.5" :class="{ 'animate-spin': attendeesStatsLoading }" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
+            </svg>
+            重新整理
           </button>
         </div>
-      </div>
-
-      <div class="mt-4 grid gap-4">
-        <label class="block">
-          <span class="mb-1 block text-sm text-gray-600">Ticket ID</span>
-          <input v-model="ticketId" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" class="input-field" />
-        </label>
-
-        <label class="block">
-          <span class="mb-1 block text-sm text-gray-600">QR Secret</span>
-          <input v-model="qrSecret" placeholder="ticket qr_secret" class="input-field" />
-        </label>
-      </div>
-
-      <div class="mt-4 flex flex-wrap gap-3">
-        <button
-          type="button"
-          class="btn-primary disabled:opacity-50"
-          :disabled="loading"
-          @click="verify"
-        >
-          Verify
-        </button>
-        <button
-          type="button"
-          class="btn-secondary disabled:opacity-50"
-          :disabled="!canCommit"
-          @click="commit"
-        >
-          Commit Check-in
-        </button>
-      </div>
-
-      <p v-if="infoMessage" role="status" class="mt-4 text-sm text-emerald-700">{{ infoMessage }}</p>
-      <p v-if="errorMessage" role="alert" class="mt-2 text-sm text-rose-700">{{ errorMessage }}</p>
-
-      <div v-if="verifySummary" class="mt-4 rounded-xl bg-gray-100 p-4">
-        <p class="text-xs font-semibold text-gray-500">Verify Summary</p>
-        <div class="mt-2 grid gap-1 text-sm text-gray-600">
-          <p>valid: {{ verifySummary.valid }}</p>
-          <p>can_checkin: {{ verifySummary.can_checkin }}</p>
-          <p>status: {{ verifySummary.status ?? "-" }}</p>
-          <p>user_id: {{ verifySummary.user_id ?? "-" }}</p>
-          <p>ticket_type_id: {{ verifySummary.ticket_type_id ?? "-" }}</p>
-          <p v-if="verifySummary.reason">reason: {{ verifySummary.reason }}</p>
+        <div class="p-5">
+          <p v-if="attendeesStatsLoading" class="flex items-center gap-2 text-sm text-cypher-muted">
+            <span class="h-3.5 w-3.5 animate-spin rounded-full border-2 border-cypher-muted border-t-transparent" />
+            載入中…
+          </p>
+          <p v-else-if="attendeesStatsError" class="text-sm text-rose-400">{{ attendeesStatsError }}</p>
+          <div v-else-if="attendeesStats">
+            <div class="flex gap-3">
+              <div class="flex-1 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-center">
+                <p class="text-xs text-cypher-muted">已入場</p>
+                <p class="mt-0.5 text-2xl font-bold text-emerald-400">{{ attendeesStats.checkedIn }}</p>
+              </div>
+              <div class="flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-center">
+                <p class="text-xs text-cypher-muted">未入場</p>
+                <p class="mt-0.5 text-2xl font-bold text-gray-300">{{ attendeesStats.notCheckedIn }}</p>
+              </div>
+              <div class="flex-1 rounded-xl border border-cypher-accent/20 bg-cypher-accent/10 px-4 py-3 text-center">
+                <p class="text-xs text-cypher-muted">總計</p>
+                <p class="mt-0.5 text-2xl font-bold text-cypher-accent-bright">{{ attendeesStats.total }}</p>
+              </div>
+            </div>
+            <div v-if="attendeesStats.byTicketType.length" class="mt-4 overflow-x-auto rounded-xl border border-white/5">
+              <table class="min-w-full text-sm">
+                <thead class="border-b border-white/5 bg-cypher-surface-alt text-left">
+                  <tr>
+                    <th class="px-4 py-2 text-xs font-semibold uppercase tracking-wider text-cypher-muted">票種</th>
+                    <th class="px-4 py-2 text-xs font-semibold uppercase tracking-wider text-cypher-muted">入場</th>
+                    <th class="px-4 py-2 text-xs font-semibold uppercase tracking-wider text-cypher-muted">總數</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-white/5">
+                  <tr v-for="row in attendeesStats.byTicketType" :key="row.ticket_type_id">
+                    <td class="px-4 py-2 text-gray-200">{{ row.ticket_type_name }}</td>
+                    <td class="px-4 py-2 font-semibold text-emerald-400">{{ row.checkedIn }}</td>
+                    <td class="px-4 py-2 text-gray-300">{{ row.total }}</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
-      </div>
+      </section>
 
-      <div v-if="commitResult" class="mt-4 rounded-xl bg-gray-100 p-4">
-        <p class="text-xs font-semibold text-gray-500">Commit Result</p>
-        <pre class="mt-2 overflow-x-auto text-xs text-gray-600 font-mono">{{ JSON.stringify(commitResult, null, 2) }}</pre>
-      </div>
-    </section>
+      <!-- Main checkin panel -->
+      <section
+        class="relative overflow-hidden rounded-2xl border border-white/10 bg-cypher-surface/90 shadow-card-glass backdrop-blur-md animate-slide-up-delay-2"
+      >
+        <div class="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cypher-accent/50 to-transparent" aria-hidden="true" />
+        <div class="p-5 md:p-6 space-y-5">
+
+          <!-- Event ID -->
+          <div>
+            <label class="mb-2 block text-xs font-semibold uppercase tracking-widest text-cypher-muted">Event ID</label>
+            <input v-model="eventId" class="input-field font-mono text-sm" placeholder="活動 UUID" />
+          </div>
+
+          <!-- Mode toggle -->
+          <div class="flex rounded-xl border border-cypher-border bg-cypher-bg/60 p-1">
+            <button
+              type="button"
+              class="flex flex-1 items-center justify-center gap-2 rounded-lg py-2 text-sm font-semibold transition-all duration-200"
+              :class="mode === 'scan' ? 'bg-cypher-accent text-white shadow-glow-sm' : 'text-gray-400 hover:text-white'"
+              @click="mode = 'scan'"
+            >
+              <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 013.75 9.375v-4.5zM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 01-1.125-1.125v-4.5zM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0113.5 9.375v-4.5z" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 6.75h.75v.75h-.75v-.75zM6.75 16.5h.75v.75h-.75V16.5zM16.5 6.75h.75v.75h-.75v-.75zM13.5 13.5h.75v.75h-.75v-.75zM13.5 19.5h.75v.75h-.75v-.75zM19.5 13.5h.75v.75h-.75v-.75zM19.5 19.5h.75v.75h-.75v-.75zM16.5 16.5h.75v.75h-.75v-.75z" />
+              </svg>
+              掃碼模式
+            </button>
+            <button
+              type="button"
+              class="flex flex-1 items-center justify-center gap-2 rounded-lg py-2 text-sm font-semibold transition-all duration-200"
+              :class="mode === 'manual' ? 'bg-cypher-accent text-white shadow-glow-sm' : 'text-gray-400 hover:text-white'"
+              @click="mode = 'manual'"
+            >
+              <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125" />
+              </svg>
+              手動輸入
+            </button>
+          </div>
+
+          <!-- Camera viewfinder (scan mode) -->
+          <div v-if="mode === 'scan'" class="space-y-3">
+            <p class="text-xs text-cypher-muted">允許相機後將票券 QR 置中，掃到後自動 Verify。</p>
+            <div class="relative overflow-hidden rounded-2xl border border-white/10 bg-black">
+              <!-- Corner guides -->
+              <div class="pointer-events-none absolute inset-0 z-10" aria-hidden="true">
+                <div class="absolute left-4 top-4 h-8 w-8 rounded-tl-lg border-l-2 border-t-2 border-cypher-accent-cyan opacity-80" />
+                <div class="absolute right-4 top-4 h-8 w-8 rounded-tr-lg border-r-2 border-t-2 border-cypher-accent-cyan opacity-80" />
+                <div class="absolute bottom-4 left-4 h-8 w-8 rounded-bl-lg border-b-2 border-l-2 border-cypher-accent-cyan opacity-80" />
+                <div class="absolute bottom-4 right-4 h-8 w-8 rounded-br-lg border-b-2 border-r-2 border-cypher-accent-cyan opacity-80" />
+              </div>
+              <video ref="scannerVideoRef" class="h-64 w-full object-cover md:h-72" muted playsinline />
+              <div v-if="!scanning" class="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/60">
+                <svg class="h-10 w-10 text-cypher-muted" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.774 48.774 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
+                </svg>
+                <p class="text-sm text-cypher-muted">按下「啟動相機」開始掃碼</p>
+              </div>
+            </div>
+            <div class="flex gap-3">
+              <button
+                type="button"
+                class="btn-primary flex-1 disabled:opacity-50"
+                :disabled="scanning || loading"
+                @click="startScan"
+              >
+                <span v-if="scanning" class="flex items-center justify-center gap-2">
+                  <span class="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  掃碼中…
+                </span>
+                <span v-else>啟動相機</span>
+              </button>
+              <button
+                type="button"
+                class="rounded-xl border border-cypher-border bg-cypher-surface px-5 py-2.5 text-sm font-medium text-gray-400 transition-colors hover:border-rose-500/40 hover:text-rose-400 disabled:opacity-50"
+                :disabled="!scanning"
+                @click="stopScan"
+              >
+                停止
+              </button>
+            </div>
+          </div>
+
+          <!-- Manual fields -->
+          <div class="space-y-4">
+            <div>
+              <label class="mb-2 block text-xs font-semibold uppercase tracking-widest text-cypher-muted">Ticket ID</label>
+              <input v-model="ticketId" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" class="input-field font-mono text-sm" />
+            </div>
+            <div>
+              <label class="mb-2 block text-xs font-semibold uppercase tracking-widest text-cypher-muted">QR Secret</label>
+              <input v-model="qrSecret" placeholder="ticket qr_secret" class="input-field font-mono text-sm" />
+            </div>
+          </div>
+
+          <!-- Action buttons -->
+          <div class="flex gap-3">
+            <button
+              type="button"
+              class="flex-1 rounded-xl border border-cypher-accent/40 bg-cypher-accent/10 py-3 text-sm font-semibold text-cypher-accent-bright transition-all hover:bg-cypher-accent/20 disabled:opacity-50"
+              :disabled="loading"
+              @click="verify"
+            >
+              <span v-if="loading && !canCommit" class="flex items-center justify-center gap-2">
+                <span class="h-3.5 w-3.5 animate-spin rounded-full border-2 border-cypher-accent border-t-transparent" />
+                驗證中…
+              </span>
+              <span v-else>Verify</span>
+            </button>
+            <button
+              type="button"
+              class="flex-1 rounded-xl py-3 text-sm font-bold transition-all disabled:opacity-40"
+              :class="canCommit
+                ? 'bg-emerald-500 text-white shadow-[0_0_20px_rgba(52,211,153,0.4)] hover:bg-emerald-400'
+                : 'border border-white/10 bg-white/5 text-gray-500 cursor-not-allowed'"
+              :disabled="!canCommit"
+              @click="commit"
+            >
+              <span v-if="loading && canCommit" class="flex items-center justify-center gap-2">
+                <span class="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                核銷中…
+              </span>
+              <span v-else>Commit 核銷</span>
+            </button>
+          </div>
+
+          <!-- Status feedback -->
+          <Transition
+            enter-active-class="transition-all duration-200 ease-out"
+            enter-from-class="opacity-0 scale-95"
+            enter-to-class="opacity-100 scale-100"
+          >
+            <div v-if="infoMessage" role="status" class="flex items-start gap-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3">
+              <svg class="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <p class="text-sm font-medium text-emerald-300">{{ infoMessage }}</p>
+            </div>
+          </Transition>
+
+          <Transition
+            enter-active-class="transition-all duration-200 ease-out"
+            enter-from-class="opacity-0 scale-95"
+            enter-to-class="opacity-100 scale-100"
+          >
+            <div v-if="errorMessage" role="alert" class="flex items-start gap-3 rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3">
+              <svg class="mt-0.5 h-4 w-4 shrink-0 text-rose-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+              </svg>
+              <p class="text-sm font-medium text-rose-300">{{ errorMessage }}</p>
+            </div>
+          </Transition>
+
+          <!-- Verify summary -->
+          <div v-if="verifySummary" class="rounded-xl border border-white/5 bg-cypher-surface-alt px-4 py-3">
+            <p class="mb-2 text-xs font-semibold uppercase tracking-wider text-cypher-muted">Verify Result</p>
+            <dl class="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
+              <div class="flex items-center gap-1.5">
+                <dt class="text-cypher-muted">valid</dt>
+                <dd>
+                  <span
+                    class="inline-flex rounded-full px-2 py-0.5 text-xs font-semibold"
+                    :class="verifySummary.valid ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'"
+                  >
+                    {{ verifySummary.valid ? 'true' : 'false' }}
+                  </span>
+                </dd>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <dt class="text-cypher-muted">can_checkin</dt>
+                <dd>
+                  <span
+                    class="inline-flex rounded-full px-2 py-0.5 text-xs font-semibold"
+                    :class="verifySummary.can_checkin ? 'bg-emerald-500/20 text-emerald-400' : 'bg-amber-500/20 text-amber-400'"
+                  >
+                    {{ verifySummary.can_checkin ? 'true' : 'false' }}
+                  </span>
+                </dd>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <dt class="text-cypher-muted">status</dt>
+                <dd class="font-mono text-gray-300">{{ verifySummary.status ?? "—" }}</dd>
+              </div>
+              <div class="flex items-center gap-1.5 col-span-2">
+                <dt class="shrink-0 text-cypher-muted">user_id</dt>
+                <dd class="truncate font-mono text-gray-300">{{ verifySummary.user_id ?? "—" }}</dd>
+              </div>
+              <div v-if="verifySummary.reason" class="col-span-2 flex items-center gap-1.5">
+                <dt class="shrink-0 text-cypher-muted">reason</dt>
+                <dd class="font-mono text-rose-400">{{ verifySummary.reason }}</dd>
+              </div>
+            </dl>
+          </div>
+
+          <!-- Commit result -->
+          <div v-if="commitResult" class="rounded-xl border border-white/5 bg-cypher-surface-alt px-4 py-3">
+            <p class="mb-2 text-xs font-semibold uppercase tracking-wider text-cypher-muted">Commit Result</p>
+            <pre class="overflow-x-auto font-mono text-xs text-gray-300">{{ JSON.stringify(commitResult, null, 2) }}</pre>
+          </div>
+
+        </div>
+      </section>
+
+    </div>
   </main>
 </template>
