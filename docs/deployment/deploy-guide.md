@@ -29,14 +29,15 @@
                 └──────────────┘
 ```
 
-| 元件 | 推薦服務 | 替代方案 |
-|------|----------|----------|
-| Frontend hosting | Vercel | Netlify、Cloudflare Pages |
-| Backend hosting | Zeabur | Render、Google Cloud Run、Railway、Fly.io |
-| Database + Auth | Supabase Cloud | 自建 PostgreSQL + GoTrue（不建議） |
-| Email | Resend | SendGrid、AWS SES |
-| Payment | ECPay 綠界 | — |
-| DNS | Cloudflare | Namecheap、GoDaddy、Google Domains |
+| 元件 | 推薦服務 |
+|------|----------|
+| Frontend hosting | Vercel |
+| Backend hosting | Zeabur |
+| Database + Auth | Supabase Cloud |
+| Email | Resend |
+| Payment | ECPay 綠界 |
+| Domain | Namecheap |
+| DNS | Cloudflare |
 
 ---
 
@@ -124,7 +125,7 @@ SELECT jobid, schedule, command FROM cron.job;
 
 ## 三、Backend 部署
 
-### 3.1 方案 A：Zeabur（推薦）
+### 3.1 準備與部署 (Zeabur)
 
 Zeabur 支援直接從 GitHub repository 自動建置與部署，非常適合 Python/Flask 專案。
 
@@ -162,47 +163,7 @@ Zeabur 支援直接從 GitHub repository 自動建置與部署，非常適合 Py
 | `ECPAY_HASH_IV` | 綠界 HashIV (🔴 SECRET) |
 | `CORS_ORIGINS` | 你的前端 Vercel URL (例如 `https://your-domain.vercel.app`) |
 
-*註：Zeabur 會自動提供一組預設的公開網域 (例如 `your-project.zeabur.app`)，請記得將這組網址作為你的 Backend API URL。*
-
-### 3.2 方案 B：Google Cloud Run
-
-Google Cloud Run 也是極佳的選擇，適合大型擴展：
-
-1. 安裝 gcloud CLI 並設定專案。
-2. 執行 `gcloud builds submit --tag gcr.io/YOUR_PROJECT/backend`。
-3. 執行 `gcloud run deploy` 並設定環境變數。
-
-### 3.3 方案 C：Fly.io / Railway / Render
-
-這些平台同樣支援從 GitHub repo 自動部署，設定流程與 Zeabur 相似：
-
-1. 連結 GitHub repo
-2. 設定 Root Directory 為 `backend/`
-3. 設定 Start Command 為 `gunicorn --bind 0.0.0.0:$PORT app:create_app()`
-4. 在 Dashboard 設定所有環境變數
-
-### 3.4 方案 D：自建 VPS + Docker Compose
-
-適合需要完全控制的場景：
-
-```bash
-# 在 VPS 上
-git clone https://github.com/your-org/CypherHub.git
-cd CypherHub
-
-# 設定環境變數
-cp .env.cloud.example .env
-# 編輯 .env 填入正式值
-
-# 啟動（僅 backend）
-docker compose -f infra/docker-compose.yml up -d backend
-
-# 搭配 Caddy 作為 reverse proxy（自動 HTTPS）
-# Caddyfile:
-# api.your-domain.com {
-#     reverse_proxy localhost:8000
-# }
-```
+*註：Zeabur 會自動提供一組預設的公開網域 (例如 `your-project.zeabur.app`)，請先記錄下這組網址，後續我們會用 Cloudflare 自訂網域指向它。*
 
 ---
 
@@ -261,39 +222,59 @@ Vercel 預設對每個 PR 產生 Preview URL。注意：
 
 ---
 
-## 五、DNS 與域名設定
+## 五、網域與 DNS 設定 (Namecheap + Cloudflare)
 
-### 5.1 推薦架構
+本專案使用 Namecheap 購買網域，並將 DNS 解析託管至 Cloudflare 進行統一管理與防護。
 
-| 用途 | 域名 | 指向 |
-|------|------|------|
-| 前端 | `app.your-domain.com` | Vercel (`cname.vercel-dns.com`) |
-| Backend API | `api.your-domain.com` | Zeabur 提供的 URL |
-| 主網站（可選） | `your-domain.com` | Vercel |
+### 5.1 步驟一：Namecheap 網域註冊與設定
 
-### 5.2 DNS 記錄
+1. 登入 [Namecheap](https://www.namecheap.com/) 並購買你的網域（例如 `your-domain.com`）。
+2. 在 Domain List 找到剛購買的網域，點擊 `Manage`。
+3. 找到 **Nameservers** 區塊。我們稍後要將這裡改為 "Custom DNS"，並填入 Cloudflare 提供的 Nameservers。
 
-以 Cloudflare 為例：
+### 5.2 步驟二：註冊與設定 Cloudflare
 
-| Type | Name | Content | Proxy |
-|------|------|---------|-------|
-| CNAME | `app` | `cname.vercel-dns.com` | DNS only |
-| CNAME | `api` | `your-project.zeabur.app` | 依需求 |
+1. 登入 [Cloudflare](https://dash.cloudflare.com/)。
+2. 點擊 `Add a Site`，輸入你的網域 `your-domain.com`。
+3. 選擇 Free Plan。
+4. Cloudflare 會掃描既有 DNS 紀錄，點擊 `Continue`。
+5. Cloudflare 會提供你兩組 Nameservers（例如 `olivia.ns.cloudflare.com` 與 `rick.ns.cloudflare.com`）。
+6. 回到 Namecheap 的 **Nameservers** 區塊，選擇 `Custom DNS`，並填入這兩組 Cloudflare Nameservers，點擊綠色勾勾儲存。
+7. 回到 Cloudflare，點擊 `Done, check nameservers`。（DNS 生效可能需要幾分鐘到數小時）
 
-> Vercel 要求 DNS-only（不經 Cloudflare proxy），否則 SSL 憑證會衝突。
+### 5.3 步驟三：設定 DNS 紀錄 (在 Cloudflare)
 
-### 5.3 CORS 設定
+在 Cloudflare 的 DNS → Records 區塊中，新增以下紀錄：
 
-Backend 的 `CORS_ORIGINS` 必須包含前端域名：
+| Type | Name | Content | Proxy status | 說明 |
+|------|------|---------|--------------|------|
+| CNAME | `app` | `cname.vercel-dns.com` | DNS only | 前端 Vercel (關閉小橘雲) |
+| CNAME | `api` | `your-project.zeabur.app` | Proxied | 後端 Zeabur (開啟小橘雲) |
+| CNAME | `@` | `cname.vercel-dns.com` | DNS only | (選填) 主網域指向前端 |
 
+> ⚠️ **重要提醒：Vercel 的限制**
+> Vercel 會自動為你的前端簽發 SSL 憑證，並要求 DNS 紀錄為 **DNS only**（關閉 Cloudflare Proxy/小橘雲）。如果開啟 Proxy，會導致 SSL 憑證衝突（`ERR_TOO_MANY_REDIRECTS`）。
+
+### 5.4 步驟四：在 Vercel 綁定自訂網域
+
+1. Vercel Dashboard → Project → Settings → Domains
+2. 新增網域：`app.your-domain.com` (或 `your-domain.com`)。
+3. 由於已經在 Cloudflare 設定好 DNS，Vercel 偵測到 CNAME 指向後，會自動簽發 SSL 憑證並顯示 `Valid`。
+
+### 5.5 步驟五：在 Zeabur 綁定自訂網域
+
+1. Zeabur Dashboard → 進入你的 CypherHub 專案 → 點擊 Backend 服務。
+2. 在 Domain (網域) 區塊，新增自訂網域 `api.your-domain.com`。
+3. 由於 Cloudflare 的 `api` 紀錄已開啟 Proxy (Proxied)，Zeabur 將透過 Cloudflare 接收請求，並自動獲得 HTTPS 保護。
+
+### 5.6 最終 CORS 確認
+
+當前後端都綁定好自訂網域後，必須回頭去修改**後端的環境變數**：
+
+在 Zeabur Dashboard 的 Variables：
 ```bash
 CORS_ORIGINS=https://app.your-domain.com
-```
-
-多個域名（含本地開發）：
-
-```bash
-CORS_ORIGINS=https://app.your-domain.com,http://localhost:5173
+FRONTEND_BASE_URL=https://app.your-domain.com
 ```
 
 ---
