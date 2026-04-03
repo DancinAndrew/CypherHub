@@ -109,6 +109,7 @@ def _validate_production_config(app: Flask) -> None:
 def _validate_cors_origins(app: Flask) -> None:
     """啟動時檢查 CORS 設定安全性（SEC-1）"""
     origins = app.config.get("CORS_ORIGINS", [])
+    app.logger.info("CORS allowed origins: %s", origins)
     is_production = app.config.get("APP_ENV") == "production"
     for origin in origins:
         if origin == "*":

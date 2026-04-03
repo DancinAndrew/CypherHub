@@ -203,7 +203,7 @@ const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
 | 環境 | `VITE_API_BASE_URL` | `VITE_SUPABASE_URL` |
 |------|----------------------|---------------------|
 | 本地 | `http://localhost:8000` | `http://127.0.0.1:54321` |
-| 雲端 | `https://api.your-domain.com` | `https://YOUR_PROJECT_REF.supabase.co` |
+| 雲端 | `https://cypherhub-234430776857.asia-east1.run.app` | `https://YOUR_PROJECT_REF.supabase.co` |
 
 ---
 

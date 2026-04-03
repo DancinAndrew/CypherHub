@@ -1,6 +1,19 @@
 from __future__ import annotations
 
+import logging
 import os
+
+_logger = logging.getLogger(__name__)
+
+_cors_raw = os.environ.get("CORS_ORIGINS")
+if _cors_raw is None:
+    _logger.warning(
+        "CORS_ORIGINS env var not set — falling back to localhost default. "
+        "In production, set CORS_ORIGINS=https://your-frontend.example.com"
+    )
+    _cors_raw = "http://localhost:5173"
+
+_CORS_ORIGINS: list[str] = [o.strip() for o in _cors_raw.split(",") if o.strip()]
 
 
 class Config:
@@ -11,11 +24,7 @@ class Config:
     SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY", "")
     SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
 
-    CORS_ORIGINS = [
-        origin.strip()
-        for origin in os.getenv("CORS_ORIGINS", "http://localhost:5173").split(",")
-        if origin.strip()
-    ]
+    CORS_ORIGINS: list[str] = _CORS_ORIGINS
 
     ADMIN_ALLOWLIST = {
         value.strip() for value in os.getenv("ADMIN_ALLOWLIST", "").split(",") if value.strip()
