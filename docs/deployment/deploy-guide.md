@@ -207,7 +207,7 @@ gcloud run deploy cypherhub-backend \
 | Timeout | Cloud Run 預設 300s，對 ECPay webhook 回呼非常足夠 |
 | HTTPS | Cloud Run 自動提供 HTTPS endpoint |
 
-*註：部署成功後，Cloud Run 會提供一組公開網址（例如 `https://cypherhub-backend-abcde-de.a.run.app`），請先記錄下這組網址，後續我們會用 Cloudflare 自訂網域指向它。*
+*註：部署成功後，Cloud Run 會提供一組公開網址（例如 `https://cypherhub-234430776857.asia-east1.run.app`），請先記錄下這組網址，後續我們會用 Cloudflare 自訂網域指向它。*
 
 ---
 

@@ -52,6 +52,10 @@ def create_app(test_config: dict | None = None) -> Flask:
     _register_error_handlers(app)
     _register_security_headers(app)
 
+    @app.get("/")
+    def index() -> tuple[dict, int]:
+        return jsonify({"status": "ok", "service": "CypherHub API", "version": "v1"}), 200
+
     @app.get("/api/v1/health")
     def health() -> tuple[dict, int]:
         payload = HealthResponse(status="ok")
