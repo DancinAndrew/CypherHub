@@ -43,9 +43,9 @@
 | 項目 | 實作位置 | 說明 |
 |------|----------|------|
 | `.env*` 在 .gitignore | `.gitignore` | `.env`、`.env.cloud`、`.env.local`（backend/frontend）皆已排除 |
-| `.env.example` 安全 | `backend/.env.example`、`frontend/.env.example` | 所有值為空 placeholder，無真實 key |
+| `.env.example` 安全 | `.env.example`、`.env.example` | 所有值為空 placeholder，無真實 key |
 | SERVICE_ROLE_KEY 隔離 | `config.py:12`、`supabase_client.py` | 僅 server-side 使用，前端無 `VITE_SUPABASE_SERVICE_ROLE_KEY` |
-| 前端 bundle 安全 | `frontend/.env.example` | 僅 `VITE_API_BASE_URL`、`VITE_SUPABASE_URL`、`VITE_SUPABASE_ANON_KEY` |
+| 前端 bundle 安全 | `.env.example` | 僅 `VITE_API_BASE_URL`、`VITE_SUPABASE_URL`、`VITE_SUPABASE_ANON_KEY` |
 | JWT 不信任 client | `auth_service.py` | `user_id` 從 JWT 解析（`g.user_id`），不從 request body 取 |
 | 500 通用回應 | `__init__.py:145-164` | `handle_unexpected_error` 回傳 `"Unexpected server error"`，不含 stack trace |
 | 404/405 通用回應 | `__init__.py:120-132` | 固定訊息，無內部資訊 |

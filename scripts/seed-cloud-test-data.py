@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 在 Supabase Cloud 建立測試用戶與資料，保持專案活躍。
-需在 backend/.env 填入 SUPABASE_URL 與 SUPABASE_SERVICE_ROLE_KEY。
+需在 .env 填入 SUPABASE_URL 與 SUPABASE_SERVICE_ROLE_KEY。
 執行：python scripts/seed-cloud-test-data.py
 """
 from __future__ import annotations
@@ -12,7 +12,7 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-# 載入 backend/.env
+# 載入 .env
 def _load_env(path: Path) -> None:
     if not path.exists():
         return
@@ -27,7 +27,7 @@ def _load_env(path: Path) -> None:
 
 
 _backend_root = Path(__file__).resolve().parent.parent / "backend"
-_load_env(_backend_root / ".env")
+_load_env(_backend_root.parent / ".env")
 
 # 確保能找到 backend app
 sys.path.insert(0, str(_backend_root))
@@ -49,7 +49,7 @@ TEST_ATTENDEE_PASSWORD = "TestAttendee123!"
 
 def main() -> None:
     if not URL or not SERVICE_ROLE:
-        print("錯誤：請在 backend/.env 填入 SUPABASE_URL 與 SUPABASE_SERVICE_ROLE_KEY")
+        print("錯誤：請在 .env 填入 SUPABASE_URL 與 SUPABASE_SERVICE_ROLE_KEY")
         print("  取得位置：Supabase Dashboard → Project Settings → API")
         sys.exit(1)
 

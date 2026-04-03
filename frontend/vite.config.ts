@@ -13,6 +13,7 @@ if (process.env.NODE_ENV === "production") {
 }
 
 export default defineConfig({
+  envDir: "../",
   plugins: [vue()],
   server: {
     host: "0.0.0.0",

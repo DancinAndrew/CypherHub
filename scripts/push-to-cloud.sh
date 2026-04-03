@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # 將 migrations 推到 Supabase Cloud，保持專案活躍
-# 使用前：請在 backend/.env 與 frontend/.env 填入 Cloud 專案的 URL 和 keys
+# 使用前：請在 .env 與 .env 填入 Cloud 專案的 URL 和 keys
 # 若尚未連結，執行：supabase link --project-ref mcqpgnavygeuylisjllr
 
 set -e
@@ -42,4 +42,4 @@ echo "  supabase migration list"
 echo ""
 echo "若需建立測試用戶與資料，請執行："
 echo "  python scripts/seed-cloud-test-data.py"
-echo "  （需先在 backend/.env 填入 SUPABASE_URL 與 SUPABASE_SERVICE_ROLE_KEY）"
+echo "  （需先在 .env 填入 SUPABASE_URL 與 SUPABASE_SERVICE_ROLE_KEY）"

@@ -202,7 +202,7 @@ docs/                     # setup/, development/, design/, verification/, archiv
 
 ## 環境變數
 
-- `backend/.env`：SUPABASE_URL、SUPABASE_ANON_KEY、SUPABASE_SERVICE_ROLE_KEY、CORS_ORIGINS、ECPay keys
-- `frontend/.env`：VITE_API_BASE_URL、VITE_SUPABASE_URL、VITE_SUPABASE_ANON_KEY
-- 範本：`backend/.env.example`、`frontend/.env.example`
+- `.env`：SUPABASE_URL、SUPABASE_ANON_KEY、SUPABASE_SERVICE_ROLE_KEY、CORS_ORIGINS、ECPay keys
+- `.env`：VITE_API_BASE_URL、VITE_SUPABASE_URL、VITE_SUPABASE_ANON_KEY
+- 範本：`.env.example`、`.env.example`
 - 切換腳本：`scripts/use-local-supabase.sh`、`scripts/use-cloud-supabase.sh`

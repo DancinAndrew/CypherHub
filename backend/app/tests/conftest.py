@@ -5,9 +5,9 @@ from pathlib import Path
 
 import pytest
 
-# 讓 pytest 執行時能讀到 backend/.env（整合測試需要 TEST_USER_EMAIL 等）
+# 讓 pytest 執行時能讀到 .env（整合測試需要 TEST_USER_EMAIL 等）
 _backend_root = Path(__file__).resolve().parent.parent.parent
-_env_path = _backend_root / ".env"
+_env_path = _backend_root.parent / ".env"
 if _env_path.exists():
     from dotenv import load_dotenv
 

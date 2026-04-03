@@ -253,51 +253,83 @@ onMounted(() => {
 </script>
 
 <template>
-  <main class="mx-auto w-full max-w-6xl px-4 pb-20 pt-4 sm:pt-6">
-    <div v-if="loading" class="flex flex-col items-center justify-center py-24">
-      <span class="h-10 w-10 animate-spin rounded-full border-2 border-cypher-accent border-t-transparent" />
-      <p class="mt-4 text-cypher-muted">載入活動中...</p>
+  <main class="mx-auto w-full max-w-6xl px-4 pb-24 pt-4 sm:pt-6">
+
+    <!-- Loading -->
+    <div v-if="loading" class="flex flex-col items-center justify-center py-32">
+      <div class="relative h-12 w-12">
+        <div class="absolute inset-0 animate-spin rounded-full border-2 border-cypher-accent border-t-transparent" />
+        <div class="absolute inset-2 animate-spin rounded-full border-2 border-cypher-accent-cyan border-b-transparent" style="animation-direction: reverse; animation-duration: 0.8s" />
+      </div>
+      <p class="mt-5 text-sm font-medium text-cypher-muted">載入活動中...</p>
     </div>
-    <div v-else-if="errorMessage" class="rounded-2xl border border-rose-500/40 bg-rose-950/60 p-6 text-rose-300 backdrop-blur-sm">
+
+    <!-- Error -->
+    <div v-else-if="errorMessage" class="rounded-2xl border border-rose-500/30 bg-rose-950/30 p-8 text-rose-300 backdrop-blur-sm">
       {{ errorMessage }}
     </div>
 
     <template v-else-if="detail">
-      <!-- Hero: Full-width image with gradient overlay -->
-      <section v-if="detail.event_media?.length" class="-mx-4 overflow-hidden rounded-2xl sm:-mx-6 lg:-mx-8">
-        <div class="relative aspect-[16/9] w-full overflow-hidden bg-gradient-to-br from-cypher-accent/30 via-cypher-accent-pink/20 to-cypher-accent-cyan/20">
-          <img
-            v-for="(item, idx) in detail.event_media"
-            :key="item.id"
-            :src="eventMediaUrl(item.path)"
-            :alt="`${detail.event.title} ${idx + 1}`"
-            class="absolute inset-0 h-full w-full object-cover transition-opacity duration-500"
-            :class="carouselIndex === idx ? 'opacity-100' : 'opacity-0'"
-            @error="(e) => ((e.target as HTMLImageElement).style.opacity = '0')"
-          />
-          <div class="absolute inset-0 bg-gradient-to-t from-cypher-bg via-transparent to-transparent" />
-          <div v-if="detail.event_media.length > 1" class="absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-3 rounded-full border border-white/20 bg-black/60 px-4 py-2 text-sm text-white backdrop-blur-sm">
-            <button type="button" aria-label="上一張" class="hover:text-cypher-accent transition-colors" @click="carouselIndex = (carouselIndex - 1 + detail.event_media!.length) % detail.event_media!.length">‹</button>
-            <span>{{ carouselIndex + 1 }} / {{ detail.event_media!.length }}</span>
-            <button type="button" aria-label="下一張" class="hover:text-cypher-accent transition-colors" @click="carouselIndex = (carouselIndex + 1) % detail.event_media!.length">›</button>
+      <!-- ── Hero Media ── -->
+      <section class="-mx-4 sm:-mx-0">
+        <div
+          v-if="detail.event_media?.length"
+          class="relative overflow-hidden rounded-none sm:rounded-2xl"
+        >
+          <div class="relative aspect-[21/9] w-full overflow-hidden bg-gradient-to-br from-cypher-accent/30 via-cypher-accent-pink/20 to-cypher-accent-cyan/20">
+            <img
+              v-for="(item, idx) in detail.event_media"
+              :key="item.id"
+              :src="eventMediaUrl(item.path)"
+              :alt="`${detail.event.title} ${idx + 1}`"
+              class="absolute inset-0 h-full w-full object-cover transition-opacity duration-700"
+              :class="carouselIndex === idx ? 'opacity-100' : 'opacity-0'"
+              @error="(e) => ((e.target as HTMLImageElement).style.opacity = '0')"
+            />
+            <!-- Bottom fade -->
+            <div class="absolute inset-0 bg-gradient-to-t from-cypher-bg via-cypher-bg/30 to-transparent" />
+            <!-- Carousel controls -->
+            <div v-if="detail.event_media.length > 1" class="absolute bottom-4 left-1/2 flex -translate-x-1/2 items-center gap-3 rounded-full border border-white/10 bg-black/60 px-4 py-2 text-sm text-white backdrop-blur-md">
+              <button type="button" aria-label="上一張" class="cursor-pointer transition-colors hover:text-cypher-accent" @click="carouselIndex = (carouselIndex - 1 + detail.event_media!.length) % detail.event_media!.length">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg>
+              </button>
+              <span class="text-xs font-medium">{{ carouselIndex + 1 }} / {{ detail.event_media!.length }}</span>
+              <button type="button" aria-label="下一張" class="cursor-pointer transition-colors hover:text-cypher-accent" @click="carouselIndex = (carouselIndex + 1) % detail.event_media!.length">
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>
+              </button>
+            </div>
           </div>
+        </div>
+        <!-- No media placeholder -->
+        <div
+          v-else
+          class="relative aspect-[21/9] w-full overflow-hidden rounded-none sm:rounded-2xl bg-gradient-to-br from-cypher-accent/20 via-cypher-accent-pink/10 to-cypher-accent-cyan/15"
+        >
+          <div class="absolute inset-0 flex items-center justify-center">
+            <svg class="h-20 w-20 text-white/5" fill="none" stroke="currentColor" stroke-width="1" viewBox="0 0 24 24" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 9l10.5-3m0 6.553v3.75a2.25 2.25 0 01-1.632 2.163l-1.32.377a1.803 1.803 0 11-.99-3.467l2.31-.66a2.25 2.25 0 001.632-2.163zm0 0V2.25L9 5.25v10.303m0 0v3.75a2.25 2.25 0 01-1.632 2.163l-1.32.377a1.803 1.803 0 01-.99-3.467l2.31-.66A2.25 2.25 0 009 15.553z" />
+            </svg>
+          </div>
+          <div class="absolute inset-0 bg-gradient-to-t from-cypher-bg via-transparent to-transparent" />
         </div>
       </section>
 
-      <!-- Placeholder when no media -->
-      <section v-else class="-mx-4 aspect-[16/9] w-[calc(100%+2rem)] rounded-2xl bg-gradient-to-br from-cypher-accent/30 via-cypher-accent-pink/20 to-cypher-accent-cyan/20 sm:-mx-6 sm:w-[calc(100%+3rem)] lg:-mx-8 lg:w-[calc(100%+4rem)]" />
-
-      <!-- Two-column: Main content + Sticky sidebar -->
+      <!-- ── Two-column layout ── -->
       <div class="mt-8 flex flex-col gap-8 lg:flex-row lg:items-start">
+
         <!-- Left: Main content -->
-        <div class="min-w-0 flex-1 space-y-8">
+        <div class="min-w-0 flex-1 space-y-6">
+
+          <!-- Event header -->
           <header class="animate-fade-in">
-            <h1 class="font-street text-3xl tracking-widest text-white sm:text-4xl">
-              {{ detail.event.title }}
-            </h1>
-            <p v-if="detail.organizer" class="mt-2 text-cypher-muted">
-              主辦 · {{ detail.organizer.name }}
-            </p>
+            <div class="flex items-start justify-between gap-4">
+              <div class="min-w-0 flex-1">
+                <p v-if="detail.organizer" class="section-label mb-3">{{ detail.organizer.name }}</p>
+                <h1 class="font-street text-3xl leading-tight tracking-widest text-white sm:text-4xl lg:text-5xl">
+                  {{ detail.event.title }}
+                </h1>
+              </div>
+            </div>
             <div class="mt-4 flex flex-wrap gap-2">
               <span v-for="style in detail.event.dance_styles || []" :key="style" class="badge-dance">
                 {{ styleLabelFromKey(style) }}
@@ -306,7 +338,7 @@ onMounted(() => {
                 {{ eventTypeLabelFromKey(type) }}
               </span>
             </div>
-            <p class="mt-6 text-lg leading-relaxed text-gray-300">
+            <p class="mt-5 text-base leading-relaxed text-gray-400 sm:text-lg">
               {{ detail.event.description || detail.event.short_desc || "無描述" }}
             </p>
           </header>
@@ -318,179 +350,253 @@ onMounted(() => {
             :stages="liveStages"
           />
 
-          <!-- Organizer -->
-          <section v-if="detail.organizer" class="card p-6 animate-slide-up">
-            <h2 class="font-street text-lg tracking-wider text-white">主辦方</h2>
+          <!-- Organizer card -->
+          <section v-if="detail.organizer" class="card animate-slide-up p-6">
+            <div class="flex items-center gap-2">
+              <span class="h-4 w-0.5 rounded-full bg-cypher-accent" aria-hidden="true" />
+              <h2 class="font-street text-base tracking-wider text-white">主辦方</h2>
+            </div>
             <div class="mt-4 flex items-start gap-4">
               <img
                 v-if="detail.organizer.logo_url"
                 :src="detail.organizer.logo_url"
                 :alt="detail.organizer.name"
-                class="h-14 w-14 rounded-xl border border-cypher-border object-cover"
+                class="h-14 w-14 shrink-0 rounded-xl border border-cypher-border object-cover"
               />
-              <div>
+              <div class="min-w-0 flex-1">
                 <p class="font-semibold text-white">{{ detail.organizer.name }}</p>
-                <p v-if="detail.organizer.description" class="mt-1 text-sm text-gray-400">{{ detail.organizer.description }}</p>
+                <p v-if="detail.organizer.description" class="mt-1 text-sm leading-relaxed text-gray-400">{{ detail.organizer.description }}</p>
                 <a
                   v-if="detail.organizer.contact_email"
                   :href="`mailto:${detail.organizer.contact_email}`"
-                  class="mt-1 inline-block text-sm text-cypher-accent transition-colors hover:text-cypher-accent-pink"
+                  class="mt-2 inline-flex items-center gap-1.5 text-sm text-cypher-accent transition-colors hover:text-cypher-accent-bright"
                 >
                   {{ detail.organizer.contact_email }}
                 </a>
               </div>
             </div>
-            <div v-if="detail.other_events?.length" class="mt-4 border-t border-cypher-border pt-4">
-              <h3 class="text-sm font-medium text-gray-400">同主辦方其他活動</h3>
-              <ul class="mt-2 space-y-2">
+            <div v-if="detail.other_events?.length" class="mt-5 border-t border-cypher-border pt-5">
+              <p class="mb-3 text-xs font-semibold uppercase tracking-widest text-cypher-muted">同主辦方其他活動</p>
+              <ul class="space-y-2">
                 <li v-for="ev in detail.other_events" :key="ev.id">
                   <RouterLink
                     :to="{ name: 'event-detail', params: { eventId: ev.id } }"
-                    class="block rounded-xl border border-cypher-border p-3 text-sm text-gray-300 transition-all hover:border-cypher-accent/50 hover:bg-cypher-accent/5"
+                    class="flex cursor-pointer items-center justify-between rounded-xl border border-cypher-border p-3 transition-all duration-200 hover:border-cypher-accent/40 hover:bg-cypher-accent/5"
                   >
-                    <span class="font-medium text-white">{{ ev.title }}</span>
-                    <span class="ml-2 text-cypher-muted">{{ formatDateShort(ev.start_at) }}</span>
+                    <span class="text-sm font-medium text-white">{{ ev.title }}</span>
+                    <span class="shrink-0 text-xs text-cypher-muted">{{ formatDateShort(ev.start_at) }}</span>
                   </RouterLink>
                 </li>
               </ul>
             </div>
           </section>
 
-          <!-- Event info, schedule, socials -->
-          <section v-if="detail.event.eligibility || detail.event.event_language || asScheduleItems(detail.event.schedule).length || asSocialEntries(detail.event.socials).length" class="card p-6 animate-slide-up" style="animation-delay: 0.1s">
-            <h2 class="font-street text-lg tracking-wider text-white">活動詳情</h2>
-            <div v-if="asSocialEntries(detail.event.socials).length" class="mt-4">
-              <h3 class="text-sm font-medium text-gray-400">社群連結</h3>
-              <div class="mt-2 flex flex-wrap gap-2">
+          <!-- Event details card -->
+          <section
+            v-if="detail.event.eligibility || detail.event.event_language || detail.event.checkin_open_at || asScheduleItems(detail.event.schedule).length || asSocialEntries(detail.event.socials).length"
+            class="card animate-slide-up p-6"
+            style="animation-delay: 0.1s"
+          >
+            <div class="flex items-center gap-2">
+              <span class="h-4 w-0.5 rounded-full bg-cypher-accent-cyan" aria-hidden="true" />
+              <h2 class="font-street text-base tracking-wider text-white">活動詳情</h2>
+            </div>
+
+            <!-- Social links -->
+            <div v-if="asSocialEntries(detail.event.socials).length" class="mt-5">
+              <p class="mb-3 text-xs font-semibold uppercase tracking-widest text-cypher-muted">社群連結</p>
+              <div class="flex flex-wrap gap-2">
                 <a
                   v-for="entry in asSocialEntries(detail.event.socials)"
                   :key="entry.key"
                   :href="entry.value.startsWith('http') ? entry.value : `https://${entry.value}`"
                   target="_blank"
                   rel="noopener noreferrer"
-                  class="inline-flex items-center gap-2 rounded-lg border border-cypher-border border-l-4 px-4 py-2 text-sm text-gray-200 transition-all"
+                  class="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-l-4 border-cypher-border px-4 py-2.5 text-sm font-medium text-gray-200 transition-all duration-200"
                   :class="SOCIAL_STYLES[entry.key] ?? 'border-l-cypher-accent/50 bg-cypher-accent/5 hover:bg-cypher-accent/10'"
                 >
                   {{ SOCIAL_LABELS[entry.key] ?? entry.key }}
-                  <span class="text-cypher-muted">→</span>
+                  <svg class="h-3 w-3 text-cypher-muted" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 19.5l15-15m0 0H8.25m11.25 0v11.25" />
+                  </svg>
                 </a>
               </div>
             </div>
-            <div class="mt-4 space-y-2 text-sm text-gray-400">
-              <p v-if="detail.event.eligibility"><span class="font-medium text-gray-300">參加資格：</span>{{ detail.event.eligibility }}</p>
-              <p v-if="detail.event.event_language"><span class="font-medium text-gray-300">活動語言：</span>{{ detail.event.event_language }}</p>
-              <p v-if="detail.event.checkin_open_at"><span class="font-medium text-gray-300">報到開放：</span>{{ formatDateTime(detail.event.checkin_open_at) }}</p>
-              <p v-if="detail.event.checkin_note"><span class="font-medium text-gray-300">報到注意：</span>{{ detail.event.checkin_note }}</p>
-            </div>
-            <div v-if="asScheduleItems(detail.event.schedule).length" class="mt-4">
-              <h3 class="text-sm font-medium text-gray-400">流程</h3>
-              <ul class="mt-2 space-y-2">
+
+            <!-- Info rows -->
+            <dl class="mt-5 grid gap-3 text-sm sm:grid-cols-2">
+              <div v-if="detail.event.eligibility" class="rounded-xl border border-cypher-border/50 bg-cypher-surface-alt/30 px-4 py-3">
+                <dt class="text-xs font-semibold uppercase tracking-widest text-cypher-muted">參加資格</dt>
+                <dd class="mt-1 text-gray-300">{{ detail.event.eligibility }}</dd>
+              </div>
+              <div v-if="detail.event.event_language" class="rounded-xl border border-cypher-border/50 bg-cypher-surface-alt/30 px-4 py-3">
+                <dt class="text-xs font-semibold uppercase tracking-widest text-cypher-muted">活動語言</dt>
+                <dd class="mt-1 text-gray-300">{{ detail.event.event_language }}</dd>
+              </div>
+              <div v-if="detail.event.checkin_open_at" class="rounded-xl border border-cypher-border/50 bg-cypher-surface-alt/30 px-4 py-3">
+                <dt class="text-xs font-semibold uppercase tracking-widest text-cypher-muted">報到開放</dt>
+                <dd class="mt-1 text-gray-300">{{ formatDateTime(detail.event.checkin_open_at) }}</dd>
+              </div>
+              <div v-if="detail.event.checkin_note" class="rounded-xl border border-cypher-border/50 bg-cypher-surface-alt/30 px-4 py-3">
+                <dt class="text-xs font-semibold uppercase tracking-widest text-cypher-muted">報到注意</dt>
+                <dd class="mt-1 text-gray-300">{{ detail.event.checkin_note }}</dd>
+              </div>
+            </dl>
+
+            <!-- Schedule timeline -->
+            <div v-if="asScheduleItems(detail.event.schedule).length" class="mt-6">
+              <p class="mb-4 text-xs font-semibold uppercase tracking-widest text-cypher-muted">活動流程</p>
+              <ol class="relative space-y-0 border-l border-cypher-border pl-6">
                 <li
                   v-for="(item, index) in asScheduleItems(detail.event.schedule)"
                   :key="index"
-                  class="flex gap-3 rounded-xl border border-cypher-border p-3 text-sm"
+                  class="relative pb-6 last:pb-0"
                 >
-                  <span class="shrink-0 font-medium text-cypher-accent">{{ item.time || "--" }}</span>
-                  <div>
-                    <p class="font-medium text-white">{{ item.title || "Untitled" }}</p>
-                    <p v-if="item.desc" class="mt-0.5 text-gray-500">{{ item.desc }}</p>
-                  </div>
+                  <!-- Timeline dot -->
+                  <span class="absolute -left-[25px] flex h-4 w-4 items-center justify-center rounded-full border border-cypher-accent/50 bg-cypher-bg">
+                    <span class="h-1.5 w-1.5 rounded-full bg-cypher-accent" />
+                  </span>
+                  <p class="text-xs font-bold text-cypher-accent">{{ item.time || "--" }}</p>
+                  <p class="mt-0.5 font-semibold text-white">{{ item.title || "Untitled" }}</p>
+                  <p v-if="item.desc" class="mt-0.5 text-sm text-gray-500">{{ item.desc }}</p>
                 </li>
-              </ul>
+              </ol>
             </div>
           </section>
 
-          <!-- Ticket types + registration / checkout -->
-          <section class="card p-6 animate-slide-up" style="animation-delay: 0.15s">
-            <h2 class="font-street text-lg tracking-wider text-white">票種與報名</h2>
-            <div v-if="!detail.ticket_types.length" class="mt-4 text-cypher-muted">暫無可選票種</div>
+          <!-- Tickets card -->
+          <section class="card animate-slide-up p-6" style="animation-delay: 0.15s">
+            <div class="flex items-center gap-2">
+              <span class="h-4 w-0.5 rounded-full bg-cypher-accent-pink" aria-hidden="true" />
+              <h2 class="font-street text-base tracking-wider text-white">票種與報名</h2>
+            </div>
+            <div v-if="!detail.ticket_types.length" class="mt-4 text-sm text-cypher-muted">暫無可選票種</div>
             <div v-else class="mt-4 space-y-3">
               <button
                 v-for="tt in detail.ticket_types"
                 :key="tt.id"
                 type="button"
-                class="flex w-full items-center justify-between rounded-xl border p-4 text-left transition-all"
-                :class="selectedTicketTypeId === tt.id ? 'border-cypher-accent bg-cypher-accent/10 shadow-glow-sm' : 'border-cypher-border hover:border-cypher-accent/40'"
+                class="flex w-full cursor-pointer items-center justify-between rounded-xl border p-4 text-left transition-all duration-200"
+                :class="selectedTicketTypeId === tt.id
+                  ? 'border-cypher-accent bg-cypher-accent/10 shadow-glow-sm'
+                  : 'border-cypher-border hover:border-cypher-accent/40 hover:bg-cypher-surface-alt/50'"
                 @click="selectTicketType(tt)"
               >
-                <div>
+                <div class="min-w-0 flex-1">
                   <p class="font-semibold text-white">{{ tt.name }}</p>
-                  <p class="mt-0.5 text-xs text-cypher-muted">
+                  <p class="mt-1 text-xs text-cypher-muted">
                     名額 {{ tt.capacity }} · 已報 {{ tt.sold_count }} · 每人限 {{ tt.per_user_limit }}
-                    <span v-if="tt.price_cents > 0"> · {{ (tt.price_cents / 100).toLocaleString() }} 元</span>
+                    <span v-if="tt.price_cents > 0" class="font-semibold text-cypher-accent-cyan"> · NT$ {{ (tt.price_cents / 100).toLocaleString() }}</span>
+                    <span v-else class="font-semibold text-emerald-400"> · 免費</span>
                   </p>
                 </div>
-                <span v-if="selectedTicketTypeId === tt.id" class="text-cypher-accent">✓ 已選</span>
+                <div class="ml-3 flex h-6 w-6 shrink-0 items-center justify-center rounded-full border transition-all duration-200"
+                  :class="selectedTicketTypeId === tt.id ? 'border-cypher-accent bg-cypher-accent' : 'border-cypher-border'">
+                  <svg v-if="selectedTicketTypeId === tt.id" class="h-3.5 w-3.5 text-white" fill="none" stroke="currentColor" stroke-width="3" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                  </svg>
+                </div>
               </button>
             </div>
 
-            <!-- 免費票：報名表單 + 立即報名 -->
+            <!-- Free ticket form -->
             <div v-if="selectedTicketType && !isPaidTicket" class="mt-6 border-t border-cypher-border pt-6">
-              <h3 class="font-medium text-white">報名表單 · {{ selectedTicketType.name }}</h3>
-              <div v-if="formLoading" class="mt-4 rounded-xl border border-cypher-border bg-cypher-surface-alt/50 p-4 text-sm text-cypher-muted">載入表單中...</div>
-              <div v-else-if="formError" class="mt-4 rounded-xl border border-rose-500/40 bg-rose-950/40 p-4 text-sm text-rose-300">{{ formError }}</div>
-              <div v-else-if="selectedForm?.schema.fields.length" class="mt-4">
+              <p class="mb-4 text-sm font-semibold text-gray-300">報名表單 · {{ selectedTicketType.name }}</p>
+              <div v-if="formLoading" class="rounded-xl border border-cypher-border bg-cypher-surface-alt/40 p-4 text-sm text-cypher-muted">載入表單中...</div>
+              <div v-else-if="formError" class="rounded-xl border border-rose-500/30 bg-rose-950/30 p-4 text-sm text-rose-300">{{ formError }}</div>
+              <div v-else-if="selectedForm?.schema.fields.length">
                 <DynamicForm v-model="formAnswers" :schema="selectedForm!.schema" :disabled="registerLoading" />
               </div>
-              <div v-else class="mt-4 rounded-xl border border-cypher-border bg-cypher-surface-alt/50 p-4 text-sm text-cypher-muted">此票種無需填寫額外資料，可直接報名。</div>
-              <p v-if="registerMessage" class="mt-3 text-sm" :class="registerMessage.startsWith('報名成功') ? 'text-emerald-400' : 'text-rose-400'">{{ registerMessage }}</p>
+              <div v-else class="rounded-xl border border-cypher-border/50 bg-cypher-surface-alt/30 p-4 text-sm text-cypher-muted">此票種無需填寫額外資料，可直接報名。</div>
+              <p v-if="registerMessage" class="mt-3 text-sm font-medium" :class="registerMessage.startsWith('報名成功') ? 'text-emerald-400' : 'text-rose-400'">{{ registerMessage }}</p>
             </div>
 
-            <!-- 付費票：數量 + 結帳說明 -->
+            <!-- Paid ticket qty -->
             <div v-else-if="selectedTicketType && isPaidTicket" class="mt-6 border-t border-cypher-border pt-6">
-              <h3 class="font-medium text-white">結帳 · {{ selectedTicketType.name }}</h3>
-              <div class="mt-4 flex items-center gap-4">
-                <label class="text-sm text-gray-400">數量</label>
+              <p class="mb-4 text-sm font-semibold text-gray-300">結帳 · {{ selectedTicketType.name }}</p>
+              <div class="flex items-center gap-4">
+                <label for="checkout-qty" class="text-sm text-gray-400">數量</label>
                 <input
+                  id="checkout-qty"
                   v-model.number="checkoutQuantity"
                   type="number"
                   min="1"
                   max="20"
-                  class="w-20 rounded-lg border border-cypher-border bg-cypher-surface px-3 py-2 text-white"
+                  class="w-24 rounded-xl border border-cypher-border bg-cypher-surface px-3 py-2 text-center text-white focus:border-cypher-accent focus:outline-none focus:ring-2 focus:ring-cypher-accent/30"
                 />
+                <span class="text-sm font-semibold text-cypher-accent-cyan">
+                  NT$ {{ ((selectedTicketType.price_cents * checkoutQuantity) / 100).toLocaleString() }}
+                </span>
               </div>
-              <p class="mt-2 text-sm text-cypher-muted">總計 {{ ((selectedTicketType.price_cents * checkoutQuantity) / 100).toLocaleString() }} 元 · 點擊「前往結帳」將導向綠界金流頁完成付款</p>
-              <p v-if="registerMessage" class="mt-3 text-sm text-rose-400">{{ registerMessage }}</p>
+              <p class="mt-2 text-xs text-cypher-muted">點擊「前往結帳」將導向綠界金流頁完成付款</p>
+              <p v-if="registerMessage" class="mt-3 text-sm font-medium text-rose-400">{{ registerMessage }}</p>
             </div>
           </section>
         </div>
 
-        <!-- Right: Sticky When & Where + CTA -->
+        <!-- ── Right: Sticky sidebar ── -->
         <aside class="w-full shrink-0 lg:sticky lg:top-24 lg:w-80">
-          <div class="card animate-slide-up p-6" style="animation-delay: 0.2s">
-            <h2 class="font-street text-sm tracking-[0.2em] text-cypher-muted">時間與地點</h2>
-            <div class="mt-4 space-y-4">
-              <div>
-                <p class="text-xs font-medium text-cypher-muted">開始</p>
-                <p class="mt-0.5 font-medium text-white">{{ formatDateTime(detail.event.start_at) }}</p>
-              </div>
-              <div>
-                <p class="text-xs font-medium text-cypher-muted">結束</p>
-                <p class="mt-0.5 font-medium text-white">{{ formatDateTime(detail.event.end_at) }}</p>
-              </div>
-              <div>
-                <p class="text-xs font-medium text-cypher-muted">地點</p>
-                <p class="mt-0.5 font-medium text-white">{{ detail.event.location_name || "待公佈" }}</p>
-                <p v-if="detail.event.location_address" class="mt-0.5 text-sm text-gray-400">{{ detail.event.location_address }}</p>
-                <a
-                  v-if="navigateUrl"
-                  :href="navigateUrl"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="mt-2 inline-flex items-center gap-2 rounded-xl border border-cypher-border bg-cypher-surface px-3 py-2 text-sm font-medium text-gray-200 transition-colors hover:border-cypher-accent hover:bg-cypher-surface-alt"
-                >
-                  <span aria-hidden="true">🧭</span>
-                  導航
-                </a>
-              </div>
-              <div v-if="detail.event.registration_end_at">
-                <p class="text-xs font-medium text-cypher-muted">報名截止</p>
-                <p class="mt-0.5 text-sm text-gray-300">{{ formatDateTime(detail.event.registration_end_at) }}</p>
-              </div>
-            </div>
+          <div class="card-glass animate-slide-up rounded-2xl p-6" style="animation-delay: 0.2s">
 
-            <!-- Sticky CTA - glowing -->
-            <div class="mt-6 space-y-3">
+            <!-- Time & Location -->
+            <p class="section-label mb-4">時間與地點</p>
+            <dl class="space-y-4">
+              <div class="flex gap-3">
+                <div class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-cypher-accent/10">
+                  <svg class="h-4 w-4 text-cypher-accent" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div>
+                  <dt class="text-xs font-semibold uppercase tracking-widest text-cypher-muted">開始</dt>
+                  <dd class="mt-0.5 text-sm font-medium text-white">{{ formatDateTime(detail.event.start_at) }}</dd>
+                  <dt class="mt-2 text-xs font-semibold uppercase tracking-widest text-cypher-muted">結束</dt>
+                  <dd class="mt-0.5 text-sm font-medium text-white">{{ formatDateTime(detail.event.end_at) }}</dd>
+                </div>
+              </div>
+              <div class="flex gap-3">
+                <div class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-cypher-accent-cyan/10">
+                  <svg class="h-4 w-4 text-cypher-accent-cyan" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+                  </svg>
+                </div>
+                <div>
+                  <dt class="text-xs font-semibold uppercase tracking-widest text-cypher-muted">地點</dt>
+                  <dd class="mt-0.5 text-sm font-medium text-white">{{ detail.event.location_name || "待公佈" }}</dd>
+                  <dd v-if="detail.event.location_address" class="mt-0.5 text-xs leading-relaxed text-gray-400">{{ detail.event.location_address }}</dd>
+                  <a
+                    v-if="navigateUrl"
+                    :href="navigateUrl"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="mt-2 inline-flex cursor-pointer items-center gap-1.5 rounded-lg border border-cypher-border bg-cypher-surface-alt/50 px-3 py-1.5 text-xs font-medium text-gray-300 transition-all duration-200 hover:border-cypher-accent-cyan/50 hover:text-cypher-accent-cyan"
+                  >
+                    <svg class="h-3 w-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M9 6.75V15m6-6v8.25m.503 3.498l4.875-2.437c.381-.19.622-.58.622-1.006V4.82c0-.836-.88-1.38-1.628-1.006l-3.869 1.934c-.317.159-.69.159-1.006 0L9.503 3.252a1.125 1.125 0 00-1.006 0L3.622 5.689C3.24 5.88 3 6.27 3 6.695V19.18c0 .836.88 1.38 1.628 1.006l3.869-1.934c.317-.159.69-.159 1.006 0l4.994 2.497c.317.158.69.158 1.006 0z" />
+                    </svg>
+                    導航
+                  </a>
+                </div>
+              </div>
+              <div v-if="detail.event.registration_end_at" class="flex gap-3">
+                <div class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-cypher-accent-pink/10">
+                  <svg class="h-4 w-4 text-cypher-accent-pink" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+                  </svg>
+                </div>
+                <div>
+                  <dt class="text-xs font-semibold uppercase tracking-widest text-cypher-muted">報名截止</dt>
+                  <dd class="mt-0.5 text-sm font-medium text-gray-300">{{ formatDateTime(detail.event.registration_end_at) }}</dd>
+                </div>
+              </div>
+            </dl>
+
+            <!-- Divider -->
+            <div class="glow-line my-6" />
+
+            <!-- CTA -->
+            <div class="space-y-3">
               <button
                 v-if="!isPaidTicket"
                 type="button"
@@ -498,7 +604,11 @@ onMounted(() => {
                 :disabled="registerLoading || formLoading"
                 @click="handleRegister"
               >
-                {{ registerLoading ? "報名中..." : "立即報名" }}
+                <span v-if="registerLoading" class="flex items-center justify-center gap-2">
+                  <span class="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  報名中...
+                </span>
+                <span v-else>立即報名</span>
               </button>
               <button
                 v-else
@@ -507,17 +617,20 @@ onMounted(() => {
                 :disabled="registerLoading"
                 @click="handleCheckout"
               >
-                {{ registerLoading ? "導向付款中..." : "前往結帳" }}
+                <span v-if="registerLoading" class="flex items-center justify-center gap-2">
+                  <span class="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  導向付款中...
+                </span>
+                <span v-else>前往結帳</span>
               </button>
-              <button
-                type="button"
-                class="btn-secondary w-full"
-                @click="copyShareUrl"
-              >
+              <button type="button" class="btn-secondary w-full" @click="copyShareUrl">
+                <svg class="mr-2 h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M7.217 10.907a2.25 2.25 0 100 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186l9.566-5.314m-9.566 7.5l9.566 5.314m0 0a2.25 2.25 0 103.935 2.186 2.25 2.25 0 00-3.935-2.186zm0-12.814a2.25 2.25 0 103.933-2.185 2.25 2.25 0 00-3.933 2.185z" />
+                </svg>
                 分享活動
               </button>
             </div>
-            <p v-if="shareMessage" class="mt-2 text-center text-sm text-emerald-400">{{ shareMessage }}</p>
+            <p v-if="shareMessage" class="mt-3 text-center text-sm font-medium text-emerald-400">{{ shareMessage }}</p>
           </div>
         </aside>
       </div>

@@ -51,7 +51,7 @@ def setup_structured_logging(app: Flask) -> None:
 
     # Set werkzeug and gunicorn logger to use the same handler if needed
     logging.getLogger("werkzeug").addHandler(handler)
-    logging.getLogger("werkzeug").setLevel(logging.WARNING)
+    logging.getLogger("werkzeug").setLevel(logging.INFO)
 
     @app.before_request
     def assign_trace_id() -> None:

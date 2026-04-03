@@ -155,8 +155,7 @@ git clone https://github.com/your-org/CypherHub.git
 cd CypherHub
 
 # 2. 環境設定
-cp backend/.env.example backend/.env
-cp frontend/.env.example frontend/.env
+cp .env.example .env
 # 編輯 .env 填入 Supabase keys
 
 # 3. 啟動

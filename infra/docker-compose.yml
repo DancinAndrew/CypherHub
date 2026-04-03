@@ -8,7 +8,7 @@ services:
       context: ../backend
       dockerfile: Dockerfile
     env_file:
-      - ../backend/.env
+      - ../.env
     working_dir: /app
     # 開發模式：覆蓋 Dockerfile 的 gunicorn CMD，使用 flask dev server + hot reload
     command: flask --app app run --host=0.0.0.0 --port=8000 --debug
@@ -22,7 +22,7 @@ services:
       context: ../frontend
       dockerfile: Dockerfile
     env_file:
-      - ../frontend/.env
+      - ../.env
     working_dir: /app
     command: sh -c "npm install && npm run dev -- --host 0.0.0.0 --port 5173"
     ports:
@@ -32,3 +32,4 @@ services:
       - /app/node_modules
     depends_on:
       - backend
+

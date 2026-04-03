@@ -169,121 +169,254 @@ async function save(): Promise<void> {
 </script>
 
 <template>
-  <main class="mx-auto max-w-lg px-4 py-12">
-    <header class="animate-fade-in">
-      <h1 class="font-street text-3xl tracking-widest text-white">個人資料</h1>
-      <p class="mt-2 text-sm text-cypher-muted">編輯顯示名稱與聯絡方式（頭像可於之後版本上傳）。</p>
-    </header>
+  <main class="relative min-h-[calc(100vh-4rem)] w-full overflow-hidden px-4 pb-20 pt-10">
+    <!-- Background layers -->
+    <div class="absolute inset-0 bg-gradient-mesh" aria-hidden="true" />
+    <div class="pointer-events-none absolute inset-0" style="background: radial-gradient(ellipse 50% 40% at 20% 0%, rgba(124,58,237,0.10) 0%, transparent 70%)" aria-hidden="true" />
 
-    <div v-if="loading" class="mt-6 animate-pulse text-cypher-muted">載入中…</div>
+    <div class="relative z-10 mx-auto w-full max-w-lg">
 
-    <div v-else-if="profile" class="card mt-6 space-y-4 p-6 animate-slide-up">
-      <div>
-        <label class="mb-1 block text-sm font-medium text-gray-300">顯示名稱 *</label>
-        <input
-          v-model="displayName"
-          type="text"
-          placeholder="您的暱稱"
-          class="input-field"
-        />
-      </div>
-      <div>
-        <label class="mb-1 block text-sm font-medium text-gray-300">手機</label>
-        <input
-          v-model="phone"
-          type="tel"
-          placeholder="選填"
-          class="input-field"
-        />
-      </div>
-      <div>
-        <label class="mb-1 block text-sm font-medium text-gray-300">Instagram</label>
-        <input
-          v-model="socialInstagram"
-          type="url"
-          placeholder="https://instagram.com/..."
-          class="input-field"
-        />
-      </div>
-      <div>
-        <label class="mb-1 block text-sm font-medium text-gray-300">Facebook</label>
-        <input
-          v-model="socialFacebook"
-          type="url"
-          placeholder="https://facebook.com/..."
-          class="input-field"
-        />
+      <!-- Header -->
+      <header class="animate-slide-up mb-8">
+        <p class="section-label mb-2">Profile</p>
+        <div class="flex items-center gap-3">
+          <span class="h-6 w-0.5 rounded-full bg-gradient-to-b from-cypher-accent to-cypher-accent-pink" aria-hidden="true" />
+          <h1 class="font-street text-2xl tracking-widest text-white">個人資料</h1>
+        </div>
+        <p class="mt-2 pl-3.5 text-sm text-cypher-muted">編輯顯示名稱與聯絡方式</p>
+      </header>
+
+      <!-- Loading -->
+      <div v-if="loading" class="card-glass flex items-center justify-center gap-3 p-12 text-cypher-muted">
+        <span class="h-5 w-5 animate-spin rounded-full border-2 border-cypher-accent border-t-transparent" aria-hidden="true" />
+        <span class="text-sm">載入中…</span>
       </div>
 
-      <p v-if="message" class="text-sm text-emerald-400">{{ message }}</p>
-      <p v-if="errorMessage" class="text-sm text-rose-400">{{ errorMessage }}</p>
+      <!-- Not authenticated -->
+      <p v-else-if="!authStore.isAuthenticated" class="text-sm text-cypher-muted">請先登入。</p>
 
-      <button
-        type="button"
-        class="btn-primary w-full disabled:opacity-50"
-        :disabled="saving"
-        @click="save"
-      >
-        {{ saving ? "儲存中…" : "儲存" }}
-      </button>
-    </div>
+      <!-- Profile form -->
+      <div v-else-if="profile" class="animate-slide-up space-y-5">
 
-    <template v-if="authStore.isAuthenticated && !loading">
-      <section class="card mt-8 p-6 animate-slide-up" style="animation-delay: 0.1s">
-        <h2 class="font-street text-lg tracking-wider text-white">主辦方帳號</h2>
-        <p v-if="organizerSummaryLoading" class="mt-3 text-sm text-cypher-muted">載入中…</p>
-        <p v-else-if="organizerSummaryError" class="mt-3 text-sm text-rose-400">{{ organizerSummaryError }}</p>
-        <div v-else-if="organizations.length === 0" class="mt-3 text-sm text-gray-400">尚無主辦方帳號。可至主辦方申請頁建立。</div>
-        <ul v-else class="mt-3 space-y-2">
-          <li
-            v-for="(org, i) in organizations"
-            :key="org.id"
-            class="flex items-center justify-between rounded-xl border border-cypher-border px-3 py-2 text-sm"
-            :style="`animation: slideUp 0.4s ease-out ${i * 0.05}s both`"
+        <!-- Avatar + email display -->
+        <div class="relative overflow-hidden rounded-2xl border border-white/10 bg-cypher-surface/90 p-6 shadow-card-glass backdrop-blur-md">
+          <div class="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cypher-accent/40 to-transparent" aria-hidden="true" />
+          <div class="flex items-center gap-4">
+            <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-cypher-accent/30 bg-gradient-to-br from-cypher-accent to-cypher-accent-pink text-xl font-bold text-white shadow-glow-sm">
+              {{ authStore.user?.email?.charAt(0).toUpperCase() ?? '?' }}
+            </div>
+            <div>
+              <p class="font-semibold text-white">{{ profile.display_name || '—' }}</p>
+              <p class="mt-0.5 text-sm text-cypher-muted">{{ authStore.user?.email }}</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Edit form -->
+        <div class="relative overflow-hidden rounded-2xl border border-white/10 bg-cypher-surface/90 p-6 shadow-card-glass backdrop-blur-md">
+          <div class="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cypher-accent/30 to-transparent" aria-hidden="true" />
+
+          <h2 class="mb-5 text-sm font-semibold text-white">基本資訊</h2>
+
+          <div class="space-y-4">
+            <div>
+              <label for="profile-display-name" class="mb-1.5 block text-xs font-semibold uppercase tracking-widest text-cypher-muted">
+                顯示名稱 <span class="text-cypher-accent">*</span>
+              </label>
+              <input
+                id="profile-display-name"
+                v-model="displayName"
+                type="text"
+                placeholder="您的暱稱"
+                class="input-field"
+              />
+            </div>
+            <div>
+              <label for="profile-phone" class="mb-1.5 block text-xs font-semibold uppercase tracking-widest text-cypher-muted">
+                手機（選填）
+              </label>
+              <input
+                id="profile-phone"
+                v-model="phone"
+                type="tel"
+                placeholder="例如 0912-345-678"
+                class="input-field"
+              />
+            </div>
+          </div>
+
+          <div class="my-5 h-px bg-white/5" />
+
+          <h2 class="mb-4 text-sm font-semibold text-white">社群連結</h2>
+          <div class="space-y-4">
+            <div>
+              <label for="profile-instagram" class="mb-1.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-cypher-muted">
+                <svg class="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
+                </svg>
+                Instagram
+              </label>
+              <input
+                id="profile-instagram"
+                v-model="socialInstagram"
+                type="url"
+                placeholder="https://instagram.com/yourhandle"
+                class="input-field"
+              />
+            </div>
+            <div>
+              <label for="profile-facebook" class="mb-1.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-widest text-cypher-muted">
+                <svg class="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                </svg>
+                Facebook
+              </label>
+              <input
+                id="profile-facebook"
+                v-model="socialFacebook"
+                type="url"
+                placeholder="https://facebook.com/yourpage"
+                class="input-field"
+              />
+            </div>
+          </div>
+
+          <!-- Alerts -->
+          <Transition
+            enter-active-class="transition-all duration-200 ease-out"
+            enter-from-class="opacity-0 -translate-y-1"
+            enter-to-class="opacity-100 translate-y-0"
           >
-            <span class="font-medium text-white">{{ org.name }}</span>
-            <span class="badge-dance">{{ roleLabel(org.role) }}</span>
-          </li>
-        </ul>
-        <router-link
-          v-if="organizations.length > 0"
-          to="/organizer"
-          class="mt-3 inline-block text-sm font-medium text-cypher-accent transition-colors hover:text-cypher-accent-pink"
-        >
-          前往主辦方後台 →
-        </router-link>
-      </section>
-
-      <section class="card mt-6 p-6 animate-slide-up" style="animation-delay: 0.15s">
-        <h2 class="font-street text-lg tracking-wider text-white">主辦方底下的活動</h2>
-        <p v-if="organizerSummaryLoading" class="mt-3 text-sm text-cypher-muted">載入中…</p>
-        <div v-else-if="events.length === 0" class="mt-3 text-sm text-gray-400">尚無活動，或您尚未加入任何主辦方。</div>
-        <ul v-else class="mt-3 space-y-2">
-          <li
-            v-for="(ev, i) in events"
-            :key="ev.id"
-            class="rounded-xl border border-cypher-border px-3 py-2 text-sm"
-            :style="`animation: slideUp 0.4s ease-out ${i * 0.05}s both`"
+            <div v-if="message" class="mt-4 flex items-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-400">
+              <svg class="h-4 w-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              {{ message }}
+            </div>
+          </Transition>
+          <Transition
+            enter-active-class="transition-all duration-200 ease-out"
+            enter-from-class="opacity-0 -translate-y-1"
+            enter-to-class="opacity-100 translate-y-0"
           >
-            <router-link :to="{ name: 'event-detail', params: { eventId: ev.id } }" class="font-medium text-cypher-accent transition-colors hover:text-cypher-accent-pink">
-              {{ ev.title }}
-            </router-link>
-            <span class="ml-2 text-cypher-muted">{{ formatEventDate(ev.start_at) }}</span>
-            <span class="ml-2 rounded px-1.5 py-0.5 text-xs" :class="ev.status === 'published' ? 'badge-type' : 'bg-cypher-surface-alt text-cypher-muted'">
-              {{ ev.status === "published" ? "已上架" : "草稿" }}
+            <div v-if="errorMessage" class="mt-4 flex items-center gap-2 rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-400">
+              <svg class="h-4 w-4 shrink-0" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+              </svg>
+              {{ errorMessage }}
+            </div>
+          </Transition>
+
+          <button
+            type="button"
+            class="btn-primary mt-5 w-full py-3"
+            :disabled="saving"
+            @click="save"
+          >
+            <span v-if="saving" class="flex items-center justify-center gap-2">
+              <span class="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" aria-hidden="true" />
+              儲存中…
             </span>
-          </li>
-        </ul>
-        <router-link
-          v-if="events.length > 0"
-          to="/organizer"
-          class="mt-3 inline-block text-sm font-medium text-cypher-accent transition-colors hover:text-cypher-accent-pink"
-        >
-          管理活動 →
-        </router-link>
-      </section>
-    </template>
+            <span v-else>儲存變更</span>
+          </button>
+        </div>
 
-    <p v-if="!loading && !profile && !authStore.isAuthenticated" class="mt-6 text-cypher-muted">請先登入。</p>
+        <!-- Organizer section -->
+        <template v-if="authStore.isAuthenticated">
+
+          <!-- My organizations -->
+          <div class="relative overflow-hidden rounded-2xl border border-white/10 bg-cypher-surface/90 shadow-card-glass backdrop-blur-md" style="animation: slideUp 0.5s ease-out 0.1s both">
+            <div class="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cypher-accent-cyan/30 to-transparent" aria-hidden="true" />
+            <div class="border-b border-white/5 px-6 py-4">
+              <h2 class="text-sm font-semibold text-white">主辦方帳號</h2>
+            </div>
+            <div class="p-6">
+              <div v-if="organizerSummaryLoading" class="flex items-center gap-2 text-sm text-cypher-muted">
+                <span class="h-4 w-4 animate-spin rounded-full border border-cypher-accent border-t-transparent" aria-hidden="true" />
+                載入中…
+              </div>
+              <p v-else-if="organizerSummaryError" class="text-sm text-rose-400">{{ organizerSummaryError }}</p>
+              <div v-else-if="organizations.length === 0" class="flex flex-col items-center gap-3 py-4 text-center">
+                <p class="text-sm text-gray-400">尚無主辦方帳號</p>
+                <router-link to="/organizer/apply" class="text-sm font-medium text-cypher-accent transition-colors hover:text-cypher-accent-pink">
+                  立即申請 →
+                </router-link>
+              </div>
+              <ul v-else class="space-y-2">
+                <li
+                  v-for="(org, i) in organizations"
+                  :key="org.id"
+                  class="flex items-center justify-between rounded-xl border border-white/5 bg-white/[0.02] px-4 py-3 text-sm"
+                  :style="`animation: slideUp 0.4s ease-out ${i * 0.05}s both`"
+                >
+                  <span class="font-medium text-white">{{ org.name }}</span>
+                  <span class="badge-dance">{{ roleLabel(org.role) }}</span>
+                </li>
+              </ul>
+              <router-link
+                v-if="organizations.length > 0"
+                to="/organizer"
+                class="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-cypher-accent transition-colors hover:text-cypher-accent-pink"
+              >
+                前往主辦方後台
+                <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                </svg>
+              </router-link>
+            </div>
+          </div>
+
+          <!-- My events -->
+          <div class="relative overflow-hidden rounded-2xl border border-white/10 bg-cypher-surface/90 shadow-card-glass backdrop-blur-md" style="animation: slideUp 0.5s ease-out 0.15s both">
+            <div class="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cypher-accent-pink/30 to-transparent" aria-hidden="true" />
+            <div class="border-b border-white/5 px-6 py-4">
+              <h2 class="text-sm font-semibold text-white">主辦活動</h2>
+            </div>
+            <div class="p-6">
+              <p v-if="organizerSummaryLoading" class="text-sm text-cypher-muted">載入中…</p>
+              <div v-else-if="events.length === 0" class="text-sm text-gray-400">尚無活動，或您尚未加入任何主辦方。</div>
+              <ul v-else class="space-y-2">
+                <li
+                  v-for="(ev, i) in events"
+                  :key="ev.id"
+                  class="flex items-center justify-between rounded-xl border border-white/5 bg-white/[0.02] px-4 py-3 text-sm"
+                  :style="`animation: slideUp 0.4s ease-out ${i * 0.05}s both`"
+                >
+                  <div class="min-w-0 flex-1">
+                    <router-link
+                      :to="{ name: 'event-detail', params: { eventId: ev.id } }"
+                      class="block truncate font-medium text-white transition-colors hover:text-cypher-accent"
+                    >
+                      {{ ev.title }}
+                    </router-link>
+                    <p class="mt-0.5 text-xs text-cypher-muted">{{ formatEventDate(ev.start_at) }}</p>
+                  </div>
+                  <span
+                    class="ml-3 shrink-0 rounded-full border px-2 py-0.5 text-[11px] font-semibold"
+                    :class="ev.status === 'published'
+                      ? 'border-cypher-accent-cyan/40 bg-cypher-accent-cyan/10 text-cypher-accent-cyan'
+                      : 'border-white/10 bg-white/5 text-cypher-muted'"
+                  >
+                    {{ ev.status === 'published' ? '已上架' : '草稿' }}
+                  </span>
+                </li>
+              </ul>
+              <router-link
+                v-if="events.length > 0"
+                to="/organizer"
+                class="mt-4 inline-flex items-center gap-1.5 text-sm font-medium text-cypher-accent transition-colors hover:text-cypher-accent-pink"
+              >
+                管理活動
+                <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+                </svg>
+              </router-link>
+            </div>
+          </div>
+
+        </template>
+      </div>
+
+    </div>
   </main>
 </template>

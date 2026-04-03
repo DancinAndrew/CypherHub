@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # 本地 Supabase 設定腳本
-# 執行後會：1) 啟動 Supabase 2) 取得 keys 3) 寫入 backend/.env 與 frontend/.env
+# 執行後會：1) 啟動 Supabase 2) 取得 keys 3) 寫入根目錄的 .env
 
 set -e
 cd "$(dirname "$0")/.."
@@ -24,44 +24,33 @@ if [[ -z "$ANON_KEY" ]]; then
   exit 1
 fi
 
-echo "==> 更新 backend/.env ..."
-# Backend 在 Docker 內需用 host.docker.internal
+echo "==> 更新 .env ..."
 BACKEND_URL="http://host.docker.internal:54321"
-if [[ -f backend/.env ]]; then
-  # 保留既有設定，只更新 Supabase 相關
-  sed -i.bak "s|^SUPABASE_URL=.*|SUPABASE_URL=$BACKEND_URL|" backend/.env
-  sed -i.bak "s|^SUPABASE_ANON_KEY=.*|SUPABASE_ANON_KEY=$ANON_KEY|" backend/.env
-  sed -i.bak "s|^SUPABASE_SERVICE_ROLE_KEY=.*|SUPABASE_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY|" backend/.env
-  rm -f backend/.env.bak
-else
-  cat > backend/.env << EOF
-APP_ENV=development
-FLASK_DEBUG=1
-SUPABASE_URL=$BACKEND_URL
-SUPABASE_ANON_KEY=$ANON_KEY
-SUPABASE_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY
-CORS_ORIGINS=http://localhost:5173
-ADMIN_ALLOWLIST=
-EOF
-fi
-cp backend/.env backend/.env.local
-echo "  已同步 backend/.env → backend/.env.local"
-
-echo "==> 更新 frontend/.env ..."
 FRONTEND_URL="${API_URL:-http://127.0.0.1:54321}"
-if [[ -f frontend/.env ]]; then
-  sed -i.bak "s|^VITE_SUPABASE_URL=.*|VITE_SUPABASE_URL=$FRONTEND_URL|" frontend/.env
-  sed -i.bak "s|^VITE_SUPABASE_ANON_KEY=.*|VITE_SUPABASE_ANON_KEY=$ANON_KEY|" frontend/.env
-  rm -f frontend/.env.bak
+
+if [[ -f .env ]]; then
+  # 如果系統是 macOS，sed -i 需要空字串備份後綴，但 GNU sed 不需要
+  # 為了相容，使用臨時檔案
+  tmp_env=$(mktemp)
+  sed -e "s|^SUPABASE_URL=.*|SUPABASE_URL=$BACKEND_URL|" \
+      -e "s|^SUPABASE_ANON_KEY=.*|SUPABASE_ANON_KEY=$ANON_KEY|" \
+      -e "s|^SUPABASE_SERVICE_ROLE_KEY=.*|SUPABASE_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY|" \
+      -e "s|^VITE_SUPABASE_URL=.*|VITE_SUPABASE_URL=$FRONTEND_URL|" \
+      -e "s|^VITE_SUPABASE_ANON_KEY=.*|VITE_SUPABASE_ANON_KEY=$ANON_KEY|" .env > "$tmp_env"
+  mv "$tmp_env" .env
 else
-  cat > frontend/.env << EOF
-VITE_API_BASE_URL=http://localhost:8000
-VITE_SUPABASE_URL=$FRONTEND_URL
-VITE_SUPABASE_ANON_KEY=$ANON_KEY
-EOF
+  cp .env.example .env
+  tmp_env=$(mktemp)
+  sed -e "s|^SUPABASE_URL=.*|SUPABASE_URL=$BACKEND_URL|" \
+      -e "s|^SUPABASE_ANON_KEY=.*|SUPABASE_ANON_KEY=$ANON_KEY|" \
+      -e "s|^SUPABASE_SERVICE_ROLE_KEY=.*|SUPABASE_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY|" \
+      -e "s|^VITE_SUPABASE_URL=.*|VITE_SUPABASE_URL=$FRONTEND_URL|" \
+      -e "s|^VITE_SUPABASE_ANON_KEY=.*|VITE_SUPABASE_ANON_KEY=$ANON_KEY|" .env > "$tmp_env"
+  mv "$tmp_env" .env
 fi
-cp frontend/.env frontend/.env.local
-echo "  已同步 frontend/.env → frontend/.env.local"
+
+cp .env .env.local
+echo "  已同步 .env → .env.local"
 
 echo ""
 echo "==> 完成！下一步："

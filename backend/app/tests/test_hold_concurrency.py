@@ -9,9 +9,9 @@ from pathlib import Path
 
 import pytest
 
-# 確保 skipif 評估時已載入 backend/.env（與 conftest 同邏輯）
+# 確保 skipif 評估時已載入 .env（與 conftest 同邏輯）
 _backend_root = Path(__file__).resolve().parent.parent.parent
-_env_path = _backend_root / ".env"
+_env_path = _backend_root.parent / ".env"
 if _env_path.exists():
     from dotenv import load_dotenv
 

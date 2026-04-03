@@ -31,7 +31,7 @@
   - 預設 `http://localhost:5173`
 
 - [ ] **1.5** 設定 `.env`
-  - `backend/.env`：`SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
+  - `.env`：`SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
   - `ADMIN_ALLOWLIST`：Admin 的 `user_id` 或 `email`（逗號分隔）
   - `RESEND_API_KEY`（選填，有則報名成功會寄信）
 

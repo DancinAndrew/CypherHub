@@ -111,7 +111,7 @@ if app.config.get("ENABLE_HSTS"):
 ```
 
 **環境變數更新**：
-- `backend/.env.example` 新增 `ENABLE_HSTS=false`、`HSTS_MAX_AGE=31536000`
+- `.env.example` 新增 `ENABLE_HSTS=false`、`HSTS_MAX_AGE=31536000`
 - 生產環境設 `ENABLE_HSTS=true`
 
 **替代方案**：若使用 Nginx/Caddy 反向代理，HSTS 可在反向代理層設定（見 Task 5）。兩者擇一即可，避免重複。
@@ -198,8 +198,8 @@ if (process.env.NODE_ENV === "production") {
 |------|----------|------|
 | `backend/app/__init__.py` | 修改 | 新增 `set_security_headers` after_request + 啟動驗證 |
 | `backend/app/config.py` | 修改 | 新增 `ENABLE_HSTS`, `HSTS_MAX_AGE`, `APP_ENV` 設定 |
-| `backend/.env.example` | 修改 | 新增 HSTS 相關環境變數 |
-| `backend/.env.cloud.example` | 修改 | 新增 HSTS 相關環境變數 |
+| `.env.example` | 修改 | 新增 HSTS 相關環境變數 |
+| `.env.cloud.example` | 修改 | 新增 HSTS 相關環境變數 |
 | `backend/app/tests/test_security_headers.py` | 新增 | Security headers 測試 |
 
 **不需要 Migration**：此功能純粹為 HTTP header 層級，不涉及資料庫變更。
@@ -326,7 +326,7 @@ class TestProductionValidation:
 
 ```bash
 # 檢查 .env 無 wildcard CORS
-if grep -q 'CORS_ORIGINS=\*' backend/.env; then
+if grep -q 'CORS_ORIGINS=\*' .env; then
   echo "ERROR: CORS_ORIGINS cannot be '*'"
   exit 1
 fi

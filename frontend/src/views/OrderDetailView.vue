@@ -94,73 +94,169 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <main class="mx-auto w-full max-w-2xl px-4 pb-20 pt-8">
-    <div v-if="loading" class="flex flex-col items-center justify-center py-24">
-      <span class="h-10 w-10 animate-spin rounded-full border-2 border-cypher-accent border-t-transparent" />
-      <p class="mt-4 text-cypher-muted">載入訂單中...</p>
-    </div>
+  <main class="relative min-h-[calc(100vh-4rem)] w-full overflow-hidden px-4 pb-20 pt-10">
+    <!-- Background layers -->
+    <div class="absolute inset-0 bg-gradient-mesh" aria-hidden="true" />
+    <div class="pointer-events-none absolute inset-0" style="background: radial-gradient(ellipse 50% 40% at 50% 0%, rgba(124,58,237,0.10) 0%, transparent 70%)" aria-hidden="true" />
 
-    <div v-else-if="errorMessage" class="rounded-2xl border border-rose-500/40 bg-rose-950/60 p-6 text-rose-300">
-      {{ errorMessage }}
-    </div>
+    <div class="relative z-10 mx-auto w-full max-w-2xl">
 
-    <div v-else-if="detail" class="space-y-6">
-      <h1 class="font-street text-2xl tracking-wider text-white">訂單詳情</h1>
-
-      <div class="card p-6">
-        <div class="flex items-center justify-between">
-          <span class="text-sm text-cypher-muted">訂單編號</span>
-          <code class="rounded bg-cypher-surface-alt px-2 py-1 text-xs text-gray-300">{{ detail.order.id.slice(0, 8) }}...</code>
-        </div>
-        <div class="mt-4 flex items-center justify-between">
-          <span class="text-sm text-cypher-muted">狀態</span>
-          <span
-            class="rounded-full px-3 py-1 text-sm font-medium"
-            :class="{
-              'bg-amber-500/20 text-amber-400': detail.order.status === 'holding' || detail.order.status === 'pending_payment',
-              'bg-emerald-500/20 text-emerald-400': detail.order.status === 'paid' || detail.order.status === 'issued',
-              'bg-gray-500/20 text-gray-400': detail.order.status === 'cancelled' || detail.order.status === 'refunded',
-            }"
-          >
-            {{ statusLabel[detail.order.status] ?? detail.order.status }}
-          </span>
-        </div>
-        <div class="mt-2 flex items-center justify-between">
-          <span class="text-sm text-cypher-muted">總金額</span>
-          <span class="font-semibold text-white">{{ formatPrice(detail.order.total_cents) }} {{ detail.order.currency }}</span>
-        </div>
-        <p v-if="detail.order.hold_expires_at && detail.order.status === 'holding'" class="mt-2 text-xs text-amber-400">
-          <span v-if="countdown && countdown !== '已逾時'" class="font-mono font-semibold">{{ countdown }}</span>
-          <span v-else-if="countdown === '已逾時'" class="font-semibold text-rose-400">已逾時，名額將自動釋放</span>
-          <span v-if="countdown && countdown !== '已逾時'"> 後逾時，名額將自動釋放</span>
-        </p>
+      <!-- Loading -->
+      <div v-if="loading" class="flex flex-col items-center justify-center py-32">
+        <span class="h-10 w-10 animate-spin rounded-full border-2 border-cypher-accent border-t-transparent" aria-hidden="true" />
+        <p class="mt-4 text-sm text-cypher-muted">載入訂單中…</p>
       </div>
 
-      <div v-if="detail.items.length" class="card p-6">
-        <h2 class="font-medium text-white">訂單內容</h2>
-        <ul class="mt-4 space-y-3">
-          <li
-            v-for="item in detail.items"
-            :key="item.id"
-            class="flex justify-between rounded-xl border border-cypher-border p-3 text-sm"
-          >
-            <span class="text-gray-300">× {{ item.quantity }} · {{ formatPrice(item.price_cents) }}/張</span>
-            <span class="text-white">{{ formatPrice(item.price_cents * item.quantity) }}</span>
-          </li>
-        </ul>
+      <!-- Error -->
+      <div v-else-if="errorMessage" role="alert" class="card-glass flex items-start gap-3 border-rose-500/30 p-6">
+        <svg class="mt-0.5 h-5 w-5 shrink-0 text-rose-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+        </svg>
+        <p class="text-sm text-rose-300">{{ errorMessage }}</p>
       </div>
 
-      <div v-if="detail.order.status === 'issued'" class="rounded-xl border border-emerald-500/30 bg-emerald-950/30 p-4 text-emerald-300">
-        <p class="font-medium">✓ 已出票</p>
-        <p class="mt-1 text-sm">請至「我的票券」查看。</p>
-        <button type="button" class="btn-primary mt-4" @click="router.push({ name: 'my-tickets' })">
-          查看我的票券
+      <!-- Content -->
+      <div v-else-if="detail" class="animate-slide-up space-y-5">
+
+        <!-- Page header -->
+        <div class="mb-8">
+          <p class="section-label mb-2">Order</p>
+          <div class="flex items-center gap-3">
+            <span class="h-6 w-0.5 rounded-full bg-gradient-to-b from-cypher-accent to-cypher-accent-pink" aria-hidden="true" />
+            <h1 class="font-street text-2xl tracking-widest text-white">訂單詳情</h1>
+          </div>
+        </div>
+
+        <!-- Order summary card -->
+        <div class="relative overflow-hidden rounded-2xl border border-white/10 bg-cypher-surface/90 shadow-card-glass backdrop-blur-md">
+          <!-- Top accent line -->
+          <div class="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-cypher-accent/50 to-transparent" aria-hidden="true" />
+
+          <div class="p-6">
+            <!-- Status + amount row -->
+            <div class="flex items-start justify-between gap-4">
+              <div>
+                <p class="text-xs text-cypher-muted">訂單狀態</p>
+                <span
+                  class="mt-1.5 inline-flex rounded-full border px-3 py-1 text-sm font-semibold"
+                  :class="{
+                    'border-amber-500/40 bg-amber-500/10 text-amber-400': detail.order.status === 'holding' || detail.order.status === 'pending_payment',
+                    'border-emerald-500/40 bg-emerald-500/10 text-emerald-400': detail.order.status === 'paid' || detail.order.status === 'issued',
+                    'border-white/10 bg-white/5 text-gray-400': detail.order.status === 'cancelled' || detail.order.status === 'refunded',
+                  }"
+                >
+                  {{ statusLabel[detail.order.status] ?? detail.order.status }}
+                </span>
+              </div>
+              <div class="text-right">
+                <p class="text-xs text-cypher-muted">總金額</p>
+                <p class="mt-1 text-2xl font-bold text-white">
+                  {{ formatPrice(detail.order.total_cents) }}
+                  <span class="text-sm font-normal text-cypher-muted">{{ detail.order.currency }}</span>
+                </p>
+              </div>
+            </div>
+
+            <!-- Divider -->
+            <div class="my-5 h-px bg-white/5" />
+
+            <!-- Meta rows -->
+            <dl class="space-y-3">
+              <div class="flex items-center justify-between text-sm">
+                <dt class="text-cypher-muted">訂單編號</dt>
+                <dd>
+                  <code class="rounded-lg bg-cypher-surface-alt px-2.5 py-1 font-mono text-xs tracking-wider text-gray-300">
+                    {{ detail.order.id.slice(0, 8).toUpperCase() }}…
+                  </code>
+                </dd>
+              </div>
+              <div v-if="detail.order.created_at" class="flex items-center justify-between text-sm">
+                <dt class="text-cypher-muted">建立時間</dt>
+                <dd class="text-gray-300">{{ formatDateTime(detail.order.created_at) }}</dd>
+              </div>
+            </dl>
+
+            <!-- Countdown banner (holding status) -->
+            <div
+              v-if="detail.order.hold_expires_at && detail.order.status === 'holding'"
+              class="mt-5 flex items-center gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3"
+            >
+              <svg class="h-4 w-4 shrink-0 text-amber-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span v-if="countdown && countdown !== '已逾時'" class="text-sm text-amber-400">
+                名額保留中，<span class="font-mono font-bold">{{ countdown }}</span> 後逾時，名額將自動釋放
+              </span>
+              <span v-else class="text-sm font-semibold text-rose-400">已逾時，名額將自動釋放</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Order items card -->
+        <div v-if="detail.items.length" class="rounded-2xl border border-white/10 bg-cypher-surface/90 shadow-card-glass backdrop-blur-md">
+          <div class="border-b border-white/5 px-6 py-4">
+            <h2 class="text-sm font-semibold text-white">訂單內容</h2>
+          </div>
+          <ul class="divide-y divide-white/5 px-6">
+            <li
+              v-for="item in detail.items"
+              :key="item.id"
+              class="flex items-center justify-between py-4"
+            >
+              <div class="flex items-center gap-3">
+                <span class="flex h-7 w-7 items-center justify-center rounded-lg border border-cypher-accent/30 bg-cypher-accent/10 text-xs font-bold text-cypher-accent-bright">
+                  ×{{ item.quantity }}
+                </span>
+                <span class="text-sm text-gray-300">{{ formatPrice(item.price_cents) }} / 張</span>
+              </div>
+              <span class="font-semibold text-white">{{ formatPrice(item.price_cents * item.quantity) }}</span>
+            </li>
+          </ul>
+          <div class="flex items-center justify-between border-t border-white/5 px-6 py-4">
+            <span class="text-sm font-semibold text-cypher-muted">合計</span>
+            <span class="text-base font-bold text-white">{{ formatPrice(detail.order.total_cents) }}</span>
+          </div>
+        </div>
+
+        <!-- Issued success banner -->
+        <div
+          v-if="detail.order.status === 'issued'"
+          class="relative overflow-hidden rounded-2xl border border-emerald-500/30 bg-emerald-950/20 p-6 backdrop-blur-sm"
+        >
+          <div class="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-emerald-500/50 to-transparent" aria-hidden="true" />
+          <div class="flex items-start gap-4">
+            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-emerald-500/40 bg-emerald-500/10">
+              <svg class="h-5 w-5 text-emerald-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div class="flex-1">
+              <p class="font-semibold text-emerald-300">已成功出票</p>
+              <p class="mt-1 text-sm text-emerald-400/80">前往「我的票券」查看入場 QR Code。</p>
+              <button
+                type="button"
+                class="btn-primary mt-4 px-5 py-2.5 text-sm"
+                @click="router.push({ name: 'my-tickets' })"
+              >
+                查看我的票券
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Back button -->
+        <button
+          type="button"
+          class="flex w-full items-center justify-center gap-2 rounded-xl border border-cypher-border bg-cypher-surface py-3 text-sm font-medium text-gray-400 transition-all hover:border-cypher-accent/40 hover:bg-cypher-surface-alt hover:text-white"
+          @click="router.push({ name: 'home' })"
+        >
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+          </svg>
+          返回首頁
         </button>
-      </div>
 
-      <button type="button" class="btn-secondary w-full" @click="router.push({ name: 'home' })">
-        返回首頁
-      </button>
+      </div>
     </div>
   </main>
 </template>

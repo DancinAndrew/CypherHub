@@ -96,8 +96,6 @@
 | **監控** | **UptimeRobot** + **Sentry** | UptimeRobot 對 API 與前端 URL 做 HTTP 偵測、斷線告警；Sentry 收前/後端 exception、release 對應。個人專案兩者內建頁面即夠用，不需自建 Grafana |
 | **分析（可選）** | **PostHog** | 事件、漏斗、Session 錄影；見 Tools.md |
 
-細節與待研究清單見 [note.md](./note.md)。
-
 ---
 
 ## 已實作功能 — 採用方案對照

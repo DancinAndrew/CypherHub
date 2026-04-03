@@ -246,9 +246,9 @@ frontend/
 ```yaml
 services:
   backend:
-    env_file: ../backend/.env
+    env_file: ../.env
   frontend:
-    env_file: ../frontend/.env
+    env_file: ../.env
 ```
 
 Docker 環境中 `SUPABASE_URL` 需使用 `http://host.docker.internal:54321`（而非 `127.0.0.1`），才能從容器內存取主機的本地 Supabase。
@@ -266,12 +266,11 @@ Docker 環境中 `SUPABASE_URL` 需使用 `http://host.docker.internal:54321`（
 只需設定 Supabase 連線，其他皆有預設值或可省略：
 
 ```bash
-# backend/.env
+# .env
 SUPABASE_URL=http://127.0.0.1:54321
 SUPABASE_ANON_KEY=eyJ...（from supabase status）
 SUPABASE_SERVICE_ROLE_KEY=eyJ...（from supabase status）
 
-# frontend/.env
 VITE_API_BASE_URL=http://localhost:8000
 VITE_SUPABASE_URL=http://127.0.0.1:54321
 VITE_SUPABASE_ANON_KEY=eyJ...（same as backend ANON_KEY）
@@ -282,7 +281,7 @@ VITE_SUPABASE_ANON_KEY=eyJ...（same as backend ANON_KEY）
 在最小設定之上加入：
 
 ```bash
-# backend/.env（追加）
+# .env（追加）
 ECPAY_MERCHANT_ID=3002607          # 測試特店
 ECPAY_HASH_KEY=pwFHCqoQZGmho4w6
 ECPAY_HASH_IV=EkRm7iFT261dpevs

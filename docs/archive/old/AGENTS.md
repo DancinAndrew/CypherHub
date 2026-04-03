@@ -123,8 +123,8 @@ Tech：Supabase（Postgres/Auth/Storage；Edge Functions optional）+ Flask（Py
 ## 2) Local Dev（Mac + Docker-first）
 ### 2.1 One-time
 - Copy env（不要提交真實 secrets）：
-  - backend/.env.example → backend/.env
-  - frontend/.env.example → frontend/.env
+  - .env.example → .env
+  - .env.example → .env
 
 ### 2.2 Docker compose（preferred）
 - Start：

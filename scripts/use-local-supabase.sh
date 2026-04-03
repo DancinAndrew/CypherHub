@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # 切換到本地 Supabase
-# 若有 .env.local 則複製到 .env（保留本地 key）；否則從 .env.local.example 建立 .env.local 並提示執行 setup-local-supabase.sh
+# 若有 .env.local 則複製到 .env；否則從 .env.local.example 建立 .env.local 並提示執行 setup-local-supabase.sh
 
 set -e
 cd "$(dirname "$0")/.."
@@ -9,33 +9,17 @@ echo "==> 切換到本地 Supabase"
 
 NEED_SETUP=
 
-# Backend
-if [[ -f backend/.env.local ]]; then
-  cp backend/.env.local backend/.env
-  echo "  已複製 backend/.env.local → backend/.env"
+if [[ -f .env.local ]]; then
+  cp .env.local .env
+  echo "  已複製 .env.local → .env"
 else
-  if [[ ! -f backend/.env.local.example ]]; then
-    echo "錯誤：找不到 backend/.env.local.example"
+  if [[ ! -f .env.local.example ]]; then
+    echo "錯誤：找不到 .env.local.example"
     exit 1
   fi
-  cp backend/.env.local.example backend/.env.local
-  cp backend/.env.local backend/.env
-  echo "  已建立 backend/.env.local（從 example）"
-  NEED_SETUP=1
-fi
-
-# Frontend
-if [[ -f frontend/.env.local ]]; then
-  cp frontend/.env.local frontend/.env
-  echo "  已複製 frontend/.env.local → frontend/.env"
-else
-  if [[ ! -f frontend/.env.local.example ]]; then
-    echo "錯誤：找不到 frontend/.env.local.example"
-    exit 1
-  fi
-  cp frontend/.env.local.example frontend/.env.local
-  cp frontend/.env.local frontend/.env
-  echo "  已建立 frontend/.env.local（從 example）"
+  cp .env.local.example .env.local
+  cp .env.local .env
+  echo "  已建立 .env.local（從 example）"
   NEED_SETUP=1
 fi
 

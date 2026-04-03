@@ -41,7 +41,7 @@
 | 執行者 | AI 助理 |
 | Phase 0～5 結果 | **Phase 0：部分通過**（僅試 P0-02-local；Cloud 路徑未記）；**Phase 1：pytest 通過**；**P1 ruff：當時未通過**（見下表；若已修復請更新） |
 | Phase 6（SEC） | 未執行 |
-| 已知限制 | 工作區有未提交變更；`backend/.env` 未設 ECPAY_*／CRON_SECRET 等；本地 DB 需 Docker 或改走 **P0-02-CLOUD**；`uv sync` 後跑測需 `uv pip install -r requirements.txt` |
+| 已知限制 | 工作區有未提交變更；`.env` 未設 ECPAY_*／CRON_SECRET 等；本地 DB 需 Docker 或改走 **P0-02-CLOUD**；`uv sync` 後跑測需 `uv pip install -r requirements.txt` |
 
 ### Phase 0 步驟證據（最近一次）
 
@@ -52,7 +52,7 @@
 | P0-02a-cloud | ✅ | cloud staging |
 | P0-03a | ✅ | `cd backend && uv sync` → exit 0 |
 | P0-04a/b | ✅ | `npm install` + `npm run build`（vue-tsc + vite）→ exit 0 |
-| P0-05 | ⚠️ | `backend/.env`：`SUPABASE_*`、`ADMIN_ALLOWLIST` 已設；`ECPAY_*`、`CRON_SECRET`、`ORG_APPROVAL_REQUIRED`、`PLATFORM_FEE_RATE` 為空（MVP-2 E2E／MVP-3 jobs 測前需補）；未驗證前端 `VITE_SUPABASE_*` |
+| P0-05 | ⚠️ | `.env`：`SUPABASE_*`、`ADMIN_ALLOWLIST` 已設；`ECPAY_*`、`CRON_SECRET`、`ORG_APPROVAL_REQUIRED`、`PLATFORM_FEE_RATE` 為空（MVP-2 E2E／MVP-3 jobs 測前需補）；未驗證前端 `VITE_SUPABASE_*` |
 
 ### Phase 1 步驟證據（同一次執行；於 P0-02 失敗後仍跑自動化以取得回歸狀態）
 
@@ -89,7 +89,7 @@
 | 路徑 | 需要 Docker？ | Phase 0 DB 怎麼算「綠」 |
 |------|----------------|------------------------|
 | **A. 本地 Supabase** | 是（`supabase start` 依賴容器） | 專案根目錄 `supabase db reset` 成功，migrations 含 MVP-2／3 |
-| **B. 僅 Cloud** | **否** | 已對目標專案（建議 **staging**）完成 `supabase db push`（或 `./scripts/push-to-cloud.sh`），且 `backend/.env` 指向該專案；schema 與 repo 內 `supabase/migrations` 一致 |
+| **B. 僅 Cloud** | **否** | 已對目標專案（建議 **staging**）完成 `supabase db push`（或 `./scripts/push-to-cloud.sh`），且 `.env` 指向該專案；schema 與 repo 內 `supabase/migrations` 一致 |
 
 若你**只用 Supabase Cloud、不跑本地 DB**：不必安裝／啟動 Docker 來通過 Phase 0；請走 **路徑 B**，並在執行紀錄註明 `環境：cloud staging`（或專案 ref）。**勿**在正式 production 上試錯 migration；應另有 staging 專案。推送前建議先 **dry-run**：[scripts/push-to-cloud.sh](../../scripts/push-to-cloud.sh) 已內建 `supabase db push --dry-run` 再正式 `db push`。
 
@@ -138,9 +138,9 @@
 
 至少確認**鍵名存在**（值由執行者本地／CI 注入）：
 
-- **後端** `backend/.env`：`SUPABASE_URL`、`SUPABASE_ANON_KEY`、`SUPABASE_SERVICE_ROLE_KEY`
+- **後端** `.env`：`SUPABASE_URL`、`SUPABASE_ANON_KEY`、`SUPABASE_SERVICE_ROLE_KEY`
 - **後端**：`ADMIN_ALLOWLIST`（Admin／審核／全站訂單等）
-- **前端**（若手動／E2E 會開瀏覽器）：`frontend/.env`（或 Vite 對應檔）內 `VITE_SUPABASE_URL`、`VITE_SUPABASE_ANON_KEY` 與後端指向**同一** Supabase 專案（見 [local-cloud-switch.md](../setup/local-cloud-switch.md)）
+- **前端**（若手動／E2E 會開瀏覽器）：`.env`（或 Vite 對應檔）內 `VITE_SUPABASE_URL`、`VITE_SUPABASE_ANON_KEY` 與後端指向**同一** Supabase 專案（見 [local-cloud-switch.md](../setup/local-cloud-switch.md)）
 - MVP-2 綠界測試：`ECPAY_MERCHANT_ID`、`ECPAY_HASH_KEY`、`ECPAY_HASH_IV`、`ECPAY_RETURN_URL`、`ECPAY_STAGE`
 - MVP-3：`CRON_SECRET`（或專案實際命名）、`ORG_APPROVAL_REQUIRED`、`PLATFORM_FEE_RATE`（依 checklist）
 

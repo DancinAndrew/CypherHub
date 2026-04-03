@@ -50,8 +50,8 @@
    ```
 
 3. **編輯 `.env`，填入雲端專案的值**：
-   - `backend/.env`：SUPABASE_URL、SUPABASE_ANON_KEY、SUPABASE_SERVICE_ROLE_KEY
-   - `frontend/.env`：VITE_SUPABASE_URL、VITE_SUPABASE_ANON_KEY
+   - `.env`：SUPABASE_URL、SUPABASE_ANON_KEY、SUPABASE_SERVICE_ROLE_KEY
+   - `.env`：VITE_SUPABASE_URL、VITE_SUPABASE_ANON_KEY
    - 取得位置：Dashboard → Project Settings → API
 
 4. **套用 migrations 到雲端**（一鍵腳本）：
@@ -62,7 +62,7 @@
 
 5. **建立測試用戶與資料**（保持專案活躍、避免被 pause）：
    ```bash
-   # 需已在 backend/.env 填入 Cloud 的 SUPABASE_URL 與 SUPABASE_SERVICE_ROLE_KEY
+   # 需已在 .env 填入 Cloud 的 SUPABASE_URL 與 SUPABASE_SERVICE_ROLE_KEY
    python scripts/seed-cloud-test-data.py
    ```
    會建立主辦方／觀眾測試帳號、一個活動、一張票券，之後可登入前端驗證。
