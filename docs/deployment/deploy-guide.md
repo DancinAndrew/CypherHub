@@ -15,7 +15,7 @@
               ┌────────────────┼────────────────┐
               ▼                                  ▼
 ┌─────────────────────┐            ┌─────────────────────────┐
-│   Vercel (Frontend) │            │  Cloud Run / Docker     │
+│   Vercel (Frontend) │            │  Zeabur (Backend)       │
 │   Vue 3 + Vite SPA  │──API──▶   │  Flask Backend          │
 │   Port: 443 (HTTPS) │   呼叫    │  Port: 8000 (container) │
 └─────────────────────┘            └────────────┬────────────┘
@@ -32,7 +32,7 @@
 | 元件 | 推薦服務 | 替代方案 |
 |------|----------|----------|
 | Frontend hosting | Vercel | Netlify、Cloudflare Pages |
-| Backend hosting | Google Cloud Run | Fly.io、Railway、Render、自建 VPS + Docker |
+| Backend hosting | Zeabur | Render、Google Cloud Run、Railway、Fly.io |
 | Database + Auth | Supabase Cloud | 自建 PostgreSQL + GoTrue（不建議） |
 | Email | Resend | SendGrid、AWS SES |
 | Payment | ECPay 綠界 | — |
@@ -124,98 +124,62 @@ SELECT jobid, schedule, command FROM cron.job;
 
 ## 三、Backend 部署
 
-### 3.1 方案 A：Google Cloud Run（推薦）
+### 3.1 方案 A：Zeabur（推薦）
 
-#### 3.1.1 準備 Production Dockerfile
+Zeabur 支援直接從 GitHub repository 自動建置與部署，非常適合 Python/Flask 專案。
 
-專案已有 `backend/Dockerfile`，正式環境建議調整：
+#### 3.1.1 準備工作
 
-```dockerfile
-FROM python:3.12-slim
+專案已有 `backend/Dockerfile` 以及 `requirements.txt`。Zeabur 在偵測到這些檔案時可以自動處理建置。
 
-WORKDIR /app
+確保 `requirements.txt` 中已包含 `gunicorn`。正式環境會透過 Dockerfile 裡的 CMD 使用 gunicorn 啟動服務。
 
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
+#### 3.1.2 在 Zeabur 上部署
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+1. 登入 [Zeabur](https://zeabur.com)
+2. 建立新專案 (Create Project)
+3. 點擊 "Deploy New Service"，選擇 "GitHub"
+4. 選擇你的 CypherHub Repository
+5. 在部署設定中：
+   - 選擇你的 Branch (通常是 `main`)
+   - 確保 **Root Directory** 設定為 `backend` (如果你的 repo 包含前後端的話)
+6. 點擊 Deploy。
 
-COPY . .
+#### 3.1.3 設定環境變數 (Variables)
 
-EXPOSE 8000
+在 Zeabur Dashboard 中，進入該服務的 "Variables" 頁籤，將以下機密資訊填入：
 
-# 正式環境使用 gunicorn
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "2", "--timeout", "120", "app:create_app()"]
-```
+| 變數名稱 | 說明 |
+|---------|------|
+| `APP_ENV` | 設為 `production` |
+| `FLASK_DEBUG` | 設為 `0` |
+| `SUPABASE_URL` | Supabase URL |
+| `SUPABASE_ANON_KEY` | Supabase Anon Key |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase Service Role Key (🔴 SECRET) |
+| `ECPAY_STAGE` | `0` (若是正式環境) |
+| `ECPAY_MERCHANT_ID` | 綠界商店代號 (🔴 SECRET) |
+| `ECPAY_HASH_KEY` | 綠界 HashKey (🔴 SECRET) |
+| `ECPAY_HASH_IV` | 綠界 HashIV (🔴 SECRET) |
+| `CORS_ORIGINS` | 你的前端 Vercel URL (例如 `https://your-domain.vercel.app`) |
 
-> 需在 `requirements.txt` 加入 `gunicorn`。
+*註：Zeabur 會自動提供一組預設的公開網域 (例如 `your-project.zeabur.app`)，請記得將這組網址作為你的 Backend API URL。*
 
-#### 3.1.2 部署至 Cloud Run
+### 3.2 方案 B：Google Cloud Run
 
-```bash
-# 安裝 gcloud CLI 並登入
-gcloud auth login
-gcloud config set project YOUR_GCP_PROJECT_ID
+Google Cloud Run 也是極佳的選擇，適合大型擴展：
 
-# 建置並推送 Docker image
-cd backend
-gcloud builds submit --tag gcr.io/YOUR_PROJECT_ID/cypherhub-backend
+1. 安裝 gcloud CLI 並設定專案。
+2. 執行 `gcloud builds submit --tag gcr.io/YOUR_PROJECT/backend`。
+3. 執行 `gcloud run deploy` 並設定環境變數。
 
-# 部署至 Cloud Run
-gcloud run deploy cypherhub-backend \
-  --image gcr.io/YOUR_PROJECT_ID/cypherhub-backend \
-  --platform managed \
-  --region asia-east1 \
-  --allow-unauthenticated \
-  --port 8000 \
-  --memory 512Mi \
-  --min-instances 0 \
-  --max-instances 3 \
-  --set-env-vars "APP_ENV=production,FLASK_DEBUG=0,ECPAY_STAGE=0" \
-  --set-secrets "SUPABASE_URL=SUPABASE_URL:latest,SUPABASE_ANON_KEY=SUPABASE_ANON_KEY:latest,SUPABASE_SERVICE_ROLE_KEY=SUPABASE_SERVICE_ROLE_KEY:latest,ECPAY_MERCHANT_ID=ECPAY_MERCHANT_ID:latest,ECPAY_HASH_KEY=ECPAY_HASH_KEY:latest,ECPAY_HASH_IV=ECPAY_HASH_IV:latest,RESEND_API_KEY=RESEND_API_KEY:latest,CRON_SECRET=CRON_SECRET:latest"
-```
+### 3.3 方案 C：Fly.io / Railway / Render
 
-> `--set-secrets` 使用 Google Secret Manager 管理機密。需先在 Secret Manager 建立各 secret。
-
-#### 3.1.3 Cloud Run 注意事項
-
-| 項目 | 說明 |
-|------|------|
-| Cold start | `min-instances=0` 會有冷啟動延遲（約 2-5 秒）。正式環境可設 `min-instances=1` |
-| Rate Limiter | Flask-Limiter 使用 `memory://`，多 instance 時限制不共享。正式環境建議改用 Redis backend |
-| Timeout | Cloud Run 預設 300s，ECPay webhook 回呼通常秒級回應，足夠 |
-| HTTPS | Cloud Run 自動提供 HTTPS endpoint |
-
-### 3.2 方案 B：Fly.io
-
-```bash
-# 安裝 flyctl
-brew install flyctl
-
-# 初始化
-cd backend
-fly launch --name cypherhub-backend --region nrt
-
-# 設定 secrets
-fly secrets set SUPABASE_URL="https://xxx.supabase.co"
-fly secrets set SUPABASE_ANON_KEY="eyJ..."
-fly secrets set SUPABASE_SERVICE_ROLE_KEY="eyJ..."
-# ... 其他 secrets
-
-# 部署
-fly deploy
-```
-
-### 3.3 方案 C：Railway / Render
-
-這些平台支援從 GitHub repo 自動部署，設定較簡單：
+這些平台同樣支援從 GitHub repo 自動部署，設定流程與 Zeabur 相似：
 
 1. 連結 GitHub repo
 2. 設定 Root Directory 為 `backend/`
-3. 設定 Build Command：`pip install -r requirements.txt`
-4. 設定 Start Command：`gunicorn --bind 0.0.0.0:$PORT app:create_app()`
-5. 在 Dashboard 設定所有環境變數
+3. 設定 Start Command 為 `gunicorn --bind 0.0.0.0:$PORT app:create_app()`
+4. 在 Dashboard 設定所有環境變數
 
 ### 3.4 方案 D：自建 VPS + Docker Compose
 
@@ -227,8 +191,8 @@ git clone https://github.com/your-org/CypherHub.git
 cd CypherHub
 
 # 設定環境變數
-cp backend/.env.cloud.example backend/.env
-# 編輯 backend/.env 填入正式值
+cp .env.cloud.example .env
+# 編輯 .env 填入正式值
 
 # 啟動（僅 backend）
 docker compose -f infra/docker-compose.yml up -d backend
@@ -303,9 +267,9 @@ Vercel 預設對每個 PR 產生 Preview URL。注意：
 
 | 用途 | 域名 | 指向 |
 |------|------|------|
-| 前端 | `app.your-domain.com` | Vercel |
-| Backend API | `api.your-domain.com` | Cloud Run / Fly.io / VPS |
-| 主網站（可選） | `your-domain.com` | Vercel 或 Landing page |
+| 前端 | `app.your-domain.com` | Vercel (`cname.vercel-dns.com`) |
+| Backend API | `api.your-domain.com` | Zeabur 提供的 URL |
+| 主網站（可選） | `your-domain.com` | Vercel |
 
 ### 5.2 DNS 記錄
 
@@ -314,7 +278,7 @@ Vercel 預設對每個 PR 產生 Preview URL。注意：
 | Type | Name | Content | Proxy |
 |------|------|---------|-------|
 | CNAME | `app` | `cname.vercel-dns.com` | DNS only |
-| CNAME | `api` | Cloud Run 提供的 URL（或 VPS IP 用 A record） | 依需求 |
+| CNAME | `api` | `your-project.zeabur.app` | 依需求 |
 
 > Vercel 要求 DNS-only（不經 Cloudflare proxy），否則 SSL 憑證會衝突。
 
@@ -386,12 +350,10 @@ VITE_SUPABASE_ANON_KEY=eyJ...
 
 | 部署平台 | Secrets 管理方式 |
 |----------|-----------------|
-| Cloud Run | Google Secret Manager（`--set-secrets`） |
-| Fly.io | `fly secrets set` |
-| Railway | Dashboard → Variables（標記為 secret） |
-| Render | Dashboard → Environment → Secret Files |
-| VPS | 系統環境變數或 Docker secrets |
+| Zeabur | Dashboard → Variables |
 | Vercel | Dashboard → Environment Variables（標記為 Sensitive） |
+| Cloud Run | Google Secret Manager（`--set-secrets`） |
+| Render / Fly.io | 各平台 Dashboard → Environment / Secrets |
 
 詳見 [development/environment-variables.md](../development/environment-variables.md)。
 
@@ -420,10 +382,9 @@ curl -X POST https://api.your-domain.com/api/v1/internal/jobs/event-reminders \
 
 | 平台 | 方式 |
 |------|------|
-| Google Cloud Scheduler | 建立 Job → HTTP Target → 設定 header |
+| Zeabur | 目前未內建 Cron，建議使用 cron-job.org 呼叫 API |
 | cron-job.org | 免費外部 Cron 服務 |
 | GitHub Actions | Scheduled workflow（`cron: '0 * * * *'`） |
-| VPS | 系統 crontab |
 
 ---
 
@@ -438,8 +399,7 @@ GET /api/v1/health
 
 部署平台可用此端點做 liveness check：
 
-- Cloud Run：自動使用 container port 做 health check
-- Fly.io：`fly.toml` 中設定 `[services.http_checks]`
+- Zeabur：在 Dashboard 自動監控服務狀態
 - Vercel：前端為靜態檔，無需 health check
 
 ### 8.2 監控建議
@@ -467,11 +427,11 @@ GET /api/v1/health
    □ 記錄 URL + Keys
 
 2. Backend
-   □ 準備 production Dockerfile（加 gunicorn）
-   □ 設定所有環境變數 / secrets
-   □ 部署至選定平台
+   □ 準備好 requirements.txt 與 Dockerfile
+   □ 在 Zeabur 部署 GitHub Repo
+   □ 進入 Dashboard 設定所有 Variables / secrets
    □ 確認 /api/v1/health 回傳 200
-   □ 記錄 Backend URL
+   □ 記錄 Backend URL（預設為 zeabur.app 網域或自訂域名）
 
 3. Frontend
    □ Vercel Import Project
@@ -505,9 +465,8 @@ GET /api/v1/health
 一般程式碼更新（不含 DB migration）：
 
 ```bash
-# Backend — 重新建置並部署
-gcloud builds submit --tag gcr.io/YOUR_PROJECT_ID/cypherhub-backend
-gcloud run deploy cypherhub-backend --image gcr.io/YOUR_PROJECT_ID/cypherhub-backend
+# Backend — 只要 Push 至對應的 Branch (如 main) Zeabur 即會自動觸發建置與部署
+git push origin main
 
 # Frontend — Vercel 自動部署（push to main 即觸發）
 git push origin main
@@ -520,11 +479,11 @@ git push origin main
 supabase db push
 
 # 2. 再部署 Backend（確保新 code 對應新 schema）
-gcloud builds submit ...
-gcloud run deploy ...
+# (在 GitHub push 程式碼，由 Zeabur 接手部署)
+git push origin main
 
 # 3. Frontend（若有 API contract 變更）
-# Vercel 自動部署，或手動觸發
+# (同上，Vercel 自動部署)
 ```
 
 > ⚠️ **順序很重要**：先推 migration → 再部署 Backend → 最後更新 Frontend。避免 Backend 存取尚未存在的表或欄位。
@@ -533,14 +492,10 @@ gcloud run deploy ...
 
 **Backend rollback**：
 
-```bash
-# 查看歷史版本
-gcloud run revisions list --service cypherhub-backend
-
-# 切換至指定版本
-gcloud run services update-traffic cypherhub-backend \
-  --to-revisions REVISION_NAME=100
-```
+在 Zeabur Dashboard 中：
+1. 進入 Service 設定
+2. 找到 "Deployments" 歷史紀錄
+3. 選擇先前穩定的版本，點擊 Rollback 或 Redeploy
 
 **Frontend rollback**：
 
@@ -602,7 +557,7 @@ CORS_ORIGINS=https://app.your-domain.com/
 ### Q: ECPay Webhook 收不到
 
 - 確認 `ECPAY_RETURN_URL` 為 HTTPS（ECPay 不支援 HTTP callback）
-- 確認 URL 可從外部存取（Cloud Run / Fly.io 的 public URL）
+- 確認 URL 可從外部存取（Zeabur 的 public URL 或自訂域名）
 - 本地測試需使用 ngrok：`ngrok http 8000`
 
 ### Q: Docker 內無法連線本地 Supabase
