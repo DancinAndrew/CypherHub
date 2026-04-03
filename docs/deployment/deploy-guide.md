@@ -162,6 +162,18 @@ CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "2", "--timeout", "120",
 
 #### 3.1.2 部署至 Cloud Run
 
+**方法一：透過 GCP 控制台設定 GitHub 自動部署（推薦，類似 Vercel）**
+
+1. 在 Cloud Run 網頁主控台點擊 **「連結存放區」** (圖示為 GitHub)。
+2. 授權並選擇你的 GitHub `CypherHub` repository。
+3. **Build Configuration**：選擇 `Dockerfile`，並將路徑指定為 `/backend/Dockerfile`。
+4. **Environment Variables**：在進階設定中，填入所有需要的環境變數與 Secrets。
+5. 儲存部署。未來只要 push 到 GitHub `main` 分支，Cloud Run 就會自動建置更新！
+
+**方法二：透過終端機 CLI 手動部署**
+
+如果你偏好指令，或是想在本地測試單次部署，請執行：
+
 ```bash
 # 安裝 gcloud CLI 並登入
 gcloud auth login
@@ -480,12 +492,10 @@ GET /api/v1/health
 一般程式碼更新（不含 DB migration）：
 
 ```bash
-# Backend — 重新建置並部署
-gcloud builds submit --tag gcr.io/YOUR_PROJECT_ID/cypherhub-backend
-gcloud run deploy cypherhub-backend --image gcr.io/YOUR_PROJECT_ID/cypherhub-backend
-
-# Frontend — Vercel 自動部署（push to main 即觸發）
+# 若前後端都已設定 GitHub 自動部署，只要 Push 至 main 即會同時觸發 Vercel 與 Cloud Run 更新
 git push origin main
+
+# (若 Backend 為手動模式，則需自行執行 gcloud builds submit 與 gcloud run deploy)
 ```
 
 包含 DB migration 的更新：
