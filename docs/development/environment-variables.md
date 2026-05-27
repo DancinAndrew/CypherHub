@@ -285,7 +285,7 @@ VITE_SUPABASE_ANON_KEY=eyJ...（same as backend ANON_KEY）
 ECPAY_MERCHANT_ID=3002607          # 測試特店
 ECPAY_HASH_KEY=pwFHCqoQZGmho4w6
 ECPAY_HASH_IV=EkRm7iFT261dpevs
-ECPAY_RETURN_URL=https://xxxx.ngrok-free.app/api/v1/webhooks/ecpay
+ECPAY_RETURN_URL=https://cypherhub-234430776857.asia-east1.run.app/api/v1/webhooks/ecpay
 ECPAY_STAGE=1
 
 RESEND_API_KEY=re_xxxx

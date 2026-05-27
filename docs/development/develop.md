@@ -40,6 +40,8 @@
 | **SEC-2** | 身份與資料保護（帳密、URL、敏感資料） | ✅ 完成 |
 | **SEC-3** | 注入與攻擊防護（SQL、XSS、CSRF、Rate limit） | ✅ 完成 |
 | **SEC-4** | Secrets 與部署檢查（環境變數、錯誤、日誌） | ✅ 完成 |
+| **AI-1** | Organizer Copilot：主辦方活動營運 Agent | ⬜ 建議補強 |
+| **AIASE-FP** | 期末專題交付包（Demo / Report / Slides） | ⬜ 建議補強 |
 
 ---
 
@@ -116,6 +118,97 @@
 | **主辦方細權限（RBAC）** | MVP-3.1 | `organizer_members.role` + RLS | ✅ owner/admin/staff 三級權限 |
 | **次要金流 PayPal** | MVP-2.7 | — | ⬜ 未做（可選） |
 | **異常告警 / Dashboard** | — | **Sentry** + **UptimeRobot** | ⬜ 上線後接入 |
+
+---
+
+## AIASE 期末專題補強建議
+
+> 目的：若以 CypherHub 作為「生成式 AI 應用系統與工程」期末 project 主體，既有全端工程完整度很高，但目前產品功能仍偏向傳統售票平台。為貼合課程 rubric，建議補強一層明確的 **生成式 AI / Agent workflow**，並整理一份專為期末評分使用的交付包。
+
+### 課程評分對齊
+
+| 課程要求 / 評分面向 | CypherHub 現況 | 補強方向 |
+|---------------------|----------------|----------|
+| 生成式 AI 應用系統 | 目前主要是全端售票 / 活動營運平台 | 加入 Organizer Copilot，讓主辦方用 AI 生成活動文案、報名表、通知與營運建議 |
+| 系統架構圖（含微服務拆分、Agent workflow） | README 已有全端架構圖 | 增補 AI Agent 子系統圖：Frontend → Flask → AI service → LLM provider → Supabase |
+| 服務流程圖與 API 設計 | API 文件完整 | 增補 `/api/v1/ai/*` API、agent tool schema、human-in-the-loop 流程 |
+| Demo Presentation and Slides | 尚未整理為課程 demo script | 製作 5-7 分鐘 demo：建立活動 → AI 生成素材 → 發布 → 報名 → QR 核銷 |
+| GitHub Source and Technical Report | Source / docs 完整 | 新增 `FINAL_PROJECT_REPORT.md` 或同等報告，聚焦課程 rubric 與可重現性 |
+
+### AI-1：Organizer Copilot（建議最小可交版本）
+
+**產品定位**：把 CypherHub 從「街舞活動售票平台」升級為「街舞主辦方 AI 營運助理」。主辦方輸入活動基本資料後，Copilot 產出可審核、可編輯、可套用的營運內容。
+
+**核心使用情境**
+
+1. 主辦方在建立 / 編輯活動頁輸入活動名稱、類型、舞風、時間、地點、票種與目標客群。
+2. Organizer Copilot 產生：
+   - 活動短文案、完整描述、社群貼文。
+   - 報名表欄位建議，例如舞風、年資、crew、參賽組別、音樂需求。
+   - 票種與容量建議，例如 early bird、battle entry、viewer ticket。
+   - 活動提醒 email 與異動通知草稿。
+3. 主辦方逐項審核，可一鍵套用到既有活動表單 / metadata / email 草稿，不允許 AI 自動發布或自動寄送。
+
+**Agent workflow**
+
+```mermaid
+flowchart LR
+  Organizer["Organizer"] --> UI["Organizer Event UI"]
+  UI --> API["Flask AI API"]
+  API --> Planner["Planning step"]
+  Planner --> Context["Fetch event / ticket / form context"]
+  Context --> Generator["LLM generation"]
+  Generator --> Critic["Policy + quality check"]
+  Critic --> Draft["Draft suggestions"]
+  Draft --> HITL["Human review"]
+  HITL --> Apply["Apply selected fields"]
+  Apply --> Supabase["Supabase DB"]
+```
+
+**建議 API**
+
+| Method | Path | 用途 | 權限 |
+|--------|------|------|------|
+| `POST` | `/api/v1/ai/organizer/events/{event_id}/draft-copy` | 生成活動文案、短描述、社群貼文 | event admin |
+| `POST` | `/api/v1/ai/organizer/events/{event_id}/suggest-form` | 生成報名表欄位建議 | event admin |
+| `POST` | `/api/v1/ai/organizer/events/{event_id}/suggest-ticketing` | 生成票種 / 容量 / 定價建議 | event admin |
+| `POST` | `/api/v1/ai/organizer/events/{event_id}/draft-notification` | 生成活動提醒或異動通知草稿 | event admin |
+
+**安全邊界**
+
+- AI 只產生草稿，不直接發布活動、不直接寄信、不直接改票價或容量。
+- 所有套用動作必須由主辦方確認，並寫入 audit log。
+- Prompt 不含 service role key、ECPay secrets、JWT、個資完整列表等敏感內容。
+- LLM 回傳需經 schema validation；無效 JSON 或缺欄位時回傳可讀錯誤。
+
+**Definition of Done**
+
+- 至少完成一條可 demo 的 happy path：活動資料 → AI 生成活動文案 / 報名表建議 → 人工套用 → 活動頁可見。
+- 有後端單元測試覆蓋 prompt builder、schema validation、權限檢查、LLM provider mock。
+- 前端至少有一個 organizer UI 入口與 loading / error / retry 狀態。
+- 文件補上架構圖、API 設計、demo script、限制與未來工作。
+
+### AIASE-FP：期末交付包
+
+建議在 repo 根目錄或 `docs/final-project/` 整理以下內容：
+
+| 交付物 | 建議內容 |
+|--------|----------|
+| Technical Report | 問題背景、目標使用者、系統架構、Agent workflow、API 設計、資料庫設計、測試與部署方式 |
+| Demo Script | 以主辦方視角走完整流程，包含 Organizer Copilot 的 AI 生成步驟 |
+| Slides | 8-12 頁：痛點、解法、架構、AI workflow、工程亮點、demo、測試、未來工作 |
+| Reproducibility Notes | `.env.example`、啟動指令、測試指令、seed data、已知限制 |
+| Live Demo Evidence | 公開 URL、測試帳號（不含真實密碼於公開 repo）、截圖或 demo GIF |
+
+### 補強優先序
+
+| 優先序 | 項目 | 原因 |
+|--------|------|------|
+| P0 | 部署 live demo，更新 README URL | 抽查不能執行會直接歸零，公開可跑最重要 |
+| P0 | 補 Organizer Copilot 最小功能 | 讓專題明確符合生成式 AI / Agent 系統定位 |
+| P1 | 新增期末 technical report / slides / demo script | 對齊課程要求，降低 reviewer 理解成本 |
+| P1 | 補 AI Agent 架構圖與服務流程圖 | 對齊「系統架構圖、服務流程圖與 API 設計」 |
+| P2 | 補 screenshots / demo GIF | 讓非技術 reviewer 快速理解完成度 |
 
 ### 開源專案參考（可研究、不一定要用）
 

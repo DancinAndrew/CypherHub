@@ -14,6 +14,8 @@
 **但目前有一個致命缺口：沒有 live demo。**  
 技術評審可能會讀 code，但客戶不會。他們要的是「點開網址能用的東西」。
 
+若要拿去交 AIASE 期末 project，還有第二個關鍵缺口：**生成式 AI / Agent 功能不夠明確**。CypherHub 目前工程完成度足夠，但產品本體仍偏傳統售票與活動營運平台；課程 rubric 會看系統架構圖、Agent workflow、服務流程圖、API 設計、Demo slides 與 technical report。因此建議先補 Organizer Copilot，再整理期末交付包。
+
 ---
 
 ## 現有亮點（不需補）
@@ -34,6 +36,33 @@
 ---
 
 ## 缺口清單（按優先序）
+
+### P0-A：AIASE 生成式 AI / Agent 定位不足（期末專題最優先）
+
+**影響：高。**
+
+CypherHub 現有亮點是完整全端工程、金流、RBAC、庫存安全與文件，但目前沒有清楚的 LLM / Agent / RAG 產品功能。若直接提交，容易被視為「完整 Web service」而非「生成式 AI 應用系統」。
+
+**建議做法：Organizer Copilot**
+
+- 在主辦方建立 / 編輯活動流程中加入 AI 助理。
+- 由活動名稱、舞風、類型、地點、時間、票種、目標客群等資料生成：
+  - 活動短文案、完整描述、社群貼文。
+  - 報名表欄位建議。
+  - 票種、容量與定價建議。
+  - 活動提醒 email、異動通知草稿。
+- AI 只產生草稿；套用、發布、寄送都必須 human-in-the-loop。
+- 補一張 Agent workflow：Context fetch → LLM generation → Critic / validation → Human review → Apply selected fields。
+- 補 `/api/v1/ai/organizer/events/{event_id}/...` 這類 API 規格與 mock-based tests。
+
+**期末交付包**
+
+- `FINAL_PROJECT_REPORT.md`：問題背景、系統架構、Agent workflow、API 設計、測試、部署、限制。
+- Demo script：主辦方建立活動 → Organizer Copilot 生成素材 → 套用 → 發布 → 報名 → QR 核銷。
+- Slides：8-12 頁，聚焦痛點、AI 解法、工程架構、demo、測試與未來工作。
+- Live demo URL、測試帳號、截圖或 GIF。
+
+---
 
 ### P0：沒有 live demo（最優先）
 
@@ -131,11 +160,11 @@ CLAUDE.md 裡的 DoD 明確列出兩個都要跑，CI 卻漏了一個。
 
 | 順序 | 項目 | 預估時間 | 說明 |
 |------|------|----------|------|
-| 1 | 部署 live demo | 1-2 天 | 最大 ROI，文件已備好 |
-| 2 | 加 README 截圖 | 半天 | 跑起來後順手截 |
-| 3 | 加前端 Vitest 測試 | 2-3 天 | 補 tech 信心 |
-| 4 | 加 Mermaid 架構圖 | 1-2 小時 | 寫進 README |
-| 5 | CI 補 ruff format check | 10 分鐘 | 完整性修補 |
+| 1 | 補 Organizer Copilot 最小功能 | 2-4 天 | 讓專案符合生成式 AI / Agent 系統定位 |
+| 2 | 部署 live demo | 1-2 天 | 最大 ROI，文件已備好 |
+| 3 | 整理期末 technical report / slides / demo script | 0.5-1 天 | 對齊課程 rubric |
+| 4 | 加 README 截圖或 demo GIF | 半天 | 跑起來後順手截 |
+| 5 | 加 Agent workflow / 服務流程圖 | 1-2 小時 | 寫進 README 或 final report |
 
 ---
 
@@ -157,4 +186,3 @@ CLAUDE.md 裡的 DoD 明確列出兩個都要跑，CI 卻漏了一個。
 | 文件撰寫能力 | ✅ API 文件、Schema、部署指南齊備 |
 
 **結論：做完 P0（live demo）和 P1（截圖）之後，這個 project 可以作為主力作品集，支撐台灣中高階接案市場（月費 NT$8-15 萬等級的全端案件）。**
-
