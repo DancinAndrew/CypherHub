@@ -4,6 +4,44 @@
 
 # CypherHub
 
+## English Summary
+
+CypherHub is a ticketing and registration web app for street-dance events such as cyphers, battles, workshops, showcases and jams. Dancers find events by dance style and event type, register or pay, and receive a QR e-ticket; organizers create events, sell free or paid tickets, and check attendees in at the door. It aims to replace the Google Forms plus LINE group chats that organizers otherwise piece together.
+
+**Key features**
+- Event filtering by dance style (Hip-hop, Popping, Locking, Breaking, Waacking and more) and event type, plus registration forms that organizers build themselves, optionally one per ticket type.
+- Paid tickets through ECPay, a Taiwanese payment gateway, via its hosted checkout (the README lists card, ATM transfer and convenience-store code). Requests and webhooks carry ECPay's SHA-256 CheckMacValue, which the backend computes and verifies; duplicate webhooks are handled idempotently and orders follow an explicit state machine. Platform admins can issue full refunds through ECPay's API for credit-card payments only.
+- To avoid overselling, PostgreSQL functions lock the ticket-type row (`SELECT ... FOR UPDATE`) before reserving or issuing tickets. An integration test sends two concurrent holds for the last ticket; it skips itself unless a Supabase project is configured.
+- QR e-tickets. Check-in by phone-camera scan or manual entry of the ticket ID and secret; a repeat check-in returns "already checked in" instead of an error.
+- Organizer teams with owner, admin and staff roles, optional platform approval of new organizers (off by default), settlements with a platform fee (5% by default), payout requests, and audit logs.
+- PostgreSQL row-level security (RLS), JWT auth through Supabase Auth, per-route rate limits and security headers. In production mode the backend refuses to start with CORS `*`, a non-HTTPS Supabase URL or missing secrets.
+
+**Tech stack:** Python 3.12, Flask 3.1, Pydantic v2 · Vue 3, TypeScript, Vite, Pinia, Tailwind CSS · Supabase (PostgreSQL, Auth, Storage; 29 SQL migrations) · ECPay · Resend (optional email) · Docker Compose · GitHub Actions CI
+
+**Status:** An MVP that was never launched to real users or real events; the hosted backend on Google Cloud Run has been shut down, so the hosted demo is offline and the app runs locally with Docker. Payments target ECPay's staging (test) environment by default (`ECPAY_STAGE` defaults to true), and a code comment notes that ECPay's refund API does not work in staging.
+
+**Run locally** (needs Docker and the Supabase CLI; steps from `docs/setup/local-cloud-switch.md`):
+```bash
+./scripts/use-local-supabase.sh      # set up .env for local Supabase
+supabase start
+./scripts/setup-local-supabase.sh    # write local Supabase keys into .env
+supabase db reset                    # apply supabase/migrations
+docker compose -f infra/docker-compose.yml up --build
+```
+Frontend: http://localhost:5173 · API health check: http://localhost:8000/api/v1/health. These steps are not confirmed on a fresh clone: `supabase/config.toml` is not committed, and the repo's acceptance checklist still lists `supabase db reset` as unverified. Paid checkout also needs ECPay to reach the webhook `/api/v1/webhooks/ecpay` at a public URL.
+
+**Run tests** (same commands as `.github/workflows/ci.yml`, which uses Python 3.12 and Node 20). The repo defines 174 backend test functions (pytest, 37 files) and 57 frontend test cases (Vitest, 6 files); `-m "not integration"` excludes the 4 tests marked as needing a live Supabase project.
+```bash
+pip install -r backend/requirements.txt
+(cd backend && pytest -q -m "not integration")
+(cd frontend && npm ci && npm run test)
+```
+
+User flows, the architecture diagram and the documentation index are in the Chinese sections below and in [`docs/`](docs/).
+
+---
+
+
 **專為街舞社群打造的活動購票平台。**
 
 從 Cypher 到 Battle、Workshop 到 Showcase — CypherHub 讓主辦方輕鬆開活動、讓舞者一站搞定報名購票。
